@@ -1,4 +1,4 @@
-// Поточна версія / Current version : v3.00_Multilingual 107 ефектов
+// Поточна версія / Current version : v3.00_sound_Multilingual 107 ефектов
 // УВАГА!!! Більшість установок перенесено у файл data/config і може змінюватися в процесі експлуатації лампи.
 // Уважно читайте файл ПРОЧИТИ МЕНЕ!!!.txt і ПРОЧТИ МЕНЕ.doc (тут з картинками)
 
@@ -44,32 +44,42 @@ uint32_t AUTOMATIC_OFF_TIME = (0UL);                        // Не удаляй
 
 //#define MP3_DEBUG                                         // якщо рядок не закоментований, виводитимуться налагоджувальні повідомлення mp3 player
 //#define HEAP_SIZE_PRINT                                   // якщо рядок не закоментований, буде виводитись розмір "купи" (вільного ОЗУ)
-//#define GENERAL_DEBUG                                     // якщо рядок не закоментований, будуть виводитися загальні налагоджувальні повідомлення
+#define GENERAL_DEBUG                                     // якщо рядок не закоментований, будуть виводитися загальні налагоджувальні повідомлення
 
 
-#define LED_PIN               (0U)                          // пин ленты                (D3) на (D4) - встроенный светодиод платы , поэтому лучше паять на D3 = #define LED_PIN (0U)
+#define LED_PIN               (0U)                          // пин ленты                (D3) 
 #define BTN_PIN               (4U)                          // пин кнопки               (D2)
 #define MOSFET_PIN            (5U)                          // пин MOSFET транзистора   (D1) - может быть использован для управления питанием матрицы/ленты (если раскомментировать строку)
 #define MOSFET_LEVEL          (HIGH)                        // логический уровень, в который будет установлен пин MOSFET_PIN, когда матрица включена - HIGH или LOW (если раскомментировать)
 //#define ALARM_PIN             (15U)                       // пин состояния будильника (D8) - может быть использован для управления каким-либо внешним устройством на время работы будильника (если раскомментировать)
 //#define ALARM_LEVEL           (HIGH)                      // логический уровень, в который будет установлен пин ALARM_PIN, когда "рассвет"/будильник включен (если раскомментировать)
+
 #define USE_LittleFS                                        // Закомментируйте эту строку, если вместо файловой системы LittlFS  хотите использовать файловую систему SPIFFS
+
 #ifdef ESP_USE_BUTTON
   //#define DISPLAY_IP_AT_START                             // Раскоментируйте эту строчку, если хотите, чтобы при включении пмтания и подключению к WiFi, лампа один раз выводила свой IP адрес (для ламп с кнопкой)
 #else
    #define DISPLAY_IP_AT_START                              // Закоментируйте эту строчку, если не хотите, чтобы при включении пмтания и подключению к WiFi, лампа один раз выводила свой IP адрес (для ламп без кнопки)
-#endif  
+#endif  //ESP_USE_BUTTON
+
 #define TM1637_USE                                          // закоментировать, если не используется дисплей TM1637
 #ifdef TM1637_USE
 #define DIO                   (16U)                         // D0 TM1637 display DIO pin
 #define CLK                   (14U)                         // D5 TM1637 display CLK pin
-#endif
+#endif  //TM1637_USE
+
 #define MP3_TX_PIN            (12U)                         // В СЛУЧАЕ ОТСУТСТВИЯ ПЛЕЕРА ЗАКОМЕНТМРОВАТЬ СТРОКУ!!! Определяет вывод TX (D6)(RX на плеере)  
 #define MP3_RX_PIN            (13U)                         // Определяет вывод RX (D7)(TX на плеере) программного последовательного порта
 #ifdef MP3_TX_PIN
   #define CHECK_MP3_CONNECTION                              // Закоментируйте эту строку если нужно, чтобы лампа не проверяла наличие связи с МР3 плеером
   #define DF_PLAYER_IS_ORIGINAL                             // Если используеися плеер с чипом, отличным от AS20HGN402 ,закоментируйте эту строку
-#endif
+#endif  //MP3_TX_PIN
+
+#define IR_RECEIVER_USE                                     // Если не используется ИК ДУ - Закомментировать эту строку
+#ifdef IR_RECEIVER_USE
+  #define IR_RECEIVER_PIN  2                                // Пин ИК сенсора
+#endif  //IR_RECEIVER_USE
+
 // --- ESP (WiFi клиент) ---------------
                                                             // SSID и пароль Вашей WiFi-сети задаются на web странице лампы в режиме WiFi точки доступа по IP 192.168.4.1            
                                                             // Там же задаётся время в секундах (таймаут), которое ESP будет пытаться подключиться к WiFi сети, после его истечения автоматически развернёт WiFi точку доступа
@@ -114,7 +124,7 @@ unsigned int NIGHT_HOURS_BRIGHTNESS;                        // Не удаляй
                                                             // константы DAY_HOURS_BRIGHTNESS и NIGHT_HOURS_BRIGHTNESS используются только, когда матрица выключена, иначе будет использована яркость текущего эффекта
 
 // --- МАТРИЦА -------------------------
-#define CURRENT_LIMIT         (3000U)                       // лимит по току в миллиамперах, автоматически управляет яркостью (пожалей свой блок питания!) 0 - выключить лимит
+#define CURRENT_LIMIT         (4000U)                       // лимит по току в миллиамперах, автоматически управляет яркостью (пожалей свой блок питания!) 0 - выключить лимит
 
 #define WIDTH                 (16U)                         // ширина матрицы
 #define HEIGHT                (16U)                         // высота матрицы
@@ -538,7 +548,13 @@ String readFile(String fileName, size_t len ) {
   return temp;
 }
 
+
+#if defined(USE_RANDOM_SETS_IN_APP) || defined(RANDOM_SETTINGS_IN_CYCLE_MODE)
+void setModeSettings(uint8_t Scale = 0U, uint8_t Speed = 0U);
+#endif //#if defined(USE_RANDOM_SETS_IN_APP) || defined(RANDOM_SETTINGS_IN_CYCLE_MODE)
+
 #ifdef USE_MULTIPLE_LAMPS_CONTROL
 void multiple_lamp_control ();
 #endif  //USE_MULTIPLE_LAMPS_CONTROL
+
 uint8_t eff_num_correct [MODE_AMOUNT]; //Корректировка номеров эффектов для разных языков

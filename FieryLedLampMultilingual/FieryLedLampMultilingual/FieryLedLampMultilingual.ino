@@ -68,6 +68,12 @@
   #define FEEDBACK  0
  #endif  //MP3_DEBUG
 #endif  //MP3_TX_PIN
+#ifdef IR_RECEIVER_USE
+ #include <IRremoteESP8266.h>
+ #include <IRrecv.h>
+ #include "IR_Receiver.h"
+#endif  //IR_RECEIVER_USE
+
 
 // --- ИНИЦИАЛИЗАЦИЯ ОБЪЕКТОВ ----------
 CRGB leds[NUM_LEDS];
@@ -260,6 +266,20 @@ uint8_t DisplayFlag=0;               // Флаг, показывающий, чт
 #ifdef HEAP_SIZE_PRINT
 uint32_t mem_timer;
 #endif //HEAP_SIZE_PRINT 
+
+#ifdef IR_RECEIVER_USE
+ uint32_t IR_Code = 0x00000000;
+ uint32_t IR_Repeet_Timer;
+ uint32_t IR_Tick_Timer;
+ uint32_t IR_Dgit_Enter_Timer;
+ uint8_t Repeat; 
+ uint8_t IR_Data_Ready;
+ uint8_t Enter_Digit_1;
+ uint8_t Enter_Number;
+
+ IRrecv irrecv(IR_RECEIVER_PIN);
+ decode_results results;
+#endif  //IR_RECEIVER_USE
 
 
 void setup()  //==================================================================  void setup()  =========================================================================
@@ -605,6 +625,12 @@ void setup()  //================================================================
    mp3_player_connect = 1;
   #endif 
 
+  #ifdef IR_RECEIVER_USE
+    irrecv.enableIRIn();  // Start the receiver
+    IR_Tick_Timer = millis();
+    IR_Repeet_Timer = millis();
+  #endif  //IR_RECEIVER_USE
+
   //TextTicker = RUNNING_TEXT_DEFAULT;
   delay (100);
   
@@ -621,6 +647,7 @@ void setup()  //================================================================
   #ifdef HEAP_SIZE_PRINT
    mem_timer = millis();
   #endif //HEAP_SIZE_PRINT 
+  
 }
 
 
@@ -683,7 +710,7 @@ void loop()  //=================================================================
   
 do {	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++========= Главный цикл ==========+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   // Если не устойчивое подключение к WiFi, или не создаётся точка доступа, или лампа не хочет подключаться к вашей сети или вы не можете подключиться к точке доступа, то может быть у вас не качественная плата.
-  delay (0);   //Для некоторых плат ( особенно без металлического экрана над ESP и Flash памятью ) эта задержка должна быть увеличена. Подбирается индивидуально в пределах 1-12 мс до устойчивой работы WiFi. Чем меньше, тем лучше. Качественные платы работают с задержкой 0.
+  delay (10);   //Для некоторых плат ( особенно без металлического экрана над ESP и Flash памятью ) эта задержка должна быть увеличена. Подбирается индивидуально в пределах 1-12 мс до устойчивой работы WiFi. Чем меньше, тем лучше. Качественные платы работают с задержкой 0.
   yield();
   
 	if ((connect || !espMode)&&((millis() - my_timer) >= 10UL)) 
@@ -734,6 +761,19 @@ do {	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=========
        LOG.println(system_get_free_heap_size());
    }
   #endif //HEAP_SIZE_PRINT
+  
+  #ifdef IR_RECEIVER_USE
+       IR_Receive_Handle();
+    if (millis() - IR_Tick_Timer > 100)
+    {
+        IR_Tick_Timer = millis();
+        if (IR_Data_Ready) 
+        {
+            IR_Receive_Button_Handle();
+            IR_Data_Ready =0;
+        }       
+    }
+  #endif  //IR_RECEIVER_USE
 
   EepromManager::HandleEepromTick(&settChanged, &eepromTimeout, &ONflag, 
     &currentMode, modes, &(FavoritesManager::SaveFavoritesToEeprom));

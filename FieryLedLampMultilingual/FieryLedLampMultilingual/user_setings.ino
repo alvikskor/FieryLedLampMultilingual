@@ -710,7 +710,7 @@ void handle_cycle_set ()  {  // Выбор эффектов для Цикла
          HTTP.send(200, "text/plain", "OK");
 }
 
-void cycle_get ()  { // запись выбранных эффектов в файл питания
+void cycle_get ()  { // сохранение выбранных эффектов в файл
       char i[4];
 	  bool cycle_change = false;
       String configCycle = readFile("cycle_config.json", 2048); 
