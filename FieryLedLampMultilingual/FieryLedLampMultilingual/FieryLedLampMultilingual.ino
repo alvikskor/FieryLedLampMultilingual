@@ -461,10 +461,7 @@ void setup()  //================================================================
 
   // EEPROM
   EepromManager::InitEepromSettings(                        // инициализация EEPROM; запись начального состояния настроек, если их там ещё нет; инициализация настроек лампы значениями из EEPROM
-    modes, alarms, &ONflag, &dawnMode, &currentMode,
-    &(FavoritesManager::ReadFavoritesFromEeprom),
-    &(FavoritesManager::SaveFavoritesToEeprom),
-    &(restoreSettings)); // не придумал ничего лучше, чем делать восстановление настроек по умолчанию в обработчике инициализации EepromManager
+    modes, alarms, &ONflag, &dawnMode, &currentMode, &(restoreSettings)); // не придумал ничего лучше, чем делать восстановление настроек по умолчанию в обработчике инициализации EepromManager
 
   jsonWrite(configSetup, "Power", ONflag);  // Чтение состояния лампы вкл/выкл,текущий эффект,яркость,скорость,масштаб
   {
@@ -500,10 +497,10 @@ void setup()  //================================================================
   first_entry = 1;
   handle_alarm ();
   first_entry = 0;
-  jsonWrite(configSetup, "cycle_on", FavoritesManager::FavoritesRunning);  // чтение состояния настроек режима Цикл 
-  jsonWrite(configSetup, "time_eff", FavoritesManager::Interval);          // вкл/выкл,время переключения,дисперсия,вкл цикла после перезагрузки
-  jsonWrite(configSetup, "disp", FavoritesManager::Dispersion);
-  jsonWrite(configSetup, "cycle_allwase", FavoritesManager::UseSavedFavoritesRunning);
+  FavoritesManager::FavoritesRunning = jsonReadtoInt(configSetup, "cycle_on");  // чтение состояния настроек режима Цикл 
+  FavoritesManager::Interval = jsonReadtoInt(configSetup, "time_eff");          // вкл/выкл,время переключения,дисперсия,вкл цикла после перезагрузки
+  FavoritesManager::Dispersion = jsonReadtoInt(configSetup, "disp");
+  FavoritesManager::UseSavedFavoritesRunning = jsonReadtoInt(configSetup, "cycle_allwase");
   jsonWrite(configSetup, "tmr", 0);
   jsonWrite(configSetup, "button_on", buttonEnabled);
   //cycle_get ();
@@ -710,7 +707,7 @@ void loop()  //=================================================================
   
 do {	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++========= Главный цикл ==========+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   // Если не устойчивое подключение к WiFi, или не создаётся точка доступа, или лампа не хочет подключаться к вашей сети или вы не можете подключиться к точке доступа, то может быть у вас не качественная плата.
-  delay (10);   //Для некоторых плат ( особенно без металлического экрана над ESP и Flash памятью ) эта задержка должна быть увеличена. Подбирается индивидуально в пределах 1-12 мс до устойчивой работы WiFi. Чем меньше, тем лучше. Качественные платы работают с задержкой 0.
+  delay (0);   //Для некоторых плат ( особенно без металлического экрана над ESP и Flash памятью ) эта задержка должна быть увеличена. Подбирается индивидуально в пределах 1-12 мс до устойчивой работы WiFi. Чем меньше, тем лучше. Качественные платы работают с задержкой 0.
   yield();
   
 	if ((connect || !espMode)&&((millis() - my_timer) >= 10UL)) 
@@ -776,7 +773,7 @@ do {	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=========
   #endif  //IR_RECEIVER_USE
 
   EepromManager::HandleEepromTick(&settChanged, &eepromTimeout, &ONflag, 
-    &currentMode, modes, &(FavoritesManager::SaveFavoritesToEeprom));
+    &currentMode, modes);
     yield();
 
   //#ifdef USE_NTP

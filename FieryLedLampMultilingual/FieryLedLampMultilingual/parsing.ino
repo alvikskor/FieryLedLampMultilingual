@@ -451,8 +451,8 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       {
         FavoritesManager::ConfigureFavorites(inputBuffer);
         FavoritesManager::SetStatus(inputBuffer);
-        settChanged = true;
-        eepromTimeout = millis();
+        //settChanged = true;
+        //eepromTimeout = millis();
         jsonWrite(configSetup, "cycle_on", FavoritesManager::FavoritesRunning);  // чтение состояния настроек режима Цикл 
         jsonWrite(configSetup, "time_eff", FavoritesManager::Interval);          // вкл/выкл,время переключения,дисперсия,вкл цикла после перезагрузки
         jsonWrite(configSetup, "disp", FavoritesManager::Dispersion);

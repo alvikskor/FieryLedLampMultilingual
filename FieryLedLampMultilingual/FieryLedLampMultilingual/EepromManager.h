@@ -87,8 +87,7 @@
 class EepromManager
 {
   public:
-    static void InitEepromSettings(ModeType modes[], AlarmType alarms[], bool* onFlag, uint8_t* dawnMode, uint8_t* currentMode, 
-       void (*readFavoritesSettings)(), void (*saveFavoritesSettings)(), void (*restoreDefaultSettings)())
+    static void InitEepromSettings(ModeType modes[], AlarmType alarms[], bool* onFlag, uint8_t* dawnMode, uint8_t* currentMode, void (*restoreDefaultSettings)())
     {
       EEPROM.begin(EEPROM_TOTAL_BYTES_USED);
       delay(50);
@@ -119,7 +118,7 @@ class EepromManager
         EEPROM.write(EEPROM_CURRENT_MODE_ADDRESS, 0);
         EEPROM.write(EEPROM_ESP_BUTTON_ENABLED_ADDRESS, 1);
 
-        saveFavoritesSettings();
+        //saveFavoritesSettings();
     
         EEPROM.commit();
       }
@@ -136,7 +135,7 @@ class EepromManager
         alarms[i].Time = ReadInt16(EEPROM_ALARM_START_ADDRESS + EEPROM_ALARM_STRUCT_SIZE * i + 1);
       }
 
-      readFavoritesSettings();
+      //readFavoritesSettings();
 
     if(DONT_TURN_ON_AFTER_SHUTDOWN)
       *onFlag = false;
@@ -159,7 +158,7 @@ class EepromManager
       EEPROM.commit();
     }
     
-    static void HandleEepromTick(bool* settChanged, uint32_t* eepromTimeout, bool* onFlag, uint8_t* currentMode, ModeType modes[], void (*saveFavoritesSettings)())
+    static void HandleEepromTick(bool* settChanged, uint32_t* eepromTimeout, bool* onFlag, uint8_t* currentMode, ModeType modes[])
     {
       if (*settChanged && millis() - *eepromTimeout >= EEPROM_WRITE_DELAY)
       {
@@ -174,7 +173,7 @@ class EepromManager
           EEPROM.put(EEPROM_MODES_START_ADDRESS + EEPROM_MODE_STRUCT_SIZE * i, modes[i]);
        
         EEPROM.write(EEPROM_CURRENT_MODE_ADDRESS, *currentMode);
-        saveFavoritesSettings(); // там уже есть EEPROM.commit();
+        //saveFavoritesSettings(); // там уже есть EEPROM.commit();
         //EEPROM.commit();
       }
     }

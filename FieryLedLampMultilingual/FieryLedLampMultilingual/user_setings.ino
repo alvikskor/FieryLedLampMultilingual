@@ -700,7 +700,7 @@ void handle_cycle_set ()  {  // Выбор эффектов для Цикла
       LOG.println (F("\nВыбор эффектов для Цикла после обработки"));
       LOG.println(configCycle);
      #endif     
-      FavoritesManager::SaveFavoritesToEeprom();
+      //FavoritesManager::SaveFavoritesToEeprom();
       if (!first_entry)
         {
          writeFile("cycle_config.json", configCycle );

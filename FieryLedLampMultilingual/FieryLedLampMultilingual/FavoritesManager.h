@@ -141,7 +141,7 @@ class FavoritesManager
 
       return false;
     }
-
+/*
     static void ReadFavoritesFromEeprom()
     {
       Interval = EepromManager::ReadUint16(EEPROM_FAVORITES_START_ADDRESS + 1);
@@ -170,7 +170,7 @@ class FavoritesManager
 
       EEPROM.commit();
     }
-
+*/
     static void TurnFavoritesOff()
     {
       FavoritesRunning = 0;

@@ -649,7 +649,7 @@ void Favorit_Add_Del(bool direction)   {
     String e = "e" + String (currentMode);
     jsonWrite(configCycle, e, direction ? 1 : 0);
     FavoritesManager::FavoriteModes[currentMode] = (direction ? 1 : 0);
-    //FavoritesManager::SaveFavoritesToEeprom();
+    //writeFile("cycle_config.json", configCycle );
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 2);
 }
