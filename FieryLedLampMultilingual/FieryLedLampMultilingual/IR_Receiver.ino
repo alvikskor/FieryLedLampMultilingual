@@ -1,21 +1,21 @@
 // 
 #ifdef IR_RECEIVER_USE
 
-#define IR_REPEET_TIMER      1000   // Час очікування повтору
+#define IR_REPEAT_TIMER      1000   // Час очікування повтору
 #define IR_TICK_TIMER        100    // Час між автоповтором
-#define IR_DIGIT_ENTER_TIMER 3000   // час для введення другої цифри номеру ефекту
+#define IR_DIGIT_ENTER_TIMER 2000   // час для введення другої цифри номеру ефекту
 
 void IR_Receive_Handle ()   {       // Обробка прийнятого сигналу
     if (irrecv.decode(&results)) {
         if (results.repeat) { 
-            if (millis() - IR_Repeet_Timer > IR_REPEET_TIMER) {
+            if (millis() - IR_Repeat_Timer > IR_REPEAT_TIMER) {
                 //Serial.print("Repeat  ");
                 IR_Data_Ready = 2;
             }
         }
         else {
             IR_Code = (uint32_t)results.value;
-            IR_Repeet_Timer = millis();
+            IR_Repeat_Timer = millis();
             IR_Data_Ready = 1;
         }
     irrecv.resume();  // Receive the next value
@@ -43,7 +43,7 @@ void IR_Receive_Handle ()   {       // Обробка прийнятого си�
           updateRemoteBlynkParams();
         #endif
         #ifdef USE_MULTIPLE_LAMPS_CONTROL
-          multiple_lamp_control ();
+          repeat_multiple_lamp_control = true;
         #endif  //USE_MULTIPLE_LAMPS_CONTROL
         //Serial.println(Enter_Number);
         //Serial.println("  1 цифра");
@@ -53,42 +53,42 @@ void IR_Receive_Handle ()   {       // Обробка прийнятого си�
 void IR_Receive_Button_Handle()   {     //Обробка прийнятих команд (натиснутих кнопок пульта ДК)
     switch(IR_Code) {
         case IR_ON_OFF:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         IR_Power();
         break;
         case IR2_ON_OFF:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         IR_Power();
         break;
         
         case IR_MUTE:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Mute();
         break;
         case IR2_MUTE:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Mute();
         break;
         
         case IR_PREV:
-        Prev_eff();
+        Prev_Next_eff(false);
         break;
         case IR2_PREV:
-        Prev_eff();
+        Prev_Next_eff(false);
         break;
         case IR_NEXT:
-        Next_eff();
+        Prev_Next_eff(true);
         break;
         case IR2_NEXT:
-        Next_eff();
+        Prev_Next_eff(true);
         break;
         
         case IR_CYCLE:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Cycle_on_off();
         break;
         case IR2_CYCLE:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Cycle_on_off();
         break;
         
@@ -145,20 +145,20 @@ void IR_Receive_Button_Handle()   {     //Обробка прийнятих ко
         break;
         
         case IR_TIME:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         printTime(thisTime, true, ONflag);
         break;
         case IR2_TIME:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         printTime(thisTime, true, ONflag);
         break;
         
         case IR_IP:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Print_IP();
         break;
         case IR2_IP:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Print_IP();
         break;
         
@@ -176,126 +176,126 @@ void IR_Receive_Button_Handle()   {     //Обробка прийнятих ко
         break;
         
         case IR_RND:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Current_Eff_Rnd_Def(true);
         break;
         case IR2_RND:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Current_Eff_Rnd_Def(true);
         break;
         case IR_DEF:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Current_Eff_Rnd_Def(false);
         break;
         case IR2_DEF :
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Current_Eff_Rnd_Def(false);
         break;
         
         case IR_EQ:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         IR_Equalizer();
         break;
         case IR2_EQ:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         IR_Equalizer();
         break;
         
         case IR_FAV_ADD:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Favorit_Add_Del(true);
         break;
         case IR2_FAV_ADD:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Favorit_Add_Del(true);
         break;
         case IR_FAV_DEL:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Favorit_Add_Del(false);
         break;
         case IR2_FAV_DEL :
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Favorit_Add_Del(false);
         break;
 
         case IR_1:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(1);
         break;
         case IR2_1 :
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(1);
         break;
         case IR_2:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(2);
         break;
         case IR2_2 :
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(2);
         break;
         case IR_3:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(3);
         break;
         case IR2_3 :
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(3);
         break;
         case IR_4:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(4);
         break;
         case IR2_4 :
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(4);
         break;
         case IR_5:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(5);
         break;
         case IR2_5 :
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(5);
         break;
         case IR_6:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(6);
         break;
         case IR2_6 :
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(6);
         break;
         case IR_7:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(7);
         break;
         case IR2_7 :
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(7);
         break;
         case IR_8:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(8);
         break;
         case IR2_8 :
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(8);
         break;
         case IR_9:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(9);
         break;
         case IR2_9 :
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(9);
         break;
         case IR_0:
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(0);
         break;
         case IR2_0 :
-        if (IR_Data_Ready != 2)  // No repeet
+        if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(0);
         break;
 
@@ -393,26 +393,42 @@ void Mute()   {                // Вкл / Откл звука
   #endif  //MP3_TX_PIN
 }
 
-void Prev_eff()   {
-  if (ONflag)
-  {
-    String Name = "correct." + jsonRead (configSetup, "lang") + ".json";
-    String Correct = readFile(Name, 2048);
-    uint8_t temp = jsonReadtoInt(configSetup, "eff_sel");
-	if (Favorit_only) 
-	{
-      uint8_t lastMode = currentMode;
-      do
-      {
-        if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
-        currentMode = eff_num_correct[temp];
-      } while (FavoritesManager::FavoriteModes[currentMode] == 0 && currentMode != lastMode);
-      if (currentMode == lastMode) // если ни один режим не добавлен в избранное, всё равно куда-нибудь переключимся
-        if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
-        currentMode = eff_num_correct[temp];
-	}
-	else 
-	  if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
+void Prev_Next_eff(bool direction)   {
+    if (ONflag)    
+    {
+      uint8_t temp = jsonReadtoInt(configSetup, "eff_sel");
+      if (direction) {
+          if (Favorit_only)
+	      {
+            uint8_t lastMode = currentMode;
+            do 
+            {
+              if (++temp >= MODE_AMOUNT) temp = 0;
+              currentMode = eff_num_correct[temp];
+            } while (FavoritesManager::FavoriteModes[currentMode] == 0 && currentMode != lastMode);
+            if (currentMode == lastMode) // если ни один режим не добавлен в избранное, всё равно куда-нибудь переключимся
+              if (++temp >= MODE_AMOUNT) temp = 0;
+              currentMode = eff_num_correct[temp];
+	      }
+          else
+            if (++temp >= MODE_AMOUNT) temp = 0;
+      }
+      else {
+	      if (Favorit_only) 
+	      {
+            uint8_t lastMode = currentMode;
+            do
+            {
+              if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
+              currentMode = eff_num_correct[temp];
+            } while (FavoritesManager::FavoriteModes[currentMode] == 0 && currentMode != lastMode);
+            if (currentMode == lastMode) // если ни один режим не добавлен в избранное, всё равно куда-нибудь переключимся
+              if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
+              currentMode = eff_num_correct[temp];
+	      }
+	      else 
+	        if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
+      }
     currentMode = eff_num_correct[temp];
 	jsonWrite(configSetup, "eff_sel", temp);
 	jsonWrite(configSetup, "br", modes[currentMode].Brightness);
@@ -436,62 +452,14 @@ void Prev_eff()   {
     updateRemoteBlynkParams();
     #endif
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
-    #endif  //USE_MULTIPLE_LAMPS_CONTROL
-  }
-}
-
-void Next_eff()   {
-  if (ONflag)    
-  {
-    String Name = "correct." + jsonRead (configSetup, "lang") + ".json";
-    String Correct = readFile(Name, 2048);
-    uint8_t temp = jsonReadtoInt(configSetup, "eff_sel");
-    if (Favorit_only)
-	{
-      uint8_t lastMode = currentMode;
-      do 
-      {
-        if (++temp >= MODE_AMOUNT) temp = 0;
-        currentMode = eff_num_correct[temp];
-      } while (FavoritesManager::FavoriteModes[currentMode] == 0 && currentMode != lastMode);
-      if (currentMode == lastMode) // если ни один режим не добавлен в избранное, всё равно куда-нибудь переключимся
-        if (++temp >= MODE_AMOUNT) temp = 0;
-        currentMode = eff_num_correct[temp];
-	}
-    else
-      if (++temp >= MODE_AMOUNT) temp = 0;
-    currentMode = eff_num_correct[temp];
-	jsonWrite(configSetup, "eff_sel", temp);
-	jsonWrite(configSetup, "br", modes[currentMode].Brightness);
-    jsonWrite(configSetup, "sp", modes[currentMode].Speed);
-    jsonWrite(configSetup, "sc", modes[currentMode].Scale);
-    FastLED.setBrightness(modes[currentMode].Brightness);
-    loadingFlag = true;
-    settChanged = true;
-    eepromTimeout = millis();
-
-      if (random_on && FavoritesManager::FavoritesRunning)
-        selectedSettings = 1U;
-
-    #if (USE_MQTT)
-    if (espMode == 1U)
-    {
-      MqttManager::needToPublish = true;
-    }
-    #endif
-    #ifdef USE_BLYNK
-    updateRemoteBlynkParams();
-    #endif
-    #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
   }
 }
 
 void Cycle_on_off()   {
-    uint8_t tmp;
     if (ONflag)   {
+        uint8_t tmp;
         jsonReadtoInt(configSetup, "cycle_on") == 0? tmp = 1 : tmp = 0;
 	    jsonWrite(configSetup, "cycle_on", tmp);
 	    FavoritesManager::FavoritesRunning = tmp;
@@ -505,7 +473,7 @@ void Cycle_on_off()   {
 }
 
 void Bright_Up_Down(bool direction)   {
-    uint8_t delta = IR_Data_Ready == 1 ? 1U : 10U;
+    uint8_t delta = IR_Data_Ready == 1 ? 1U : 4U;
     modes[currentMode].Brightness = constrain(direction ? modes[currentMode].Brightness + delta : modes[currentMode].Brightness - delta, 1, 255);
 	jsonWrite(configSetup, "br", modes[currentMode].Brightness);
     FastLED.setBrightness(modes[currentMode].Brightness);
@@ -518,7 +486,7 @@ void Bright_Up_Down(bool direction)   {
     settChanged = true;
     eepromTimeout = millis();
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-        multiple_lamp_control ();
+        repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
     #if (USE_MQTT)
     if (espMode == 1U)
@@ -529,7 +497,7 @@ void Bright_Up_Down(bool direction)   {
 }
 
 void Speed_Up_Down(bool direction)   {
-    uint8_t delta = IR_Data_Ready == 1 ? 1U : 10U;
+    uint8_t delta = IR_Data_Ready == 1 ? 1U : 4U;
     modes[currentMode].Speed = constrain(direction ? modes[currentMode].Speed + delta : modes[currentMode].Speed - delta, 1, 255);
 	jsonWrite(configSetup, "sp", modes[currentMode].Speed);
     loadingFlag = true; // без перезапуска эффекта ничего и не увидишь
@@ -542,7 +510,7 @@ void Speed_Up_Down(bool direction)   {
     settChanged = true;
     eepromTimeout = millis();
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-        multiple_lamp_control ();
+        repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
     #if (USE_MQTT)
     if (espMode == 1U)
@@ -553,7 +521,7 @@ void Speed_Up_Down(bool direction)   {
 }
 
 void Scale_Up_Down(bool direction)   {
-    uint8_t delta = IR_Data_Ready == 1 ? 1U : 5U;
+    uint8_t delta = IR_Data_Ready == 1 ? 1U : 2U;
     modes[currentMode].Scale = constrain(direction ? modes[currentMode].Scale + delta : modes[currentMode].Scale - delta, 1, 100);
 	jsonWrite(configSetup, "sc", modes[currentMode].Scale);
     loadingFlag = true; // без перезапуска эффекта ничего и не увидишь
@@ -566,7 +534,7 @@ void Scale_Up_Down(bool direction)   {
     settChanged = true;
     eepromTimeout = millis();
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-        multiple_lamp_control ();
+        repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
     #if (USE_MQTT)
     if (espMode == 1U)
@@ -623,14 +591,14 @@ void Current_Eff_Rnd_Def(bool direction)   {
     selectedSettings = 1U;
     updateSets();
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
     }
     else {
     setModeSettings();
     updateSets();    
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
     }
 }
@@ -684,7 +652,7 @@ void Digit_Handle (uint8_t digit)   {
           updateRemoteBlynkParams();
         #endif
         #ifdef USE_MULTIPLE_LAMPS_CONTROL
-          multiple_lamp_control ();
+          repeat_multiple_lamp_control = true;
         #endif  //USE_MULTIPLE_LAMPS_CONTROL
         //Serial.println(Enter_Number);
         //Serial.println("  2 цифри");

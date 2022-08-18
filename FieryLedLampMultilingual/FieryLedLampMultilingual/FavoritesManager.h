@@ -11,7 +11,6 @@
     uint8_t shuffleFavoriteModes[MODE_AMOUNT];
     uint8_t shuffleCurrentIndex = MODE_AMOUNT; // начальное значение увеличивается на 1 и затем сравнивается с MODE_AMOUNT, чтобы создать первоначальное перемешивание режимов
 #endif
-bool repeat_multiple_lamp_control = false;
 
 
 ModeType modes[MODE_AMOUNT];

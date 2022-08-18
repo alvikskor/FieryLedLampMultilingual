@@ -107,7 +107,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
 	  jsonWrite(configSetup, "sp", modes[currentMode].Speed);
 	  jsonWrite(configSetup, "sc", modes[currentMode].Scale);
       #ifdef USE_MULTIPLE_LAMPS_CONTROL
-      multiple_lamp_control ();
+      repeat_multiple_lamp_control = true;
       #endif  //USE_MULTIPLE_LAMPS_CONTROL
       //FastLED.clear();
       //delay(1);
@@ -226,7 +226,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       modes[currentMode].Brightness = constrain(atoi(buff), 1, 255);
 	  jsonWrite(configSetup, "br", modes[currentMode].Brightness);
       #ifdef USE_MULTIPLE_LAMPS_CONTROL
-      multiple_lamp_control ();
+      repeat_multiple_lamp_control = true;
       #endif  //USE_MULTIPLE_LAMPS_CONTROL
       FastLED.setBrightness(modes[currentMode].Brightness);
       //loadingFlag = true; //не хорошо делать перезапуск эффекта после изменения яркости, но в некоторых эффектах от чётности яркости мог бы зависеть внешний вид
@@ -255,7 +255,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       updateRemoteBlynkParams();
       #endif
       #ifdef USE_MULTIPLE_LAMPS_CONTROL
-      multiple_lamp_control ();
+      repeat_multiple_lamp_control = true;
       #endif  //USE_MULTIPLE_LAMPS_CONTROL
       updateSets();
       sendCurrent(inputBuffer);
@@ -267,7 +267,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       modes[currentMode].Scale = atoi(buff);
 	  jsonWrite(configSetup, "sc", modes[currentMode].Scale);
       #ifdef USE_MULTIPLE_LAMPS_CONTROL
-      multiple_lamp_control ();
+      repeat_multiple_lamp_control = true;
       #endif  //USE_MULTIPLE_LAMPS_CONTROL
       updateSets();
       sendCurrent(inputBuffer);
@@ -534,7 +534,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       FastLED.setBrightness(ALLbri);
       loadingFlag = true;
       #ifdef USE_MULTIPLE_LAMPS_CONTROL
-      multiple_lamp_control ();
+      repeat_multiple_lamp_control = true;
       #endif  //USE_MULTIPLE_LAMPS_CONTROL
     }
     #ifdef USE_RANDOM_SETS_IN_APP
@@ -545,7 +545,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
          setModeSettings();
          updateSets();
          #ifdef USE_MULTIPLE_LAMPS_CONTROL
-         multiple_lamp_control ();
+         repeat_multiple_lamp_control = true;
          #endif  //USE_MULTIPLE_LAMPS_CONTROL
          sendCurrent(inputBuffer);
        }
@@ -554,7 +554,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
          selectedSettings = 1U;
          updateSets();
          #ifdef USE_MULTIPLE_LAMPS_CONTROL
-         multiple_lamp_control ();
+         repeat_multiple_lamp_control = true;
          #endif  //USE_MULTIPLE_LAMPS_CONTROL
        }
        else if (!strncmp_P(inputBuffer, PSTR("RND_Z"), 5)) // вернуть настройки по умолчанию всем эффектам
@@ -563,7 +563,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
          selectedSettings = 0U;
          updateSets();
          #ifdef USE_MULTIPLE_LAMPS_CONTROL
-         multiple_lamp_control ();
+         repeat_multiple_lamp_control = true;
          #endif  //USE_MULTIPLE_LAMPS_CONTROL
          sendCurrent(inputBuffer);
          #ifdef USE_BLYNK

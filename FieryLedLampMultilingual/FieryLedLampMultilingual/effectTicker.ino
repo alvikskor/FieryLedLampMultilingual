@@ -255,7 +255,7 @@ void Eff_Tick () {
     FastLED.show();
       #ifdef USE_MULTIPLE_LAMPS_CONTROL
       if (repeat_multiple_lamp_control)  {
-		  jsonWrite(configSetup, "eff_sel", currentMode);
+		  //jsonWrite(configSetup, "eff_sel", currentMode);
 		  jsonWrite(configSetup, "br", modes[currentMode].Brightness);
 		  jsonWrite(configSetup, "sp", modes[currentMode].Speed);
 		  jsonWrite(configSetup, "sc", modes[currentMode].Scale);          

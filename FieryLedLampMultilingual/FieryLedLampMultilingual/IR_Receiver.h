@@ -19,8 +19,8 @@
 #define IR_SC_DOWN     0xFF40BF // "Prev"       Уменьшить масштаб
 #define IR_FAV_ADD     0xFFE817 // "Play/Pause" Добавить в избранное
 #define IR_FAV_DEL     0xFFE01F // "Stop"       Удалить из избранного
-#define IR_RND         0xFFD02F // "Setup"      Случайные настр. текущего эфф.
-#define IR_DEF         0xFFD827 // "Menu"       Настр. тек. эфф. по  умолчанию
+#define IR_RND         0xFFD827 // "Menu"       Случайные настр. текущего эфф.
+#define IR_DEF         0xFFD02F // "Setup"      Настр. тек. эфф. по  умолчанию
 #define IR_FOLD_PREV   0xFF7887 // "Zoom"       Предыдущая пепка
 #define IR_FOLD_NEXT   0xFFF807 // "Title"      Следующая папка
 #define IR_1           0xFF827D // "1"          1

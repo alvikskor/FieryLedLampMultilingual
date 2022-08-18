@@ -230,15 +230,9 @@ void handle_ntp ()  {
 }
 
 void handle_eff_sel () {
-    String Name = "correct." + jsonRead (configSetup, "lang") + ".json";
-    String Correct = readFile(Name, 2048);
     uint8_t temp = (HTTP.arg("eff_sel").toInt());
 	jsonWrite(configSetup, "eff_sel", temp);
 	currentMode = eff_num_correct[temp];
-    //Serial.print ("temp = ");
-    //Serial.println (temp);
-    //Serial.print ("CurrentMode = ");
-    //Serial.println (currentMode);
 	jsonWrite(configSetup, "br", modes[currentMode].Brightness);
 	jsonWrite(configSetup, "sp", modes[currentMode].Speed);
 	jsonWrite(configSetup, "sc", modes[currentMode].Scale);
@@ -259,68 +253,70 @@ void handle_eff_sel () {
     #endif
 	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL   
 }
 
 void handle_eff () {
     uint8_t temp = jsonReadtoInt (configSetup, "eff_sel");
-	//jsonWrite(configSetup, "eff", HTTP.arg("eff").toInt());
 	if (HTTP.arg("eff").toInt())  {
-	  if (++temp >= MODE_AMOUNT) temp = 0;
-	  jsonWrite(configSetup, "eff_sel", temp);
-      currentMode = eff_num_correct[temp];
-	  jsonWrite(configSetup, "br", modes[currentMode].Brightness);
-	  jsonWrite(configSetup, "sp", modes[currentMode].Speed);
-	  jsonWrite(configSetup, "sc", modes[currentMode].Scale);
-      FastLED.setBrightness(modes[currentMode].Brightness);
-      loadingFlag = true;
-      settChanged = true;
-      eepromTimeout = millis();
+          if (Favorit_only)
+	      {
+            uint8_t lastMode = currentMode;
+            do 
+            {
+              if (++temp >= MODE_AMOUNT) temp = 0;
+              currentMode = eff_num_correct[temp];
+            } while (FavoritesManager::FavoriteModes[currentMode] == 0 && currentMode != lastMode);
+            if (currentMode == lastMode) // если ни один режим не добавлен в избранное, всё равно куда-нибудь переключимся
+              if (++temp >= MODE_AMOUNT) temp = 0;
+              currentMode = eff_num_correct[temp];
+	      }
+          else
+            if (++temp >= MODE_AMOUNT) temp = 0;
+      }
+      else {
+	      if (Favorit_only) 
+	      {
+            uint8_t lastMode = currentMode;
+            do
+            {
+              if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
+              currentMode = eff_num_correct[temp];
+            } while (FavoritesManager::FavoriteModes[currentMode] == 0 && currentMode != lastMode);
+            if (currentMode == lastMode) // если ни один режим не добавлен в избранное, всё равно куда-нибудь переключимся
+              if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
+              currentMode = eff_num_correct[temp];
+	      }
+	      else 
+	        if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
+      }
+    currentMode = eff_num_correct[temp];
+	jsonWrite(configSetup, "eff_sel", temp);
+	jsonWrite(configSetup, "br", modes[currentMode].Brightness);
+    jsonWrite(configSetup, "sp", modes[currentMode].Speed);
+    jsonWrite(configSetup, "sc", modes[currentMode].Scale);
+    FastLED.setBrightness(modes[currentMode].Brightness);
+    loadingFlag = true;
+    settChanged = true;
+    eepromTimeout = millis();
+
       if (random_on && FavoritesManager::FavoritesRunning)
         selectedSettings = 1U;
-      #if (USE_MQTT)
-       if (espMode == 1U)
-      {
+
+    #if (USE_MQTT)
+    if (espMode == 1U)
+    {
       MqttManager::needToPublish = true;
-      }
-      #endif
-      #ifdef USE_BLYNK
-      updateRemoteBlynkParams();
-      #endif
-	}
-	else  {
-		if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
-    
-		jsonWrite(configSetup, "eff_sel", temp);
-        currentMode = eff_num_correct[temp];
-		jsonWrite(configSetup, "br", modes[currentMode].Brightness);
-	    jsonWrite(configSetup, "sp", modes[currentMode].Speed);
-	    jsonWrite(configSetup, "sc", modes[currentMode].Scale);
-		FastLED.setBrightness(modes[currentMode].Brightness);
-		loadingFlag = true;
-		settChanged = true;
-		eepromTimeout = millis();
-		if (random_on && FavoritesManager::FavoritesRunning)
-        selectedSettings = 1U;
-		#if (USE_MQTT)
-		if (espMode == 1U)
-		{
-		MqttManager::needToPublish = true;
-		}
-		#endif
-		#ifdef USE_BLYNK
-		updateRemoteBlynkParams();
-		#endif
-	}
-    //Serial.print ("temp = ");
-    //Serial.println (temp);
-    //Serial.print ("CurrentMode = ");
-    //Serial.println (currentMode);
-	  HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}"); 
-      #ifdef USE_MULTIPLE_LAMPS_CONTROL
-      multiple_lamp_control ();
-      #endif  //USE_MULTIPLE_LAMPS_CONTROL
+    }
+    #endif
+    #ifdef USE_BLYNK
+    updateRemoteBlynkParams();
+    #endif
+    #ifdef USE_MULTIPLE_LAMPS_CONTROL
+    repeat_multiple_lamp_control = true;
+    #endif  //USE_MULTIPLE_LAMPS_CONTROL
+    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
 }
 
 void handle_br ()  {
@@ -332,7 +328,7 @@ void handle_br ()  {
     #endif
 	 HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}"); 
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL    
 }
 
@@ -345,7 +341,7 @@ void handle_sp ()  {
     #endif
 	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
 }
 
@@ -358,7 +354,7 @@ void handle_sc ()  {
     #endif
 	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL       
 }
 
@@ -368,7 +364,7 @@ void handle_brm ()   {
 	FastLED.setBrightness(modes[currentMode].Brightness);
 	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL    
 }
 
@@ -378,7 +374,7 @@ void handle_brp ()   {
 	FastLED.setBrightness(modes[currentMode].Brightness);
 	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
 }
 
@@ -388,7 +384,7 @@ void handle_spm ()   {
 	loadingFlag = true;  // Перезапуск Эффекта
 	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
 }
 
@@ -398,7 +394,7 @@ void handle_spp ()   {
 	loadingFlag = true;  // Перезапуск Эффекта
 	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
 }
 
@@ -408,7 +404,7 @@ void handle_scm ()   {
 	loadingFlag = true;  // Перезапуск Эффекта
 	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
 }
 
@@ -418,7 +414,7 @@ void handle_scp ()   {
 	loadingFlag = true;  // Перезапуск Эффекта
 	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
 }
 
@@ -758,7 +754,7 @@ void handle_def ()   { // Сброс настроек текущего эффе�
     updateSets();    
     HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
 }
 
@@ -767,7 +763,7 @@ void handle_rnd ()   { // Установка случайных настроек
     updateSets();
     HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
 }
 
@@ -784,7 +780,7 @@ void handle_all_br ()   {  //Общая яркость
     //LOG.println (ALLbri);
     HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
 }
 

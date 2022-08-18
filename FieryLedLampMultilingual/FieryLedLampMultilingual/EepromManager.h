@@ -87,7 +87,7 @@
 class EepromManager
 {
   public:
-    static void InitEepromSettings(ModeType modes[], AlarmType alarms[], bool* onFlag, uint8_t* dawnMode, uint8_t* currentMode, void (*restoreDefaultSettings)())
+    static void InitEepromSettings(ModeType modes[], AlarmType alarms[], bool* onFlag, uint8_t* dawnMode, void (*restoreDefaultSettings)())
     {
       EEPROM.begin(EEPROM_TOTAL_BYTES_USED);
       delay(50);
@@ -143,11 +143,13 @@ class EepromManager
       *onFlag = (bool)EEPROM.read(EEPROM_LAMP_ON_ADDRESS);
 
       *dawnMode = EEPROM.read(EEPROM_DAWN_MODE_ADDRESS);
-      *currentMode = EEPROM.read(EEPROM_CURRENT_MODE_ADDRESS);
+      //*currentMode = EEPROM.read(EEPROM_CURRENT_MODE_ADDRESS);
+/*      
 	  jsonWrite(configSetup, "eff_sel", *currentMode);
 	  jsonWrite(configSetup, "br", modes[*currentMode].Brightness);
       jsonWrite(configSetup, "sp", modes[*currentMode].Speed);
       jsonWrite(configSetup, "sc", modes[*currentMode].Scale);
+*/
   //    if (*buttonEnabled) *buttonEnabled = EEPROM.read(EEPROM_ESP_BUTTON_ENABLED_ADDRESS);
     }
 
