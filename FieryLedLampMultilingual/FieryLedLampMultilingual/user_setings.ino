@@ -534,7 +534,7 @@ void handle_alarm ()  {
      	//сохранение установок будильника
      	alarms[k].State = (jsonReadtoInt(configAlarm, a));
      	alarms[k].Time = (jsonReadtoInt(configAlarm, h)) * 60 + (jsonReadtoInt(configAlarm, m));
-     	EepromManager::SaveAlarmsSettings(&k, alarms);
+     	//EepromManager::SaveAlarmsSettings(&k, alarms);
         ESP.wdtFeed();
         yield();
     }
@@ -546,7 +546,7 @@ void handle_alarm ()  {
 	dawnMode = jsonReadtoInt(configAlarm, "t")-1;
 	DAWN_TIMEOUT = jsonReadtoInt(configAlarm, "after");
     DAWN_BRIGHT = jsonReadtoInt(configAlarm, "a_br");
-	EepromManager::SaveDawnMode(&dawnMode);
+	//EepromManager::SaveDawnMode(&dawnMode);
     if (!first_entry)
         {
          writeFile("alarm_config.json", configAlarm );

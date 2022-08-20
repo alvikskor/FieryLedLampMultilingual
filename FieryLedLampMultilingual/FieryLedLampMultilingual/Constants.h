@@ -44,7 +44,7 @@ uint32_t AUTOMATIC_OFF_TIME = (0UL);                        // Не удаляй
 
 //#define MP3_DEBUG                                         // якщо рядок не закоментований, виводитимуться налагоджувальні повідомлення mp3 player
 //#define HEAP_SIZE_PRINT                                   // якщо рядок не закоментований, буде виводитись розмір "купи" (вільного ОЗУ)
-#define GENERAL_DEBUG                                     // якщо рядок не закоментований, будуть виводитися загальні налагоджувальні повідомлення
+//#define GENERAL_DEBUG                                     // якщо рядок не закоментований, будуть виводитися загальні налагоджувальні повідомлення
 
 
 #define LED_PIN               (0U)                          // пин ленты                (D3) 
@@ -478,7 +478,9 @@ bool telnetGreetingShown = false;                           // признак "�
 #endif
 
 String configSetup = "{}";
-//String configJson = "{}";
+
+// Раскоментируйте эти четыре функции если используете библиотеку ArduinoJSON Version 5
+/*
 // ------------- Чтение значения json String
 String jsonRead(String &json, String name) {
   DynamicJsonBuffer jsonBuffer;
@@ -512,6 +514,45 @@ String jsonWrite(String &json, String name, int volume) {
   root.printTo(json);
   return json;
 }
+*/
+
+// Закоментируйте эти четыре функции если используете библиотеку ArduinoJSON Version 6
+// StaticJsonDocument<2048> doc;  // DynamicJsonDocument doc(2048);
+// ------------- Чтение значения json String
+String jsonRead(String &json, String name) {
+  DynamicJsonDocument doc(2048);
+  deserializeJson(doc, json);
+  JsonObject obj = doc.as<JsonObject>();  
+  return obj[name].as<String>();
+}
+
+// ------------- Чтение значения json int
+int jsonReadtoInt(String &json, String name) {
+  DynamicJsonDocument doc(2048);
+  deserializeJson(doc, json);
+  return doc[name];
+}
+
+// ------------- Запись значения json String
+String jsonWrite(String &json, String name, String volume) {
+  DynamicJsonDocument doc(2048);
+  deserializeJson(doc, json);
+  doc[name] = volume;
+  json = "";
+  serializeJson(doc, json);
+  return json;
+}
+
+// ------------- Запись значения json int
+String jsonWrite(String &json, String name, int volume) {
+  DynamicJsonDocument doc(2048);
+  deserializeJson(doc, json);
+  doc[name] = volume;
+  json = "";
+  serializeJson(doc, json);
+  return json;
+}
+
 
 // ------------- Запись строки в файл
 String writeFile(String fileName, String strings ) {
@@ -531,7 +572,6 @@ String writeFile(String fileName, String strings ) {
 void saveConfig (){
   writeFile("config.json", configSetup );
 }
-
 // ------------- Чтение файла в строку
 String readFile(String fileName, size_t len ) {
   File configFile = SPIFFS.open("/" + fileName, "r");

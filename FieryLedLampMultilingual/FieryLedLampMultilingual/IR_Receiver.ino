@@ -1,7 +1,7 @@
 // 
 #ifdef IR_RECEIVER_USE
 
-#define IR_REPEAT_TIMER      1000   // Час очікування повтору
+#define IR_REPEAT_TIMER      500   // Час очікування повтору
 #define IR_TICK_TIMER        100    // Час між автоповтором
 #define IR_DIGIT_ENTER_TIMER 2000   // час для введення другої цифри номеру ефекту
 

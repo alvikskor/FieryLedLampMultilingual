@@ -363,7 +363,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
           alarms[alarmNum].Time = atoi(buff);
           sendAlarms(inputBuffer);
         }
-        EepromManager::SaveAlarmsSettings(&alarmNum, alarms);
+        //EepromManager::SaveAlarmsSettings(&alarmNum, alarms);
 
         #if (USE_MQTT)
         if (espMode == 1U)
@@ -381,7 +381,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
     {
       memcpy(buff, &inputBuffer[4], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 5
       dawnMode = atoi(buff) - 1;
-      EepromManager::SaveDawnMode(&dawnMode);
+      //EepromManager::SaveDawnMode(&dawnMode);
       sendAlarms(inputBuffer);
 
       #if (USE_MQTT)
@@ -745,6 +745,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
             updateRemoteBlynkParams();
             #endif
           }
+/*
           else if (!strncmp_P(inputBuffer, PSTR("TXT-alarm"), 9)&& (BUFF.length() > 12) && (char)inputBuffer[10] == '='){
             // 0000000000111111
             // 0123456789012345
@@ -787,9 +788,10 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
               #endif              
               showWarning(CRGB::Blue, 2000U, 500U);     // мигание голубым цветом 2 секунды (2 раза) - будильник установлен
               
-              EepromManager::SaveAlarmsSettings(&alarmNum, alarms);
+              //EepromManager::SaveAlarmsSettings(&alarmNum, alarms);
             }
           }
+*/
           else if (!strncmp_P(inputBuffer, PSTR("TXT-dawn="), 9)){
             memcpy(buff, &inputBuffer[9], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 10
             uint8_t temp = atoi(buff);

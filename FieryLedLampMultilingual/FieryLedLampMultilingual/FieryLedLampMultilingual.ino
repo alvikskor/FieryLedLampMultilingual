@@ -53,7 +53,7 @@
 #include <ArduinoJson.h>        //Установить из менеджера библиотек версию 5.13.5 !!!. https://arduinojson.org/
 #include <ESP8266HTTPUpdateServer.h>    // Обновление с web страницы
 #ifdef USE_LittleFS
-#include <LittleFS.h>    
+#include <LittleFS.h>
 #define SPIFFS LittleFS  
 #endif
 #ifdef TM1637_USE
@@ -463,9 +463,15 @@ void setup()  //================================================================
   // EEPROM
   EepromManager::InitEepromSettings(                        // инициализация EEPROM; запись начального состояния настроек, если их там ещё нет; инициализация настроек лампы значениями из EEPROM
     //modes, alarms, &ONflag, &dawnMode, &currentMode, &(restoreSettings)); // не придумал ничего лучше, чем делать восстановление настроек по умолчанию в обработчике инициализации EepromManager
-    modes, alarms, &ONflag, &dawnMode, &(restoreSettings));
+    modes, &(restoreSettings));
 
-  jsonWrite(configSetup, "Power", ONflag);  // Чтение состояния лампы вкл/выкл,текущий эффект,яркость,скорость,масштаб
+  if(DONT_TURN_ON_AFTER_SHUTDOWN){
+      ONflag = false;
+  jsonWrite(configSetup, "Power", ONflag);
+  }
+  else
+      ONflag = jsonReadtoInt (configSetup, "Power");  // Чтение состояния лампы вкл/выкл,текущий эффект,яркость,скорость,масштаб
+
   currentMode = eff_num_correct[jsonReadtoInt (configSetup, "eff_sel")];
   modes[currentMode].Brightness = jsonReadtoInt (configSetup, "br");
   modes[currentMode].Speed = jsonReadtoInt (configSetup, "sp");
@@ -778,8 +784,8 @@ do {	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=========
     }
   #endif  //IR_RECEIVER_USE
 
-  EepromManager::HandleEepromTick(&settChanged, &eepromTimeout, &ONflag, 
-    &currentMode, modes);
+  //EepromManager::HandleEepromTick(&settChanged, &eepromTimeout, &ONflag, &currentMode, modes);
+  EepromManager::HandleEepromTick(&settChanged, &eepromTimeout, modes);
     yield();
 
   //#ifdef USE_NTP
