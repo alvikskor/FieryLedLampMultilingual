@@ -87,8 +87,7 @@
 class EepromManager
 {
   public:
-    static void InitEepromSettings(ModeType modes[], AlarmType alarms[], bool* onFlag, uint8_t* dawnMode, uint8_t* currentMode, 
-       void (*readFavoritesSettings)(), void (*saveFavoritesSettings)(), void (*restoreDefaultSettings)())
+    static void InitEepromSettings(ModeType modes[], void (*restoreDefaultSettings)())
     {
       EEPROM.begin(EEPROM_TOTAL_BYTES_USED);
       delay(50);
@@ -106,7 +105,7 @@ class EepromManager
           EEPROM.put(EEPROM_MODES_START_ADDRESS + EEPROM_ALARM_STRUCT_SIZE * i, modes[i]);
           EEPROM.commit();
         }
-
+/*
         for (uint8_t i = 0; i < 7; i++)
         {
           EEPROM.write(EEPROM_ALARM_START_ADDRESS + EEPROM_ALARM_STRUCT_SIZE * i, alarms[i].State);
@@ -119,9 +118,10 @@ class EepromManager
         EEPROM.write(EEPROM_CURRENT_MODE_ADDRESS, 0);
         EEPROM.write(EEPROM_ESP_BUTTON_ENABLED_ADDRESS, 1);
 
-        saveFavoritesSettings();
+        //saveFavoritesSettings();
     
         EEPROM.commit();
+*/
       }
 
       // инициализируем настройки лампы значениями из EEPROM
@@ -129,26 +129,28 @@ class EepromManager
       {
         EEPROM.get(EEPROM_MODES_START_ADDRESS + EEPROM_MODE_STRUCT_SIZE * i, modes[i]);
       }
-
+/*
       for (uint8_t i = 0; i < 7; i++)
       {
         alarms[i].State = EEPROM.read(EEPROM_ALARM_START_ADDRESS + EEPROM_ALARM_STRUCT_SIZE * i);
         alarms[i].Time = ReadInt16(EEPROM_ALARM_START_ADDRESS + EEPROM_ALARM_STRUCT_SIZE * i + 1);
       }
 
-      readFavoritesSettings();
+      //readFavoritesSettings();
 
     if(DONT_TURN_ON_AFTER_SHUTDOWN)
       *onFlag = false;
     else
       *onFlag = (bool)EEPROM.read(EEPROM_LAMP_ON_ADDRESS);
 
-      *dawnMode = EEPROM.read(EEPROM_DAWN_MODE_ADDRESS);
-      *currentMode = EEPROM.read(EEPROM_CURRENT_MODE_ADDRESS);
+      //*dawnMode = EEPROM.read(EEPROM_DAWN_MODE_ADDRESS);
+      //*currentMode = EEPROM.read(EEPROM_CURRENT_MODE_ADDRESS);
+      
 	  jsonWrite(configSetup, "eff_sel", *currentMode);
 	  jsonWrite(configSetup, "br", modes[*currentMode].Brightness);
       jsonWrite(configSetup, "sp", modes[*currentMode].Speed);
       jsonWrite(configSetup, "sc", modes[*currentMode].Scale);
+*/
   //    if (*buttonEnabled) *buttonEnabled = EEPROM.read(EEPROM_ESP_BUTTON_ENABLED_ADDRESS);
     }
 
@@ -159,26 +161,27 @@ class EepromManager
       EEPROM.commit();
     }
     
-    static void HandleEepromTick(bool* settChanged, uint32_t* eepromTimeout, bool* onFlag, uint8_t* currentMode, ModeType modes[], void (*saveFavoritesSettings)())
+    //static void HandleEepromTick(bool* settChanged, uint32_t* eepromTimeout, bool* onFlag, uint8_t* currentMode, ModeType modes[])
+    static void HandleEepromTick(bool* settChanged, uint32_t* eepromTimeout, ModeType modes[])
     {
       if (*settChanged && millis() - *eepromTimeout >= EEPROM_WRITE_DELAY)
       {
         *settChanged = false;
         *eepromTimeout = millis();
         //SaveOnFlag(onFlag);
-        #ifndef DONT_TURN_ON_AFTER_SHUTDOWN
-        EEPROM.write(EEPROM_LAMP_ON_ADDRESS, *onFlag);
-        #endif      
+        //#ifndef DONT_TURN_ON_AFTER_SHUTDOWN
+        //EEPROM.write(EEPROM_LAMP_ON_ADDRESS, *onFlag);
+        //#endif      
         //SaveModesSettings(currentMode, modes);
         for (uint8_t i = 0; i < MODE_AMOUNT; i++)
           EEPROM.put(EEPROM_MODES_START_ADDRESS + EEPROM_MODE_STRUCT_SIZE * i, modes[i]);
        
-        EEPROM.write(EEPROM_CURRENT_MODE_ADDRESS, *currentMode);
-        saveFavoritesSettings(); // там уже есть EEPROM.commit();
+        //EEPROM.write(EEPROM_CURRENT_MODE_ADDRESS, *currentMode);
+        //saveFavoritesSettings(); // там уже есть EEPROM.commit();
         //EEPROM.commit();
       }
     }
-
+/*
     static void SaveAlarmsSettings(uint8_t* alarmNumber, AlarmType alarms[])
     {
       EEPROM.write(EEPROM_ALARM_START_ADDRESS + EEPROM_ALARM_STRUCT_SIZE * (*alarmNumber), alarms[*alarmNumber].State);
@@ -200,6 +203,7 @@ class EepromManager
       EEPROM.write(EEPROM_DAWN_MODE_ADDRESS, *dawnMode);
       EEPROM.commit();
     }
+*/
 
     static uint16_t ReadUint16(uint16_t address)
     {

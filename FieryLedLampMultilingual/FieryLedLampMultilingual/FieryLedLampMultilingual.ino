@@ -53,7 +53,7 @@
 #include <ArduinoJson.h>        //Установить из менеджера библиотек версию 5.13.5 !!!. https://arduinojson.org/
 #include <ESP8266HTTPUpdateServer.h>    // Обновление с web страницы
 #ifdef USE_LittleFS
-#include <LittleFS.h>    
+#include <LittleFS.h>
 #define SPIFFS LittleFS  
 #endif
 #ifdef TM1637_USE
@@ -68,6 +68,12 @@
   #define FEEDBACK  0
  #endif  //MP3_DEBUG
 #endif  //MP3_TX_PIN
+#ifdef IR_RECEIVER_USE
+ #include <IRremoteESP8266.h>
+ #include <IRrecv.h>
+ #include "IR_Receiver.h"
+#endif  //IR_RECEIVER_USE
+
 
 // --- ИНИЦИАЛИЗАЦИЯ ОБЪЕКТОВ ----------
 CRGB leds[NUM_LEDS];
@@ -151,7 +157,7 @@ bool dawnFlag = false;
 uint32_t thisTime;
 bool manualOff = false;
 
-uint8_t currentMode = 3;
+uint8_t currentMode;
 bool loadingFlag = true;
 bool ONflag = false;
 uint32_t eepromTimeout;
@@ -261,6 +267,20 @@ uint8_t DisplayFlag=0;               // Флаг, показывающий, чт
 uint32_t mem_timer;
 #endif //HEAP_SIZE_PRINT 
 
+#ifdef IR_RECEIVER_USE
+ uint32_t IR_Code = 0x00000000;
+ uint32_t IR_Repeat_Timer;
+ uint32_t IR_Tick_Timer;
+ uint32_t IR_Dgit_Enter_Timer;
+ uint8_t Repeat; 
+ uint8_t IR_Data_Ready;
+ uint8_t Enter_Digit_1;
+ uint8_t Enter_Number;
+
+ IRrecv irrecv(IR_RECEIVER_PIN);
+ decode_results results;
+#endif  //IR_RECEIVER_USE
+
 
 void setup()  //==================================================================  void setup()  =========================================================================
 {
@@ -297,7 +317,7 @@ void setup()  //================================================================
   LOG.print(F("\nСтарт файловой системы\n"));
   FS_init();  //Запускаем файловую систему
   LOG.print(F("Чтение файла конфигурации\n"));
-  configSetup = readFile("config.json", 1024);   
+  configSetup = readFile("config.json", 2048);   
   LOG.println(configSetup);
   //Настраиваем и запускаем SSDP интерфейс
   LOG.print(F("Старт SSDP\n"));
@@ -439,14 +459,24 @@ void setup()  //================================================================
       shuffleFavoriteModes[i] = i;
 #endif
 
+
   // EEPROM
   EepromManager::InitEepromSettings(                        // инициализация EEPROM; запись начального состояния настроек, если их там ещё нет; инициализация настроек лампы значениями из EEPROM
-    modes, alarms, &ONflag, &dawnMode, &currentMode,
-    &(FavoritesManager::ReadFavoritesFromEeprom),
-    &(FavoritesManager::SaveFavoritesToEeprom),
-    &(restoreSettings)); // не придумал ничего лучше, чем делать восстановление настроек по умолчанию в обработчике инициализации EepromManager
+    //modes, alarms, &ONflag, &dawnMode, &currentMode, &(restoreSettings)); // не придумал ничего лучше, чем делать восстановление настроек по умолчанию в обработчике инициализации EepromManager
+    modes, &(restoreSettings));
 
-  jsonWrite(configSetup, "Power", ONflag);  // Чтение состояния лампы вкл/выкл,текущий эффект,яркость,скорость,масштаб
+  if(DONT_TURN_ON_AFTER_SHUTDOWN){
+      ONflag = false;
+  jsonWrite(configSetup, "Power", ONflag);
+  }
+  else
+      ONflag = jsonReadtoInt (configSetup, "Power");  // Чтение состояния лампы вкл/выкл,текущий эффект,яркость,скорость,масштаб
+
+  currentMode = eff_num_correct[jsonReadtoInt (configSetup, "eff_sel")];
+  modes[currentMode].Brightness = jsonReadtoInt (configSetup, "br");
+  modes[currentMode].Speed = jsonReadtoInt (configSetup, "sp");
+  modes[currentMode].Scale = jsonReadtoInt (configSetup, "sc");
+/*
   {
     String Name = "correct." + jsonRead (configSetup, "lang") + ".json";
     String Correct = readFile(Name, 2048);
@@ -455,7 +485,7 @@ void setup()  //================================================================
         eff_num_correct[n] = jsonReadtoInt (Correct, String(n)); 
         if (eff_num_correct[n] == currentMode) jsonWrite(configSetup, "eff_sel", n);
     }
-  }
+  }*/
   {
     File file = SPIFFS.open("/index.json.gz","r");
     File Status = SPIFFS.open("/effect2.ini", "r");
@@ -472,18 +502,16 @@ void setup()  //================================================================
     file.close();
     Status.close();
   }
-  //jsonWrite(configSetup, "eff_sel", currentMode);
-  jsonWrite(configSetup, "br", modes[currentMode].Brightness);
-  jsonWrite(configSetup, "sp", modes[currentMode].Speed);
-  jsonWrite(configSetup, "sc", modes[currentMode].Scale); 
-  //sendAlarms(inputBuffer);                                                 // Чтение настроек будильника при старте лампы
+  //jsonWrite(configSetup, "br", modes[currentMode].Brightness);
+  //jsonWrite(configSetup, "sp", modes[currentMode].Speed);
+  //jsonWrite(configSetup, "sc", modes[currentMode].Scale); 
   first_entry = 1;
   handle_alarm ();
   first_entry = 0;
-  jsonWrite(configSetup, "cycle_on", FavoritesManager::FavoritesRunning);  // чтение состояния настроек режима Цикл 
-  jsonWrite(configSetup, "time_eff", FavoritesManager::Interval);          // вкл/выкл,время переключения,дисперсия,вкл цикла после перезагрузки
-  jsonWrite(configSetup, "disp", FavoritesManager::Dispersion);
-  jsonWrite(configSetup, "cycle_allwase", FavoritesManager::UseSavedFavoritesRunning);
+  FavoritesManager::FavoritesRunning = jsonReadtoInt(configSetup, "cycle_on");  // чтение состояния настроек режима Цикл 
+  FavoritesManager::Interval = jsonReadtoInt(configSetup, "time_eff");          // вкл/выкл,время переключения,дисперсия,вкл цикла после перезагрузки
+  FavoritesManager::Dispersion = jsonReadtoInt(configSetup, "disp");
+  FavoritesManager::UseSavedFavoritesRunning = jsonReadtoInt(configSetup, "cycle_allwase");
   jsonWrite(configSetup, "tmr", 0);
   jsonWrite(configSetup, "button_on", buttonEnabled);
   //cycle_get ();
@@ -545,8 +573,7 @@ void setup()  //================================================================
   {
     LOG.println(F("Старт WiFi в режиме клиента (подключение к роутеру)"));
 //	WIFI_start_station_mode (); 
-	
-   
+	   
    WiFi.persistent(false);
 
   // Попытка подключения к Роутеру
@@ -581,6 +608,7 @@ void setup()  //================================================================
   ESP.wdtFeed();
   #endif
 
+
   // MQTT
   #if (USE_MQTT)
   if (espMode == 1U)
@@ -590,6 +618,7 @@ void setup()  //================================================================
   }
   ESP.wdtFeed();
   #endif
+
 
   // ОСТАЛЬНОЕ
   memset(matrixValue, 0, sizeof(matrixValue)); //это массив для эффекта Огонь. странно, что его нужно залить нулями
@@ -604,6 +633,12 @@ void setup()  //================================================================
    mp3_timer = millis();
    mp3_player_connect = 1;
   #endif 
+
+  #ifdef IR_RECEIVER_USE
+    irrecv.enableIRIn();  // Start the receiver
+    IR_Tick_Timer = millis();
+    IR_Repeat_Timer = millis();
+  #endif  //IR_RECEIVER_USE
 
   //TextTicker = RUNNING_TEXT_DEFAULT;
   delay (100);
@@ -621,6 +656,7 @@ void setup()  //================================================================
   #ifdef HEAP_SIZE_PRINT
    mem_timer = millis();
   #endif //HEAP_SIZE_PRINT 
+  
 }
 
 
@@ -734,9 +770,22 @@ do {	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=========
        LOG.println(system_get_free_heap_size());
    }
   #endif //HEAP_SIZE_PRINT
+  
+  #ifdef IR_RECEIVER_USE
+       IR_Receive_Handle();
+    if (millis() - IR_Tick_Timer > 100)
+    {
+        IR_Tick_Timer = millis();
+        if (IR_Data_Ready) 
+        {
+            IR_Receive_Button_Handle();
+            IR_Data_Ready =0;
+        }       
+    }
+  #endif  //IR_RECEIVER_USE
 
-  EepromManager::HandleEepromTick(&settChanged, &eepromTimeout, &ONflag, 
-    &currentMode, modes, &(FavoritesManager::SaveFavoritesToEeprom));
+  //EepromManager::HandleEepromTick(&settChanged, &eepromTimeout, &ONflag, &currentMode, modes);
+  EepromManager::HandleEepromTick(&settChanged, &eepromTimeout, modes);
     yield();
 
   //#ifdef USE_NTP

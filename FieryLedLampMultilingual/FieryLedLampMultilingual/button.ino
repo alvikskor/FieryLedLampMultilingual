@@ -94,8 +94,8 @@ void buttonTick()
       
   if (ONflag)    
   {
-    String Name = "correct." + jsonRead (configSetup, "lang") + ".json";
-    String Correct = readFile(Name, 2048);
+    //String Name = "correct." + jsonRead (configSetup, "lang") + ".json";
+    //String Correct = readFile(Name, 2048);
     uint8_t temp = jsonReadtoInt(configSetup, "eff_sel");
     if (Favorit_only)
 	{
@@ -136,7 +136,7 @@ void buttonTick()
     updateRemoteBlynkParams();
     #endif
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
   }
 
@@ -144,8 +144,8 @@ void buttonTick()
   // трёхкратное нажатие
   if (ONflag && clickCount == 3U)
   {
-    String Name = "correct." + jsonRead (configSetup, "lang") + ".json";
-    String Correct = readFile(Name, 2048);
+    //String Name = "correct." + jsonRead (configSetup, "lang") + ".json";
+    //String Correct = readFile(Name, 2048);
     uint8_t temp = jsonReadtoInt(configSetup, "eff_sel");
 	if (Favorit_only) 
 	{
@@ -186,7 +186,7 @@ void buttonTick()
     updateRemoteBlynkParams();
     #endif
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
   }
 
@@ -350,7 +350,7 @@ if (touch.isStep())
         LOG.printf_P(PSTR("Новое значение яркости: %d\n"), modes[currentMode].Brightness);
         #endif
         #ifdef USE_MULTIPLE_LAMPS_CONTROL
-        multiple_lamp_control ();
+        repeat_multiple_lamp_control = true;
         #endif  //USE_MULTIPLE_LAMPS_CONTROL
 
         break;
@@ -366,7 +366,7 @@ if (touch.isStep())
         LOG.printf_P(PSTR("Новое значение скорости: %d\n"), modes[currentMode].Speed);
         #endif
         #ifdef USE_MULTIPLE_LAMPS_CONTROL
-        multiple_lamp_control ();
+        repeat_multiple_lamp_control = true;
         #endif  //USE_MULTIPLE_LAMPS_CONTROL
 
         break;
@@ -382,7 +382,7 @@ if (touch.isStep())
         LOG.printf_P(PSTR("Новое значение масштаба: %d\n"), modes[currentMode].Scale);
         #endif
         #ifdef USE_MULTIPLE_LAMPS_CONTROL
-        multiple_lamp_control ();
+        repeat_multiple_lamp_control = true;
         #endif  //USE_MULTIPLE_LAMPS_CONTROL
 
         break;
@@ -427,8 +427,8 @@ if (touch.isStep())
 	  {
 		Button_Holding = true;
 		currentMode = EFF_WHITE_COLOR;
-    String Name = "correct." + jsonRead (configSetup, "lang") + ".json";
-    String Correct = readFile(Name, 2048);
+    //String Name = "correct." + jsonRead (configSetup, "lang") + ".json";
+    //String Correct = readFile(Name, 2048);
     for ( uint8_t n=0; n< MODE_AMOUNT; n++)
     {
         if (eff_num_correct[n] == currentMode)

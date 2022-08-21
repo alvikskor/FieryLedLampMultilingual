@@ -58,7 +58,7 @@ const uint8_t CENTER_X_MAJOR =   WIDTH / 2  + (WIDTH % 2);           // цент
 const uint8_t CENTER_Y_MAJOR =  HEIGHT / 2  + (HEIGHT % 2);          // центр матрицы по ИГРЕКУ, сдвинутый в большую сторону, если высота чётная
 
 #if defined(USE_RANDOM_SETS_IN_APP) || defined(RANDOM_SETTINGS_IN_CYCLE_MODE)
-void setModeSettings(uint8_t Scale = 0U, uint8_t Speed = 0U) {
+void setModeSettings(uint8_t Scale, uint8_t Speed) {
   modes[currentMode].Scale = Scale ? Scale : pgm_read_byte(&defaultSettings[currentMode][2]);
   modes[currentMode].Speed = Speed ? Speed : pgm_read_byte(&defaultSettings[currentMode][1]);
   jsonWrite(configSetup, "sp", modes[currentMode].Speed);
@@ -8840,5 +8840,3 @@ void squaresNdotsRoutine() {
       gSparks[b].Draw();
     }
   }  //}
-
-

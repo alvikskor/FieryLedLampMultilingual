@@ -11,7 +11,6 @@
     uint8_t shuffleFavoriteModes[MODE_AMOUNT];
     uint8_t shuffleCurrentIndex = MODE_AMOUNT; // начальное значение увеличивается на 1 и затем сравнивается с MODE_AMOUNT, чтобы создать первоначальное перемешивание режимов
 #endif
-bool repeat_multiple_lamp_control = false;
 
 
 ModeType modes[MODE_AMOUNT];
@@ -141,7 +140,7 @@ class FavoritesManager
 
       return false;
     }
-
+/*
     static void ReadFavoritesFromEeprom()
     {
       Interval = EepromManager::ReadUint16(EEPROM_FAVORITES_START_ADDRESS + 1);
@@ -170,7 +169,7 @@ class FavoritesManager
 
       EEPROM.commit();
     }
-
+*/
     static void TurnFavoritesOff()
     {
       FavoritesRunning = 0;

@@ -107,7 +107,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
 	  jsonWrite(configSetup, "sp", modes[currentMode].Speed);
 	  jsonWrite(configSetup, "sc", modes[currentMode].Scale);
       #ifdef USE_MULTIPLE_LAMPS_CONTROL
-      multiple_lamp_control ();
+      repeat_multiple_lamp_control = true;
       #endif  //USE_MULTIPLE_LAMPS_CONTROL
       //FastLED.clear();
       //delay(1);
@@ -226,7 +226,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       modes[currentMode].Brightness = constrain(atoi(buff), 1, 255);
 	  jsonWrite(configSetup, "br", modes[currentMode].Brightness);
       #ifdef USE_MULTIPLE_LAMPS_CONTROL
-      multiple_lamp_control ();
+      repeat_multiple_lamp_control = true;
       #endif  //USE_MULTIPLE_LAMPS_CONTROL
       FastLED.setBrightness(modes[currentMode].Brightness);
       //loadingFlag = true; //не хорошо делать перезапуск эффекта после изменения яркости, но в некоторых эффектах от чётности яркости мог бы зависеть внешний вид
@@ -255,7 +255,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       updateRemoteBlynkParams();
       #endif
       #ifdef USE_MULTIPLE_LAMPS_CONTROL
-      multiple_lamp_control ();
+      repeat_multiple_lamp_control = true;
       #endif  //USE_MULTIPLE_LAMPS_CONTROL
       updateSets();
       sendCurrent(inputBuffer);
@@ -267,7 +267,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       modes[currentMode].Scale = atoi(buff);
 	  jsonWrite(configSetup, "sc", modes[currentMode].Scale);
       #ifdef USE_MULTIPLE_LAMPS_CONTROL
-      multiple_lamp_control ();
+      repeat_multiple_lamp_control = true;
       #endif  //USE_MULTIPLE_LAMPS_CONTROL
       updateSets();
       sendCurrent(inputBuffer);
@@ -363,7 +363,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
           alarms[alarmNum].Time = atoi(buff);
           sendAlarms(inputBuffer);
         }
-        EepromManager::SaveAlarmsSettings(&alarmNum, alarms);
+        //EepromManager::SaveAlarmsSettings(&alarmNum, alarms);
 
         #if (USE_MQTT)
         if (espMode == 1U)
@@ -381,7 +381,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
     {
       memcpy(buff, &inputBuffer[4], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 5
       dawnMode = atoi(buff) - 1;
-      EepromManager::SaveDawnMode(&dawnMode);
+      //EepromManager::SaveDawnMode(&dawnMode);
       sendAlarms(inputBuffer);
 
       #if (USE_MQTT)
@@ -451,8 +451,8 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       {
         FavoritesManager::ConfigureFavorites(inputBuffer);
         FavoritesManager::SetStatus(inputBuffer);
-        settChanged = true;
-        eepromTimeout = millis();
+        //settChanged = true;
+        //eepromTimeout = millis();
         jsonWrite(configSetup, "cycle_on", FavoritesManager::FavoritesRunning);  // чтение состояния настроек режима Цикл 
         jsonWrite(configSetup, "time_eff", FavoritesManager::Interval);          // вкл/выкл,время переключения,дисперсия,вкл цикла после перезагрузки
         jsonWrite(configSetup, "disp", FavoritesManager::Dispersion);
@@ -534,7 +534,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       FastLED.setBrightness(ALLbri);
       loadingFlag = true;
       #ifdef USE_MULTIPLE_LAMPS_CONTROL
-      multiple_lamp_control ();
+      repeat_multiple_lamp_control = true;
       #endif  //USE_MULTIPLE_LAMPS_CONTROL
     }
     #ifdef USE_RANDOM_SETS_IN_APP
@@ -545,7 +545,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
          setModeSettings();
          updateSets();
          #ifdef USE_MULTIPLE_LAMPS_CONTROL
-         multiple_lamp_control ();
+         repeat_multiple_lamp_control = true;
          #endif  //USE_MULTIPLE_LAMPS_CONTROL
          sendCurrent(inputBuffer);
        }
@@ -554,7 +554,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
          selectedSettings = 1U;
          updateSets();
          #ifdef USE_MULTIPLE_LAMPS_CONTROL
-         multiple_lamp_control ();
+         repeat_multiple_lamp_control = true;
          #endif  //USE_MULTIPLE_LAMPS_CONTROL
        }
        else if (!strncmp_P(inputBuffer, PSTR("RND_Z"), 5)) // вернуть настройки по умолчанию всем эффектам
@@ -563,7 +563,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
          selectedSettings = 0U;
          updateSets();
          #ifdef USE_MULTIPLE_LAMPS_CONTROL
-         multiple_lamp_control ();
+         repeat_multiple_lamp_control = true;
          #endif  //USE_MULTIPLE_LAMPS_CONTROL
          sendCurrent(inputBuffer);
          #ifdef USE_BLYNK
@@ -745,6 +745,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
             updateRemoteBlynkParams();
             #endif
           }
+/*
           else if (!strncmp_P(inputBuffer, PSTR("TXT-alarm"), 9)&& (BUFF.length() > 12) && (char)inputBuffer[10] == '='){
             // 0000000000111111
             // 0123456789012345
@@ -787,9 +788,10 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
               #endif              
               showWarning(CRGB::Blue, 2000U, 500U);     // мигание голубым цветом 2 секунды (2 раза) - будильник установлен
               
-              EepromManager::SaveAlarmsSettings(&alarmNum, alarms);
+              //EepromManager::SaveAlarmsSettings(&alarmNum, alarms);
             }
           }
+*/
           else if (!strncmp_P(inputBuffer, PSTR("TXT-dawn="), 9)){
             memcpy(buff, &inputBuffer[9], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 10
             uint8_t temp = atoi(buff);
