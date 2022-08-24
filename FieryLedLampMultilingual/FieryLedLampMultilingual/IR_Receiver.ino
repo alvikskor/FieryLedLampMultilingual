@@ -438,8 +438,10 @@ void Prev_Next_eff(bool direction)   {
     loadingFlag = true;
     settChanged = true;
     eepromTimeout = millis();
+    DisplayFlag = 0;
+    Display_Timer();
 
-      if (random_on && FavoritesManager::FavoritesRunning)
+    if (random_on && FavoritesManager::FavoritesRunning)
         selectedSettings = 1U;
 
     #if (USE_MQTT)
@@ -478,6 +480,9 @@ void Bright_Up_Down(bool direction)   {
 	jsonWrite(configSetup, "br", modes[currentMode].Brightness);
     FastLED.setBrightness(modes[currentMode].Brightness);
 
+    DisplayFlag = 3;
+    Display_Timer(modes[currentMode].Brightness);
+    
     #ifdef GENERAL_DEBUG
         LOG.printf_P(PSTR("Новое значение яркости: %d\n"), modes[currentMode].Brightness);
     #endif
@@ -502,6 +507,9 @@ void Speed_Up_Down(bool direction)   {
 	jsonWrite(configSetup, "sp", modes[currentMode].Speed);
     loadingFlag = true; // без перезапуска эффекта ничего и не увидишь
 
+    DisplayFlag = 3;
+    Display_Timer(modes[currentMode].Speed);
+    
     #ifdef GENERAL_DEBUG
         LOG.printf_P(PSTR("Новое значение скорости: %d\n"), modes[currentMode].Speed);
     #endif
@@ -526,6 +534,9 @@ void Scale_Up_Down(bool direction)   {
 	jsonWrite(configSetup, "sc", modes[currentMode].Scale);
     loadingFlag = true; // без перезапуска эффекта ничего и не увидишь
 
+    DisplayFlag = 3;
+    Display_Timer(modes[currentMode].Scale);
+    
     #ifdef GENERAL_DEBUG
         LOG.printf_P(PSTR("Новое значение масштаба: %d\n"), modes[currentMode].Scale);
     #endif
@@ -549,6 +560,10 @@ void Volum_Up_Down (bool direction)   {
     eff_volume = constrain(direction ? eff_volume + 1 : eff_volume - 1, 1, 30);
     jsonWrite(configSetup, "vol", eff_volume);
     if (!dawnflag_sound) send_command(6,FEEDBACK,0,eff_volume); //Громкость
+
+    DisplayFlag = 3;
+    Display_Timer(eff_volume);
+
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
     #endif  //MP3_TX_PIN
@@ -577,13 +592,15 @@ void Print_IP()   {
 }
 
 void Folder_Next_Prev(bool direction)    {
-    CurrentFolder = constrain(direction ? CurrentFolder + 1 : CurrentFolder - 1, 1, 99);
+    CurrentFolder = constrain(direction ? CurrentFolder + 1 : CurrentFolder - 1, 0, 99);
     jsonWrite(configSetup, "fold_sel", CurrentFolder);
     send_command(0x17,FEEDBACK,0,CurrentFolder);           //  Попередня папка
     #ifdef GENERAL_DEBUG
      LOG.print (F("\nCurrent folder "));
      LOG.println (CurrentFolder);
     #endif
+    DisplayFlag = 0;
+    Display_Timer();
 }
 
 void Current_Eff_Rnd_Def(bool direction)   {
