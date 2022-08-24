@@ -65,7 +65,7 @@
 #define EEPROM_ESP_BUTTON_ENABLED_ADDRESS    (21U)         // адрес в EEPROM памяти для записи признака разблокированной кнопки
 #define EEPROM_ESP_MODE                      (22U)         // адрес в EEPROM памяти для записи режима работы модуля ESP (точка доступа/WiFi клиент)
 #define EEPROM_LAMP_ON_ADDRESS               (23U)         // адрес в EEPROM памяти для записи состояния лампы (вкл/выкл)
-#define EEPROM_FIRST_RUN_ADDRESS             (24U)         // адрес в EEPROM памяти для записи признака первого запуска (определяет необходимость первоначальной записи всех хранимых настроек)
+#define EEPROM_FIRST_RUN_ADDRESS             (0U)         // (24U) адрес в EEPROM памяти для записи признака первого запуска (определяет необходимость первоначальной записи всех хранимых настроек)
 #define EEPROM_DAWN_MODE_ADDRESS             (25U)         // адрес в EEPROM памяти для записи времени до "рассвета"
 #define EEPROM_CURRENT_MODE_ADDRESS          (26U)         // адрес в EEPROM памяти для записи номера текущего эффекта лампы
 
@@ -75,14 +75,14 @@
 #define EEPROM_MODE_STRUCT_SIZE              (3U)           // 1 байт - яркость; 1 байт - скорость; 1 байт - масштаб
 
                                                             // начальный адрес в EEPROM памяти для записи настроек эффектов (яркость, скорость, масштаб)
-#define EEPROM_MODES_START_ADDRESS           (50U)
+#define EEPROM_MODES_START_ADDRESS           (10U)
                                                             // начальный адрес в EEPROM памяти для записи настроек режима избранных эффектов
 #define EEPROM_FAVORITES_START_ADDRESS       (EEPROM_MODES_START_ADDRESS+MODE_AMOUNT*EEPROM_MODE_STRUCT_SIZE+1)       
                                                             // общий размер используемой EEPROM памяти (сумма всех хранимых настроек + 1 байт) 
-#define EEPROM_TOTAL_BYTES_USED              (EEPROM_FAVORITES_START_ADDRESS+MODE_AMOUNT+7)       
+#define EEPROM_TOTAL_BYTES_USED              EEPROM_FAVORITES_START_ADDRESS // (EEPROM_FAVORITES_START_ADDRESS+MODE_AMOUNT+7)       
 
 #define EEPROM_FIRST_RUN_MARK                (MODE_AMOUNT)          // число-метка, если ещё не записно в EEPROM_FIRST_RUN_ADDRESS, значит нужно проинициализировать EEPROM и записать все первоначальные настройки
-#define EEPROM_WRITE_DELAY                   (30000UL)      // отсрочка записи в EEPROM после последнего изменения хранимых настроек, позволяет уменьшить количество операций записи в EEPROM
+#define EEPROM_WRITE_DELAY                   (300000UL)      // отсрочка записи в EEPROM после последнего изменения хранимых настроек, позволяет уменьшить количество операций записи в EEPROM
 
 class EepromManager
 {
@@ -102,7 +102,7 @@ class EepromManager
 
         for (uint8_t i = 0; i < MODE_AMOUNT; i++)
         {
-          EEPROM.put(EEPROM_MODES_START_ADDRESS + EEPROM_ALARM_STRUCT_SIZE * i, modes[i]);
+          EEPROM.put(EEPROM_MODES_START_ADDRESS + EEPROM_MODE_STRUCT_SIZE * i, modes[i]);
           EEPROM.commit();
         }
 /*

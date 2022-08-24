@@ -480,7 +480,7 @@ bool telnetGreetingShown = false;                           // признак "�
 String configSetup = "{}";
 
 // Раскоментируйте эти четыре функции если используете библиотеку ArduinoJSON Version 5
-/*
+
 // ------------- Чтение значения json String
 String jsonRead(String &json, String name) {
   DynamicJsonBuffer jsonBuffer;
@@ -514,8 +514,8 @@ String jsonWrite(String &json, String name, int volume) {
   root.printTo(json);
   return json;
 }
-*/
 
+/*
 // Закоментируйте эти четыре функции если используете библиотеку ArduinoJSON Version 6
 // StaticJsonDocument<2048> doc;  // DynamicJsonDocument doc(2048);
 // ------------- Чтение значения json String
@@ -552,7 +552,7 @@ String jsonWrite(String &json, String name, int volume) {
   serializeJson(doc, json);
   return json;
 }
-
+*/
 
 // ------------- Запись строки в файл
 String writeFile(String fileName, String strings ) {
@@ -600,3 +600,4 @@ bool repeat_multiple_lamp_control = false;
 #endif  //USE_MULTIPLE_LAMPS_CONTROL
 
 uint8_t eff_num_correct [MODE_AMOUNT]; //Корректировка номеров эффектов для разных языков
+void Display_Timer (uint8_t argument = 0);

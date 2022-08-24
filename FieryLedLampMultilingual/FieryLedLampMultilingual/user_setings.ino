@@ -1128,7 +1128,7 @@ void handle_sound_set ()   {    // Выбор папок для озвучива
 }
 
 void handle_folder_down ()   {
-    CurrentFolder = constrain(CurrentFolder-1, 1, 99);
+    CurrentFolder = constrain(CurrentFolder-1, 0, 99);
     jsonWrite(configSetup, "fold_sel", CurrentFolder);
     send_command(0x17,FEEDBACK,0,CurrentFolder);           //  Попередня папка
     #ifdef GENERAL_DEBUG
@@ -1139,7 +1139,7 @@ void handle_folder_down ()   {
 }
 
 void handle_folder_up ()   {
-    CurrentFolder = constrain(CurrentFolder+1, 1, 99);
+    CurrentFolder = constrain(CurrentFolder+1, 0, 99);
     jsonWrite(configSetup, "fold_sel", CurrentFolder);
     send_command(0x17,FEEDBACK,0,CurrentFolder);          // Наступна папка
     #ifdef GENERAL_DEBUG
@@ -1215,11 +1215,12 @@ void handle_matrix_orientation ()   {
 void  handle_lang ()   {
     jsonWrite(configSetup, "lang", HTTP.arg("lang"));
     saveConfig();
-    Lang_set();
+    Lang_set();      
     HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
 }
 
 void Lang_set ()   {
+      
     String Name = "correct." + jsonRead (configSetup, "lang") + ".json";
     String Correct = readFile(Name, 2048);
     for ( uint8_t n=0; n< MODE_AMOUNT; n++)
