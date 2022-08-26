@@ -1,4 +1,4 @@
-// Поточна версія / Current version : v3.00_sound_Multilingual 107 ефектов
+// Поточна версія / Current version : v3.2_sound_Multilingual_IR 107 ефектов
 // УВАГА!!! Більшість установок перенесено у файл data/config і може змінюватися в процесі експлуатації лампи.
 // Уважно читайте файл ПРОЧИТИ МЕНЕ!!!.txt і ПРОЧТИ МЕНЕ.doc (тут з картинками)
 
@@ -77,7 +77,7 @@ uint32_t AUTOMATIC_OFF_TIME = (0UL);                        // Не удаляй
 
 #define IR_RECEIVER_USE                                     // Если не используется ИК ДУ - Закомментировать эту строку
 #ifdef IR_RECEIVER_USE
-  #define IR_RECEIVER_PIN  2                                // Пин ИК сенсора
+  #define IR_RECEIVER_PIN  2                                // Пин ИК сенсора D4
 #endif  //IR_RECEIVER_USE
 
 // --- ESP (WiFi клиент) ---------------
@@ -479,8 +479,8 @@ bool telnetGreetingShown = false;                           // признак "�
 
 String configSetup = "{}";
 
-// Раскоментируйте эти четыре функции если используете библиотеку ArduinoJSON Version 5
-
+// Раскоментируйте эти четыре функции и закоментируйте следующие четыре функции если используете библиотеку ArduinoJSON Version 5
+/*
 // ------------- Чтение значения json String
 String jsonRead(String &json, String name) {
   DynamicJsonBuffer jsonBuffer;
@@ -514,29 +514,50 @@ String jsonWrite(String &json, String name, int volume) {
   root.printTo(json);
   return json;
 }
+*/
 
-/*
-// Закоментируйте эти четыре функции если используете библиотеку ArduinoJSON Version 6
+// Раскоментируйте эти четыре функции и закоментируйте предыдущие четыре функции если используете библиотеку ArduinoJSON Version 6
 // StaticJsonDocument<2048> doc;  // DynamicJsonDocument doc(2048);
 // ------------- Чтение значения json String
 String jsonRead(String &json, String name) {
-  DynamicJsonDocument doc(2048);
-  deserializeJson(doc, json);
+  DynamicJsonDocument doc(2560);
+  DeserializationError error = deserializeJson(doc, json);
+  #ifdef GENERAL_DEBUG
+  if (error) {
+    LOG.print(F("deserializeJson() failed: "));
+    LOG.println(error.f_str());
+  }
+  #endif
+//  deserializeJson(doc, json);
   JsonObject obj = doc.as<JsonObject>();  
   return obj[name].as<String>();
 }
 
 // ------------- Чтение значения json int
 int jsonReadtoInt(String &json, String name) {
-  DynamicJsonDocument doc(2048);
-  deserializeJson(doc, json);
+  DynamicJsonDocument doc(2560);
+  DeserializationError error = deserializeJson(doc, json);
+  #ifdef GENERAL_DEBUG
+  if (error) {
+    LOG.print(F("deserializeJson() failed: "));
+    LOG.println(error.f_str());
+  }
+  #endif
+//  deserializeJson(doc, json);
   return doc[name];
 }
 
 // ------------- Запись значения json String
 String jsonWrite(String &json, String name, String volume) {
-  DynamicJsonDocument doc(2048);
-  deserializeJson(doc, json);
+  DynamicJsonDocument doc(2560);
+  DeserializationError error = deserializeJson(doc, json);
+  #ifdef GENERAL_DEBUG
+  if (error) {
+    LOG.print(F("deserializeJson() failed: "));
+    LOG.println(error.f_str());
+  }
+  #endif
+//  deserializeJson(doc, json);
   doc[name] = volume;
   json = "";
   serializeJson(doc, json);
@@ -545,14 +566,21 @@ String jsonWrite(String &json, String name, String volume) {
 
 // ------------- Запись значения json int
 String jsonWrite(String &json, String name, int volume) {
-  DynamicJsonDocument doc(2048);
-  deserializeJson(doc, json);
+  DynamicJsonDocument doc(2560);
+  DeserializationError error = deserializeJson(doc, json);
+  #ifdef GENERAL_DEBUG
+  if (error) {
+    LOG.print(F("deserializeJson() failed: "));
+    LOG.println(error.f_str());
+  }
+  #endif
+//  deserializeJson(doc, json);
   doc[name] = volume;
   json = "";
   serializeJson(doc, json);
   return json;
 }
-*/
+
 
 // ------------- Запись строки в файл
 String writeFile(String fileName, String strings ) {

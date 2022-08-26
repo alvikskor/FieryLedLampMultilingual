@@ -255,6 +255,13 @@ void Eff_Tick () {
     FastLED.show();
       #ifdef USE_MULTIPLE_LAMPS_CONTROL
       if (repeat_multiple_lamp_control)  {
+          for ( uint8_t n=0; n< MODE_AMOUNT; n++)
+          {
+              if (eff_num_correct[n] == currentMode) {
+                  jsonWrite(configSetup, "eff_sel", n);
+                  break;
+              }
+          } 
 		  //jsonWrite(configSetup, "eff_sel", currentMode);
 		  jsonWrite(configSetup, "br", modes[currentMode].Brightness);
 		  jsonWrite(configSetup, "sp", modes[currentMode].Speed);
