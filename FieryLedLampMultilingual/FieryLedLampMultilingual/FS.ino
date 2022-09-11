@@ -13,7 +13,7 @@ void FS_init(void) {
   HTTP.on("/list", HTTP_GET, handleFileList);
   //загрузка редактора editor
   HTTP.on("/edit", HTTP_GET, []() {
-    if (!handleFileRead("/edit.htm")) HTTP.send(404, "text/plain", "FileNotFound");
+    if (!handleFileRead("/edit.htm")) HTTP.send(404, F("text/plain"), F("FileNotFound"));
   });
   //Создание файла
   HTTP.on("/edit", HTTP_PUT, handleFileCreate);
@@ -22,36 +22,36 @@ void FS_init(void) {
   //first callback is called after the request has ended with all parsed arguments
   //second callback handles file uploads at that location
   HTTP.on("/edit", HTTP_POST, []() {
-    HTTP.send(200, "text/plain", "");
+    HTTP.send(200, F("text/plain"), "");
   }, handleFileUpload);
   //called when the url is not defined here
   //use it to load content from SPIFFS
   HTTP.onNotFound([]() {
     if (!handleFileRead(HTTP.uri()))
-      HTTP.send(404, "text/plain", "FileNotFound");
+      HTTP.send(404, F("text/plain"), F("FileNotFound"));
   });
 }
 // Здесь функции для работы с файловой системой
 String getContentType(String filename) {
-  if (HTTP.hasArg("download")) return "application/octet-stream";
-  else if (filename.endsWith(".htm")) return "text/html";
-  else if (filename.endsWith(".html")) return "text/html";
-  else if (filename.endsWith(".json")) return "application/json";
-  else if (filename.endsWith(".css")) return "text/css";
-  else if (filename.endsWith(".js")) return "application/javascript";
-  else if (filename.endsWith(".png")) return "image/png";
-  else if (filename.endsWith(".gif")) return "image/gif";
-  else if (filename.endsWith(".jpg")) return "image/jpeg";
-  else if (filename.endsWith(".ico")) return "image/x-icon";
-  else if (filename.endsWith(".xml")) return "text/xml";
-  else if (filename.endsWith(".pdf")) return "application/x-pdf";
-  else if (filename.endsWith(".zip")) return "application/x-zip";
-  else if (filename.endsWith(".gz")) return "application/x-gzip";
-  return "text/plain";
+  if (HTTP.hasArg("download")) return F("application/octet-stream");
+  else if (filename.endsWith(".htm")) return F("text/html");
+  else if (filename.endsWith(".html")) return F("text/html");
+  else if (filename.endsWith(".json")) return F("application/json");
+  else if (filename.endsWith(".css")) return F("text/css");
+  else if (filename.endsWith(".js")) return F("application/javascript");
+  else if (filename.endsWith(".png")) return F("image/png");
+  else if (filename.endsWith(".gif")) return F("image/gif");
+  else if (filename.endsWith(".jpg")) return F("image/jpeg");
+  else if (filename.endsWith(".ico")) return F("image/x-icon");
+  else if (filename.endsWith(".xml")) return F("text/xml");
+  else if (filename.endsWith(".pdf")) return F("application/x-pdf");
+  else if (filename.endsWith(".zip")) return F("application/x-zip");
+  else if (filename.endsWith(".gz")) return F("application/x-gzip");
+  return F("text/plain");
 }
 
 bool handleFileRead(String path) {
-  if (path.endsWith("/")) path += "index.htm";
+  if (path.endsWith("/")) path += F("index.htm");
   String contentType = getContentType(path);
   String pathWithGz = path + ".gz";
   if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)) {
@@ -84,31 +84,31 @@ void handleFileUpload() {
 }
 
 void handleFileDelete() {
-  if (HTTP.args() == 0) return HTTP.send(500, "text/plain", "BAD ARGS");
+  if (HTTP.args() == 0) return HTTP.send(500, F("text/plain"), F("BAD ARGS"));
   String path = HTTP.arg(0);
   if (path == "/")
-    return HTTP.send(500, "text/plain", "BAD PATH");
+    return HTTP.send(500, F("text/plain"), F("BAD PATH"));
   if (!SPIFFS.exists(path))
-    return HTTP.send(404, "text/plain", "FileNotFound");
+    return HTTP.send(404, F("text/plain"), F("FileNotFound"));
   SPIFFS.remove(path);
-  HTTP.send(200, "text/plain", "");
+  HTTP.send(200, F("text/plain"), "");
   path = String();
 }
 
 void handleFileCreate() {
   if (HTTP.args() == 0)
-    return HTTP.send(500, "text/plain", "BAD ARGS");
+    return HTTP.send(500, F("text/plain"), F("BAD ARGS"));
   String path = HTTP.arg(0);
   if (path == "/")
-    return HTTP.send(500, "text/plain", "BAD PATH");
+    return HTTP.send(500, F("text/plain"), F("BAD PATH"));
   if (SPIFFS.exists(path))
-    return HTTP.send(500, "text/plain", "FILE EXISTS");
+    return HTTP.send(500, F("text/plain"), F("FILE EXISTS"));
   File file = SPIFFS.open(path, "w");
   if (file)
     file.close();
   else
-    return HTTP.send(500, "text/plain", "CREATE FAILED");
-  HTTP.send(200, "text/plain", "");
+    return HTTP.send(500, F("text/plain"), F("CREATE FAILED"));
+  HTTP.send(200, F("text/plain"), "");
   path = String();
 
 }
@@ -117,7 +117,7 @@ void handleFileCreate() {
 
 void handleFileList() {
   if (!HTTP.hasArg("dir")) {
-    HTTP.send(500, "text/plain", "BAD ARGS");
+    HTTP.send(500, F("text/plain"), F("BAD ARGS"));
     return;
   }
   String path = HTTP.arg("dir");
@@ -145,6 +145,6 @@ void handleFileList() {
 //    isDir = false;
   }
   output += "]";
-  HTTP.send(200, "text/json", output);
+  HTTP.send(200, F("text/json"), output);
 }
 

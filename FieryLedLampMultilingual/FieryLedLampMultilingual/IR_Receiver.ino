@@ -438,12 +438,12 @@ void Prev_Next_eff(bool direction)   {
     loadingFlag = true;
     settChanged = true;
     eepromTimeout = millis();
+    #ifdef TM1637_USE
     DisplayFlag = 0;
     Display_Timer();
-
+    #endif
     if (random_on && FavoritesManager::FavoritesRunning)
         selectedSettings = 1U;
-
     #if (USE_MQTT)
     if (espMode == 1U)
     {
@@ -465,6 +465,8 @@ void Cycle_on_off()   {
         jsonReadtoInt(configSetup, "cycle_on") == 0? tmp = 1 : tmp = 0;
 	    jsonWrite(configSetup, "cycle_on", tmp);
 	    FavoritesManager::FavoritesRunning = tmp;
+        if (tmp) showWarning(CRGB::Blue, 500, 250U);        // мигание синим цветом 0.5 секунды
+        else showWarning(CRGB::Red, 500, 250U);        // мигание красным цветом 0.5 секунды
         #if (USE_MQTT)
         if (espMode == 1U)
         {
@@ -479,10 +481,10 @@ void Bright_Up_Down(bool direction)   {
     modes[currentMode].Brightness = constrain(direction ? modes[currentMode].Brightness + delta : modes[currentMode].Brightness - delta, 1, 255);
 	jsonWrite(configSetup, "br", modes[currentMode].Brightness);
     FastLED.setBrightness(modes[currentMode].Brightness);
-
+    #ifdef TM1637_USE
     DisplayFlag = 3;
     Display_Timer(modes[currentMode].Brightness);
-    
+    #endif    
     #ifdef GENERAL_DEBUG
         LOG.printf_P(PSTR("Новое значение яркости: %d\n"), modes[currentMode].Brightness);
     #endif
@@ -506,10 +508,10 @@ void Speed_Up_Down(bool direction)   {
     modes[currentMode].Speed = constrain(direction ? modes[currentMode].Speed + delta : modes[currentMode].Speed - delta, 1, 255);
 	jsonWrite(configSetup, "sp", modes[currentMode].Speed);
     loadingFlag = true; // без перезапуска эффекта ничего и не увидишь
-
+    #ifdef TM1637_USE
     DisplayFlag = 3;
     Display_Timer(modes[currentMode].Speed);
-    
+    #endif    
     #ifdef GENERAL_DEBUG
         LOG.printf_P(PSTR("Новое значение скорости: %d\n"), modes[currentMode].Speed);
     #endif
@@ -533,9 +535,10 @@ void Scale_Up_Down(bool direction)   {
     modes[currentMode].Scale = constrain(direction ? modes[currentMode].Scale + delta : modes[currentMode].Scale - delta, 1, 100);
 	jsonWrite(configSetup, "sc", modes[currentMode].Scale);
     loadingFlag = true; // без перезапуска эффекта ничего и не увидишь
-
+    #ifdef TM1637_USE
     DisplayFlag = 3;
     Display_Timer(modes[currentMode].Scale);
+    #endif
     
     #ifdef GENERAL_DEBUG
         LOG.printf_P(PSTR("Новое значение масштаба: %d\n"), modes[currentMode].Scale);
@@ -560,10 +563,10 @@ void Volum_Up_Down (bool direction)   {
     eff_volume = constrain(direction ? eff_volume + 1 : eff_volume - 1, 1, 30);
     jsonWrite(configSetup, "vol", eff_volume);
     if (!dawnflag_sound) send_command(6,FEEDBACK,0,eff_volume); //Громкость
-
+    #ifdef TM1637_USE
     DisplayFlag = 3;
     Display_Timer(eff_volume);
-
+    #endif
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
     #endif  //MP3_TX_PIN
@@ -599,8 +602,10 @@ void Folder_Next_Prev(bool direction)    {
      LOG.print (F("\nCurrent folder "));
      LOG.println (CurrentFolder);
     #endif
+    #ifdef TM1637_USE
     DisplayFlag = 0;
     Display_Timer();
+    #endif
 }
 
 void Current_Eff_Rnd_Def(bool direction)   {
@@ -618,6 +623,8 @@ void Current_Eff_Rnd_Def(bool direction)   {
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
     }
+    if (direction) showWarning(CRGB::Blue, 500, 250U);  // мигание синим цветом 0.5 секунды
+    else showWarning(CRGB::Red, 500, 250U);             // мигание красным цветом 0.5 секунды
 }
 
 void IR_Equalizer()   {     // Устанавливаем эквалайзер
@@ -627,16 +634,22 @@ void IR_Equalizer()   {     // Устанавливаем эквалайзер
     send_command(0x07, FEEDBACK, 0, Equalizer); 
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
+    #ifdef TM1637_USE
+    DisplayFlag = 3;
+    Display_Timer(Equalizer);
+    #endif
 }
 
 void Favorit_Add_Del(bool direction)   {
-    String configCycle = readFile("cycle_config.json", 2048);
+    String configCycle = readFile(F("cycle_config.json"), 2048);
     String e = "e" + String (currentMode);
     jsonWrite(configCycle, e, direction ? 1 : 0);
     FavoritesManager::FavoriteModes[currentMode] = (direction ? 1 : 0);
     //writeFile("cycle_config.json", configCycle );
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 2);
+    if (direction) showWarning(CRGB::Blue, 500, 250U);  // мигание синим цветом 0.5 секунды
+    else showWarning(CRGB::Red, 500, 250U);             // мигание красным цветом 0.5 секунды
 }
 
 void Digit_Handle (uint8_t digit)   {
@@ -644,12 +657,20 @@ void Digit_Handle (uint8_t digit)   {
         Enter_Digit_1 = 1;
         IR_Dgit_Enter_Timer = millis();
         Enter_Number = digit;
-     Serial.println(Enter_Number);
+        #ifdef TM1637_USE
+        DisplayFlag = 3;
+        Display_Timer(digit);
+        #endif
+       //Serial.println(Enter_Number);
     }
     else {
         Enter_Digit_1 = 0;
         Enter_Number = Enter_Number * 10 + digit;
         currentMode = eff_num_correct[Enter_Number];
+        #ifdef TM1637_USE
+        DisplayFlag = 3;
+        Display_Timer(Enter_Number);
+        #endif
 	    jsonWrite(configSetup, "eff_sel", Enter_Number);
 	    jsonWrite(configSetup, "br", modes[currentMode].Brightness);
         jsonWrite(configSetup, "sp", modes[currentMode].Speed);

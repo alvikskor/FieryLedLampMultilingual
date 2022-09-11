@@ -607,21 +607,21 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
            {
              //Udp.write(efList_1.c_str());
              //Udp.write("\0");
-             EffectList ("/efflist1");
+             EffectList (F("/efflist1"));
              break;
            }
            case 2U:
            {
              //Udp.write(efList_2.c_str());
              //Udp.write("\0");
-             EffectList ("/efflist2");
+             EffectList (F("/efflist2"));
              break;
            }
            case 3U:
            {
              //Udp.write(efList_3.c_str());
              //Udp.write("\0");
-             EffectList ("/efflist3");
+             EffectList (F("/efflist3"));
 
              #ifdef USE_DEFAULT_SETTINGS_RESET
              // и здесь же после успешной отправки списка эффектов делаем сброс настроек эффектов на значения по умолчанию
@@ -641,8 +641,23 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       saveConfig();            
     }
     else if (!strncmp_P(inputBuffer, PSTR("passw"), 5)){        // Сохрание пароля для подключения к WiFi роутера 
-      jsonWrite(configSetup, "password", BUFF.substring(6, BUFF.length()));        
-      saveConfig();            
+      //jsonWrite(configSetup, "password", BUFF.substring(6, BUFF.length()));        
+      //saveConfig();            
+      String password = BUFF.substring(6, BUFF.length());
+      if (password != ""){
+          char* Pass_STA = new char[64];
+          password.toCharArray(Pass_STA, password.length()+1);
+          for (uint8_t address = 0; address < 64; address ++){
+              EEPROM.put((EEPROM_PASSWORD_START_ADDRESS + address), Pass_STA[address]);
+              EEPROM.commit();
+              if (Pass_STA[address] == NULL) break;
+          }
+          #ifdef GENERAL_DEBUG
+          LOG.print("\Pass_STA = ");
+          LOG.println(Pass_STA );
+          #endif
+          delete [] Pass_STA;
+      }
     }          
     else if (!strncmp_P(inputBuffer, PSTR("timeout"), 7)){     // Сохрание таймаута - времени попытки подключения к WiFi роутера
       jsonWrite(configSetup, "TimeOut", BUFF.substring(8, BUFF.length()));        
@@ -1117,7 +1132,7 @@ void sendAlarms(char *outputBuffer)
 {
       char k[2];
 	  bool alarm_change = false;
-    	String configAlarm = readFile("alarm_config.json", 512); 
+    	String configAlarm = readFile(F("alarm_config.json"), 512); 
 	#ifdef GENERAL_DEBUG
 		LOG.println ("\nТекущие установки будильника");
     	LOG.println(configAlarm);

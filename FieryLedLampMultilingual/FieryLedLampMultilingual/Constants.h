@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <ESP8266WebServer.h>
+//#include <ESP8266WebServer.h>
 
 // ============= НАСТРОЙКИ =============
 //#define USE_SECRET_COMMANDS                               // удалите эту строку, если вам не нужна возможность смены режимов работы ESP_MODE и обнуления настроек из приложения
@@ -469,6 +469,16 @@ bool telnetGreetingShown = false;                           // признак "�
 
 //================ Дальше только для разработчиков. Не меняйте здесь ничего, если не уверены в результате!!! ===================
 
+//#include <EEPROM.h>
+//#include "Types.h"
+#define EEPROM_PASSWORD_START_ADDRESS           (0U)            // начальный адрес в EEPROM памяти для записи пароля к роутеру
+#define EEPROM_MODES_START_ADDRESS              (50U)           // начальный адрес в EEPROM памяти для записи настроек эффектов (яркость, скорость, масштаб)
+#define EEPROM_FIRST_RUN_ADDRESS                (40U)           // (40U) адрес в EEPROM памяти для записи признака первого запуска (определяет необходимость первоначальной записи всех хранимых настроек)
+#define EEPROM_MODE_STRUCT_SIZE                 (3U)            // 1 байт - яркость; 1 байт - скорость; 1 байт - масштаб
+#define EEPROM_TOTAL_BYTES_USED                 (EEPROM_MODES_START_ADDRESS+MODE_AMOUNT*EEPROM_MODE_STRUCT_SIZE+1)       
+#define EEPROM_FIRST_RUN_MARK                   (MODE_AMOUNT)   // число-метка, если ещё не записно в EEPROM_FIRST_RUN_ADDRESS, значит нужно проинициализировать EEPROM и записать все первоначальные настройки
+#define EEPROM_WRITE_DELAY                      (300000UL)      // отсрочка записи в EEPROM после последнего изменения хранимых настроек, позволяет уменьшить количество операций записи в EEPROM
+
 //+++++Функции для работы с json файлами+++++++++++++++++++++++++++
 
 #include <ArduinoJson.h>        //Установить из менеджера библиотек версию 5.13.5 !!!. https://arduinojson.org/
@@ -520,7 +530,7 @@ String jsonWrite(String &json, String name, int volume) {
 // StaticJsonDocument<2048> doc;  // DynamicJsonDocument doc(2048);
 // ------------- Чтение значения json String
 String jsonRead(String &json, String name) {
-  DynamicJsonDocument doc(2560);
+  DynamicJsonDocument doc(3072);
   DeserializationError error = deserializeJson(doc, json);
   #ifdef GENERAL_DEBUG
   if (error) {
@@ -535,7 +545,7 @@ String jsonRead(String &json, String name) {
 
 // ------------- Чтение значения json int
 int jsonReadtoInt(String &json, String name) {
-  DynamicJsonDocument doc(2560);
+  DynamicJsonDocument doc(3072);
   DeserializationError error = deserializeJson(doc, json);
   #ifdef GENERAL_DEBUG
   if (error) {
@@ -548,8 +558,8 @@ int jsonReadtoInt(String &json, String name) {
 }
 
 // ------------- Запись значения json String
-String jsonWrite(String &json, String name, String volume) {
-  DynamicJsonDocument doc(2560);
+void jsonWrite(String &json, String name, String volume) {
+  DynamicJsonDocument doc(3072);
   DeserializationError error = deserializeJson(doc, json);
   #ifdef GENERAL_DEBUG
   if (error) {
@@ -561,12 +571,12 @@ String jsonWrite(String &json, String name, String volume) {
   doc[name] = volume;
   json = "";
   serializeJson(doc, json);
-  return json;
+  //return json;
 }
 
 // ------------- Запись значения json int
-String jsonWrite(String &json, String name, int volume) {
-  DynamicJsonDocument doc(2560);
+void jsonWrite(String &json, String name, int volume) {
+  DynamicJsonDocument doc(3072);
   DeserializationError error = deserializeJson(doc, json);
   #ifdef GENERAL_DEBUG
   if (error) {
@@ -578,12 +588,12 @@ String jsonWrite(String &json, String name, int volume) {
   doc[name] = volume;
   json = "";
   serializeJson(doc, json);
-  return json;
+  //return json;
 }
 
 
 // ------------- Запись строки в файл
-String writeFile(String fileName, String strings ) {
+String writeFile(const String& fileName, String& strings ) {
   File configFile = SPIFFS.open("/" + fileName, "w");
   if (!configFile) {
     return "Failed to open config file";
@@ -598,10 +608,10 @@ String writeFile(String fileName, String strings ) {
   return "Write sucsses";
 }
 void saveConfig (){
-  writeFile("config.json", configSetup );
+  writeFile(F("config.json"), configSetup );
 }
 // ------------- Чтение файла в строку
-String readFile(String fileName, size_t len ) {
+String readFile(const String& fileName, size_t len ) {
   File configFile = SPIFFS.open("/" + fileName, "r");
   if (!configFile) {
     return "Failed";

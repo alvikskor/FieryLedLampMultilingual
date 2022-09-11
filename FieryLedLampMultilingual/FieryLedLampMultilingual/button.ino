@@ -345,6 +345,10 @@ if (touch.isStep())
           1, 255);
 		jsonWrite(configSetup, "br", modes[currentMode].Brightness);
         FastLED.setBrightness(modes[currentMode].Brightness);
+        #ifdef TM1637_USE
+        DisplayFlag = 3;
+        Display_Timer(modes[currentMode].Brightness);
+        #endif    
 
         #ifdef GENERAL_DEBUG
         LOG.printf_P(PSTR("Новое значение яркости: %d\n"), modes[currentMode].Brightness);
@@ -368,6 +372,10 @@ if (touch.isStep())
         #ifdef USE_MULTIPLE_LAMPS_CONTROL
         repeat_multiple_lamp_control = true;
         #endif  //USE_MULTIPLE_LAMPS_CONTROL
+        #ifdef TM1637_USE
+        DisplayFlag = 3;
+        Display_Timer(modes[currentMode].Speed);
+        #endif    
 
         break;
       }
@@ -384,6 +392,10 @@ if (touch.isStep())
         #ifdef USE_MULTIPLE_LAMPS_CONTROL
         repeat_multiple_lamp_control = true;
         #endif  //USE_MULTIPLE_LAMPS_CONTROL
+        #ifdef TM1637_USE
+        DisplayFlag = 3;
+        Display_Timer(modes[currentMode].Scale);
+        #endif
 
         break;
       }

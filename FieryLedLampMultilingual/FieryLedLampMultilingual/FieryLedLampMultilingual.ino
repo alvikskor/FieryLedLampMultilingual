@@ -21,6 +21,7 @@
 //
 #define FASTLED_USE_PROGMEM 1 // просим библиотеку FASTLED экономить память контроллера на свои палитры
 #include "pgmspace.h"
+#include <ESP8266WebServer.h>
 #include "Constants.h"
 #include <FastLED.h>
 #include <ESP8266WiFi.h>
@@ -50,12 +51,14 @@
 #include <BlynkSimpleEsp8266.h>
 #endif
 #include <ESP8266SSDP.h>        
-#include <ArduinoJson.h>        //Установить из менеджера библиотек версию 5.13.5 !!!. https://arduinojson.org/
 #include <ESP8266HTTPUpdateServer.h>    // Обновление с web страницы
+/*
+#include <ArduinoJson.h>        // Перенесено у файл constants.h
 #ifdef USE_LittleFS
 #include <LittleFS.h>
 #define SPIFFS LittleFS  
 #endif
+*/
 #ifdef TM1637_USE
 #include "TM1637Display.h"
 #endif
@@ -317,7 +320,7 @@ void setup()  //================================================================
   LOG.print(F("\nСтарт файловой системы\n"));
   FS_init();  //Запускаем файловую систему
   LOG.print(F("Чтение файла конфигурации\n"));
-  configSetup = readFile("config.json", 2048);   
+  configSetup = readFile(F("config.json"), 2048);   
   LOG.println(configSetup);
   //Настраиваем и запускаем SSDP интерфейс
   LOG.print(F("Старт SSDP\n"));
@@ -374,7 +377,10 @@ void setup()  //================================================================
   MATRIX_TYPE = jsonReadtoInt(configSetup, "m_t");
   ORIENTATION = jsonReadtoInt(configSetup, "m_o");
   {
-    String Name = "correct." + jsonRead (configSetup, "lang") + ".json";
+    String Name = F("correct.");
+    Name.reserve(17);
+    Name += jsonRead (configSetup, "lang");
+    Name += F(".json");
     String Correct = readFile(Name, 2048);
     for ( uint8_t n=0; n< MODE_AMOUNT; n++)
     {
@@ -476,19 +482,10 @@ void setup()  //================================================================
   modes[currentMode].Brightness = jsonReadtoInt (configSetup, "br");
   modes[currentMode].Speed = jsonReadtoInt (configSetup, "sp");
   modes[currentMode].Scale = jsonReadtoInt (configSetup, "sc");
-/*
+
   {
-    String Name = "correct." + jsonRead (configSetup, "lang") + ".json";
-    String Correct = readFile(Name, 2048);
-    for ( uint8_t n=0; n< MODE_AMOUNT; n++) 
-    {
-        eff_num_correct[n] = jsonReadtoInt (Correct, String(n)); 
-        if (eff_num_correct[n] == currentMode) jsonWrite(configSetup, "eff_sel", n);
-    }
-  }*/
-  {
-    File file = SPIFFS.open("/index.json.gz","r");
-    File Status = SPIFFS.open("/effect2.ini", "r");
+    File file = SPIFFS.open(F("/index.json.gz"),"r");
+    File Status = SPIFFS.open(F("/effect2.ini"), "r");
     if (Status && file.size() > 700)
     {
     String Name = Status.readString();
@@ -502,9 +499,7 @@ void setup()  //================================================================
     file.close();
     Status.close();
   }
-  //jsonWrite(configSetup, "br", modes[currentMode].Brightness);
-  //jsonWrite(configSetup, "sp", modes[currentMode].Speed);
-  //jsonWrite(configSetup, "sc", modes[currentMode].Scale); 
+
   first_entry = 1;
   handle_alarm ();
   first_entry = 0;
@@ -577,17 +572,43 @@ void setup()  //================================================================
    WiFi.persistent(false);
 
   // Попытка подключения к Роутеру
+  {
   WiFi.mode(WIFI_STA);
   String _ssid = jsonRead(configSetup, "ssid");
-  String _password = jsonRead(configSetup, "password");
-  if (_ssid == "" && _password == "") {
-   espMode = 0;
-   jsonWrite(configSetup, "ESP_mode", (int)espMode);
-   saveConfig(); 
-   ESP.restart();
+  //String _password = jsonRead(configSetup, "password");
+  char* Pass_STA = new char[64];
+  char* SSID_STA = new char[32];
+  //char *Pass_STA= (char*)malloc(64);
+  //char *SSID_STA= (char*)malloc(32);
+  _ssid.toCharArray(SSID_STA, _ssid.length()+1); // (jsonRead(configSetup, "ssid")).toCharArray (SSID_STA, (jsonRead(configSetup, "ssid")).length()+1); //
+  //_password.toCharArray(Pass_STA, _password.length()+1);
+  #ifdef GENERAL_DEBUG
+  LOG.print("\Pass_STA = ");
+  #endif
+  for (uint8_t address = 0; address < 64; address ++){
+      Pass_STA[address] = EEPROM.read(EEPROM_PASSWORD_START_ADDRESS + address);
+      #ifdef GENERAL_DEBUG
+      LOG.print(Pass_STA[address]);
+      #endif
+      if (Pass_STA[address] == NULL) break;
   }
-  else {
-    WiFi.begin(_ssid.c_str(), _password.c_str());
+  #ifdef GENERAL_DEBUG
+  LOG.println( );
+  #endif
+  if (_ssid == "") {
+     espMode = 0;
+     jsonWrite(configSetup, "ESP_mode", (int)espMode);
+     saveConfig(); 
+     ESP.restart();
+  }
+  else
+  {
+    WiFi.begin(SSID_STA, Pass_STA); //WiFi.begin(_ssid.c_str(), _password.c_str()); //
+    delete [] Pass_STA;
+    delete [] SSID_STA;
+    //free(Pass_STA);
+    //free(SSID_STA);
+  }
   }
 		
 	delay (100);	  

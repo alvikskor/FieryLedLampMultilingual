@@ -40,7 +40,7 @@ void timeTick()
         //save_file_changes = 0;
         switch (save_file_changes) {
         case 1:
-            writeFile("config.json", configSetup );
+            writeFile(F("config.json"), configSetup );
             save_file_changes = 0;
             break;
         case 2:
@@ -49,7 +49,7 @@ void timeTick()
             break;
         case 3:
             save_alarms();
-            writeFile("config.json", configSetup );
+            writeFile(F("config.json"), configSetup );
             save_file_changes = 0;
             break;
         case 4:
@@ -58,7 +58,7 @@ void timeTick()
             break;
         case 5:
             cycle_get();
-            writeFile("config.json", configSetup );
+            writeFile(F("config.json"), configSetup );
             save_file_changes = 0;
             break;
         case 6:
@@ -69,7 +69,7 @@ void timeTick()
         case 7:
             save_alarms();
             cycle_get();
-            writeFile("config.json", configSetup );
+            writeFile(F("config.json"), configSetup );
             save_file_changes = 0;
             break;
         }

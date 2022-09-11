@@ -71,7 +71,8 @@ void User_setings ()  {
  HTTP.on("/m_t", handle_matrix_tipe);  //
  HTTP.on("/m_o", handle_matrix_orientation);  //
  HTTP.on("/lang", handle_lang);  //
-
+ HTTP.on("/ssid", handle_ssid);
+/*
   // --------------------Получаем SSID со страницы
   HTTP.on("/ssid", HTTP_GET, []() {
   jsonWrite(configSetup, "ssid", HTTP.arg("ssid"));
@@ -79,16 +80,41 @@ void User_setings ()  {
   jsonWrite(configSetup, "TimeOut", HTTP.arg("TimeOut").toInt()); 
   ESP_CONN_TIMEOUT = jsonReadtoInt(configSetup, "TimeOut");
   saveConfig();                 // Функция сохранения строки конфигурации в файл
-  HTTP.send(200, "text/plain", "OK"); // отправляем ответ о выполнении
+  HTTP.send(200, F("text/plain"), F("OK")); // отправляем ответ о выполнении
   });
+*/
    // --------------------Получаем SSID AP со страницы
   HTTP.on("/ssidap", HTTP_GET, []() {
   jsonWrite(configSetup, "ssidAP", HTTP.arg("ssidAP"));
   jsonWrite(configSetup, "passwordAP", HTTP.arg("passwordAP"));
   saveConfig();                 // Функция сохранения строки конфигурации в файл
-  HTTP.send(200, "text/plain", "OK"); // отправляем ответ о выполнении
+  HTTP.send(200, F("text/plain"), F("OK")); // отправляем ответ о выполнении
   });
 
+}
+
+void handle_ssid()  {
+    String password = HTTP.arg("password");
+    if (password != ""){
+        char* Pass_STA = new char[64];
+        password.toCharArray(Pass_STA, password.length()+1);
+        for (uint8_t address = 0; address < 64; address ++){
+            EEPROM.put((EEPROM_PASSWORD_START_ADDRESS + address), Pass_STA[address]);
+            EEPROM.commit();
+            if (Pass_STA[address] == NULL) break;
+        }
+        #ifdef GENERAL_DEBUG
+        LOG.print("\Pass_STA = ");
+        LOG.println(Pass_STA );
+        #endif
+        delete [] Pass_STA;
+    }
+    jsonWrite(configSetup, "ssid", HTTP.arg("ssid"));
+    //jsonWrite(configSetup, "password", HTTP.arg("password"));
+    ESP_CONN_TIMEOUT = HTTP.arg("TimeOut").toInt();
+    jsonWrite(configSetup, "TimeOut", ESP_CONN_TIMEOUT); 
+    saveConfig();                 // Функция сохранения строки конфигурации в файл
+    HTTP.send(200, F("text/plain"), F("OK")); // отправляем ответ о выполнении
 }
 
 void handle_favorit() {    
@@ -97,7 +123,7 @@ void handle_favorit() {
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
   Favorit_only = jsonReadtoInt(configSetup, "favorit");
-  HTTP.send(200, "text/plain", "OK");
+  HTTP.send(200, F("text/plain"), F("OK"));
  }
 
 void handle_random() { 
@@ -106,7 +132,7 @@ void handle_random() {
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
   random_on = jsonReadtoInt(configSetup, "random_on");
-  HTTP.send(200, "text/plain", "OK");
+  HTTP.send(200, F("text/plain"), F("OK"));
  }
  
 void handle_print_time() {    
@@ -115,14 +141,14 @@ void handle_print_time() {
   //saveConfig();
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
-  HTTP.send(200, "text/plain", "OK");
+  HTTP.send(200, F("text/plain"), F("OK"));
  }
  
 void handle_button_on() {    
   jsonWrite(configSetup, "button_on", HTTP.arg("button_on").toInt());
   saveConfig();  
   buttonEnabled = jsonReadtoInt(configSetup, "button_on");
-  HTTP.send(200, "text/plain", "OK");
+  HTTP.send(200, F("text/plain"), F("OK"));
  }
 
 /*
@@ -132,7 +158,7 @@ void handle_button_on() {
  	handle_time_always();
 	handle_button_on();
     saveConfig();
-    HTTP.send(200, "text/plain", "OK");
+    HTTP.send(200, F("text/plain"), "OK");
  }
 */ 
 
@@ -140,7 +166,7 @@ void handle_ESP_mode() {
   jsonWrite(configSetup, "ESP_mode", HTTP.arg("ESP_mode").toInt());
   saveConfig();  
   espMode = jsonReadtoInt(configSetup, "ESP_mode");
-  HTTP.send(200, "text/plain", "OK");
+  HTTP.send(200, F("text/plain"), F("OK"));
  }
 
 void handle_eff_reset() {    
@@ -154,7 +180,7 @@ void handle_eff_reset() {
     #ifdef USE_BLYNK
     updateRemoteBlynkParams();
     #endif
-    HTTP.send(200, "text/plain", "OK");
+    HTTP.send(200, F("text/plain"), F("OK"));
  }
 
 void handle_run_text ()  {
@@ -174,7 +200,7 @@ void handle_run_text ()  {
     }
     LOG.println();
     #endif
-	HTTP.send(200, "text/plain", "OK"); // отправляем ответ о выполнении
+	HTTP.send(200, F("text/plain"), F("OK")); // отправляем ответ о выполнении
  }
 
 void handle_night_time ()  {
@@ -192,7 +218,7 @@ void handle_night_time ()  {
     #endif
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
-	HTTP.send(200, "text/plain", "OK");
+	HTTP.send(200, F("text/plain"), F("OK"));
  }
 
 void handle_effect_always ()  {
@@ -201,7 +227,7 @@ void handle_effect_always ()  {
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
 	DONT_TURN_ON_AFTER_SHUTDOWN = jsonReadtoInt(configSetup, "effect_always");
-	HTTP.send(200, "text/plain", "OK");
+	HTTP.send(200, F("text/plain"), F("OK"));
  }
 
 void handle_timer5h ()  {
@@ -217,14 +243,14 @@ void handle_timer5h ()  {
       else
           TimerManager::TimeToFire = millis() + (24UL*60UL*60UL*1000UL); //Если 0 то не выключать (установить 24 часа)
     }
-	HTTP.send(200, "text/plain", "OK");
+	HTTP.send(200, F("text/plain"), F("OK"));
  }
  
 void handle_ntp ()  {
 	jsonWrite(configSetup, "ntp", HTTP.arg("ntp"));
 	saveConfig();
 	(jsonRead(configSetup, "ntp")).toCharArray (NTP_ADDRESS, (jsonRead(configSetup, "ntp")).length()+1);
-	HTTP.send(200, "text/plain", "OK");
+	HTTP.send(200, F("text/plain"), F("OK"));
 	//delay (100);
 	//ESP.restart();
 }
@@ -251,7 +277,7 @@ void handle_eff_sel () {
     #ifdef USE_BLYNK
     updateRemoteBlynkParams();
     #endif
-	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+	HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL   
@@ -316,7 +342,7 @@ void handle_eff () {
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 void handle_br ()  {
@@ -326,7 +352,7 @@ void handle_br ()  {
     #ifdef GENERAL_DEBUG
     LOG.printf_P(PSTR("Новое значение яркости: %d\n"), modes[currentMode].Brightness);
     #endif
-	 HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}"); 
+	 HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}")); 
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL    
@@ -339,7 +365,7 @@ void handle_sp ()  {
     #ifdef GENERAL_DEBUG
     LOG.printf_P(PSTR("Новое значение скорости: %d\n"), modes[currentMode].Speed);
     #endif
-	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+	HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
@@ -352,7 +378,7 @@ void handle_sc ()  {
     #ifdef GENERAL_DEBUG
     LOG.printf_P(PSTR("Новое значение Масштаба / Цвета: %d\n"), modes[currentMode].Scale);
     #endif
-	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+	HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL       
@@ -362,7 +388,7 @@ void handle_brm ()   {
 	modes[currentMode].Brightness = constrain(modes[currentMode].Brightness - 1, 1, 255);
 	jsonWrite(configSetup, "br", modes[currentMode].Brightness);
 	FastLED.setBrightness(modes[currentMode].Brightness);
-	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+	HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL    
@@ -372,7 +398,7 @@ void handle_brp ()   {
 	modes[currentMode].Brightness = constrain(modes[currentMode].Brightness + 1, 1, 255);
 	jsonWrite(configSetup, "br", modes[currentMode].Brightness);
 	FastLED.setBrightness(modes[currentMode].Brightness);
-	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+	HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
@@ -382,7 +408,7 @@ void handle_spm ()   {
 	modes[currentMode].Speed = constrain(modes[currentMode].Speed - 1, 1, 255);
 	jsonWrite(configSetup, "sp", modes[currentMode].Speed);
 	loadingFlag = true;  // Перезапуск Эффекта
-	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+	HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
@@ -392,7 +418,7 @@ void handle_spp ()   {
 	modes[currentMode].Speed = constrain(modes[currentMode].Speed + 1, 1, 255);
 	jsonWrite(configSetup, "sp", modes[currentMode].Speed);
 	loadingFlag = true;  // Перезапуск Эффекта
-	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+	HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
@@ -402,7 +428,7 @@ void handle_scm ()   {
 	modes[currentMode].Scale = constrain(modes[currentMode].Scale - 1, 1, 100);
 	jsonWrite(configSetup, "sc", modes[currentMode].Scale);
 	loadingFlag = true;  // Перезапуск Эффекта
-	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+	HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
@@ -412,7 +438,7 @@ void handle_scp ()   {
 	modes[currentMode].Scale = constrain(modes[currentMode].Scale + 1, 1, 100);
 	jsonWrite(configSetup, "sc", modes[currentMode].Scale);
 	loadingFlag = true;  // Перезапуск Эффекта
-	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+	HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
@@ -421,13 +447,13 @@ void handle_scp ()   {
 void handle_tm ()   {
 	bool flg = false;
 	jsonWrite(configSetup, "tm", HTTP.arg("tm").toInt());
-	if (jsonReadtoInt(configSetup, "tm")) flg = FileCopy ("/css/dark/build.css.gz" , "/css/build.css.gz");
-	else flg = FileCopy ("/css/light/build.css.gz" , "/css/build.css.gz");
+	if (jsonReadtoInt(configSetup, "tm")) flg = FileCopy (F("/css/dark/build.css.gz") , F("/css/build.css.gz"));
+	else flg = FileCopy (F("/css/light/build.css.gz") , F("/css/build.css.gz"));
 	if (flg) {
-       HTTP.send(200, "text/plain", "OK");
+       HTTP.send(200, F("text/plain"), F("OK"));
 	   saveConfig();
     }
-	else HTTP.send(404, "text/plain", "File not found");  
+	else HTTP.send(404, F("text/plain"), "File not found");  
 }
 
 void handle_PassOn ()   {
@@ -436,10 +462,10 @@ void handle_PassOn ()   {
 //	  if (jsonReadtoInt(configSetup, "PassOn")) flg = FileCopy ("/stp/stp_l.json.gz" , "/setup.json.gz");
 //	  else flg = FileCopy ("/stp/stp_nl.json.gz" , "/setup.json.gz");
 //	  if (flg) {
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 	saveConfig();
 //    }
-//	  else HTTP.send(404, "text/plain", "File not found");  
+//	  else HTTP.send(404, F("text/plain"), "File not found");  
 }
 
 void handle_Power ()  {
@@ -471,7 +497,7 @@ void handle_Power ()  {
     save_file_changes = 7;
     loadingFlag = true;
     }
-	 HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+	 HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     multiple_lamp_control ();
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
@@ -485,7 +511,7 @@ void handle_summer_time() {
 	  localTimeZone.setRules (summerTime, winterTime);
     #endif
     jsonWrite(configSetup, "time", (Get_Time(getCurrentLocalTime())));
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
  }
  
 void handle_time_always() {
@@ -494,7 +520,7 @@ void handle_time_always() {
     time_always = jsonReadtoInt(configSetup, "time_always");
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
-    HTTP.send(200, "text/plain", "OK");
+    HTTP.send(200, F("text/plain"), F("OK"));
  }
  
 // Установка параметров времянной зоны по запросу вида, например, http://192.168.0.101/timeZone?timeZone=3
@@ -506,14 +532,14 @@ void handle_time_zone() {
     summerTime.offset = winterTime.offset + jsonReadtoInt(configSetup, "Summer_Time") * 60;
     localTimeZone.setRules (summerTime, winterTime);
     #endif
-    //HTTP.send(200, "text/plain", "OK");
+    //HTTP.send(200, F("text/plain"), F("OK"));
     jsonWrite(configSetup, "time", (Get_Time(getCurrentLocalTime())));
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 void handle_alarm ()  { 
     char i[2];
-    String configAlarm = readFile("alarm_config.json", 512); 
+    String configAlarm = readFile(F("alarm_config.json"), 512); 
 	#ifdef GENERAL_DEBUG
 	LOG.println (F("\nУстановки будильника"));
    	LOG.println(configAlarm);
@@ -549,15 +575,15 @@ void handle_alarm ()  {
 	//EepromManager::SaveDawnMode(&dawnMode);
     if (!first_entry)
         {
-         writeFile("alarm_config.json", configAlarm );
+         writeFile(F("alarm_config.json"), configAlarm );
         }
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 void save_alarms()   {
     char k[2];
 	bool alarm_change = false;
-    String configAlarm = readFile("alarm_config.json", 512); 
+    String configAlarm = readFile(F("alarm_config.json"), 512); 
 	#ifdef GENERAL_DEBUG
      LOG.println (F("\nТекущие установки будильника"));
      LOG.println(configAlarm);
@@ -585,7 +611,7 @@ void save_alarms()   {
     jsonWrite(configAlarm, "after", DAWN_TIMEOUT);
     jsonWrite(configAlarm, "a_br", DAWN_BRIGHT);  
     if (alarm_change) {
-	    writeFile("alarm_config.json", configAlarm );
+	    writeFile(F("alarm_config.json"), configAlarm );
 	    #ifdef GENERAL_DEBUG
         LOG.println (F("\nНовые установки будильника сохранены в файл"));
         LOG.println(configAlarm);
@@ -606,7 +632,7 @@ void handle_cycle_on()  {  // Вкл/выкл режима Цикл
         FavoritesManager::FavoritesRunning = 0;
         jsonWrite(configSetup, "cycle_on", 0);
     }
-	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");  //HTTP.send(200, "text/plain", "OK");
+	HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));  //HTTP.send(200, F("text/plain"), F("OK"));
 }
 
 void handle_time_eff ()  {  // Время переключения цикла + Dispersion добавочное случайное время от 0 до disp
@@ -616,7 +642,7 @@ void handle_time_eff ()  {  // Время переключения цикла + 
 	FavoritesManager::Dispersion = jsonReadtoInt(configSetup, "disp");	
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
-	HTTP.send(200, "text/plain", "OK");
+	HTTP.send(200, F("text/plain"), F("OK"));
 }
 
 void handle_rnd_cycle ()  {  // Перемешать выбранные или по порядку
@@ -625,7 +651,7 @@ void handle_rnd_cycle ()  {  // Перемешать выбранные или �
 	//saveConfig();
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
-	HTTP.send(200, "text/plain", "OK");
+	HTTP.send(200, F("text/plain"), F("OK"));
 }
 
 void handle_cycle_allwase ()  {  // Запускать режим цыкл после выкл/вкл лампы или нет
@@ -637,12 +663,12 @@ void handle_cycle_allwase ()  {  // Запускать режим цыкл по�
     }
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
-	HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");  //HTTP.send(200, "text/plain", "OK");
+	HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));  //HTTP.send(200, F("text/plain"), F("OK"));
 }
 
 void handle_eff_all ()   {  //Выбрать все эффекты
     char i[4];
-    String configCycle = readFile("cycle_config.json", 2048); 
+    String configCycle = readFile(F("cycle_config.json"), 2048); 
     // подготовка  строк с именами полей json 
     ESP.wdtFeed();
     for (uint8_t k=0; k<MODE_AMOUNT; k++) {
@@ -652,13 +678,13 @@ void handle_eff_all ()   {  //Выбрать все эффекты
         jsonWrite(configCycle, e, 1U);
         yield();
     }
-    writeFile("cycle_config.json", configCycle );
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    writeFile(F("cycle_config.json"), configCycle );
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 void handle_eff_clr ()   {  //очистить все эффекты
       char i[4];
-      String configCycle = readFile("cycle_config.json", 2048); 
+      String configCycle = readFile(F("cycle_config.json"), 2048); 
       // подготовка  строк с именами полей json 
       ESP.wdtFeed();
       for (uint8_t k=0; k<MODE_AMOUNT; k++)
@@ -669,13 +695,13 @@ void handle_eff_clr ()   {  //очистить все эффекты
         jsonWrite(configCycle, e, 0U);
         yield();
       }
-    writeFile("cycle_config.json", configCycle );
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    writeFile(F("cycle_config.json"), configCycle );
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 void handle_cycle_set ()  {  // Выбор эффектов для Цикла 
       char i[4];
-      String configCycle = readFile("cycle_config.json", 2048); 
+      String configCycle = readFile(F("cycle_config.json"), 2048); 
       #ifdef GENERAL_DEBUG
       LOG.println (F("\nВыбор эффектов для Цикла"));
       LOG.println(configCycle);
@@ -699,17 +725,17 @@ void handle_cycle_set ()  {  // Выбор эффектов для Цикла
       //FavoritesManager::SaveFavoritesToEeprom();
       if (!first_entry)
         {
-         writeFile("cycle_config.json", configCycle );
+         writeFile(F("cycle_config.json"), configCycle );
          //settChanged = true;
          //eepromTimeout = millis();
         }
-         HTTP.send(200, "text/plain", "OK");
+         HTTP.send(200, F("text/plain"), F("OK"));
 }
 
 void cycle_get ()  { // сохранение выбранных эффектов в файл
       char i[4];
 	  bool cycle_change = false;
-      String configCycle = readFile("cycle_config.json", 2048); 
+      String configCycle = readFile(F("cycle_config.json"), 2048); 
       #ifdef GENERAL_DEBUG
       LOG.println (F("\nВыбор эффектов для Цикла"));
       LOG.println(configCycle);
@@ -728,7 +754,7 @@ void cycle_get ()  { // сохранение выбранных эффектов
           yield();
 		}
 	if (cycle_change)	{
-	    writeFile("cycle_config.json", configCycle );
+	    writeFile(F("cycle_config.json"), configCycle );
 	    #ifdef GENERAL_DEBUG
 		LOG.println (F("\nНовы выбор эффектов для Цикла сохранен в файл"));
     	LOG.println(configCycle);
@@ -746,13 +772,13 @@ void handle_timer ()   {  // Установка таймера
     jsonWrite(configSetup, "tmr", 1);
     TimerManager::TimeToFire = millis() + tmp * 60UL * 1000UL;
     TimerManager::TimerRunning = true;    
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}"); //HTTP.send(200, "application/json", "{\"title\":\"Запущен\",\"class\":\"btn btn-block btn-warning\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}")); //HTTP.send(200, F("application/json"), "{\"title\":\"Запущен\",\"class\":\"btn btn-block btn-warning\"}");
 }
 
 void handle_def ()   { // Сброс настроек текущего эффекта по умолчанию
     setModeSettings();
     updateSets();    
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
@@ -761,7 +787,7 @@ void handle_def ()   { // Сброс настроек текущего эффе�
 void handle_rnd ()   { // Установка случайных настроек текущему эффекту
     selectedSettings = 1U;
     updateSets();
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
@@ -778,7 +804,7 @@ void handle_all_br ()   {  //Общая яркость
     FastLED.setBrightness(ALLbri);
     loadingFlag = true;
     //LOG.println (ALLbri);
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
@@ -788,7 +814,7 @@ void handle_all_br ()   {  //Общая яркость
 
 void handle_multiple_lamp () {
     String str;
-    String configMultilamp = readFile("multilamp_config.json", 512);
+    String configMultilamp = readFile(F("multilamp_config.json"), 512);
     jsonWrite(configMultilamp, "ml1", HTTP.arg("ml1").toInt());
     jsonWrite(configMultilamp, "ml2", HTTP.arg("ml2").toInt());
     jsonWrite(configMultilamp, "ml3", HTTP.arg("ml3").toInt());
@@ -798,7 +824,7 @@ void handle_multiple_lamp () {
     jsonWrite(configMultilamp, "comment1", HTTP.arg("comment1"));
     jsonWrite(configMultilamp, "comment2", HTTP.arg("comment2"));
     jsonWrite(configMultilamp, "comment3", HTTP.arg("comment3"));   
-    writeFile("multilamp_config.json", configMultilamp );
+    writeFile(F("multilamp_config.json"), configMultilamp );
     ml1 = jsonReadtoInt(configMultilamp, "ml1");
     ml2 = jsonReadtoInt(configMultilamp, "ml2");
     ml3 = jsonReadtoInt(configMultilamp, "ml3");
@@ -808,12 +834,12 @@ void handle_multiple_lamp () {
     str.toCharArray (Host2, str.length() + 1);
     str = jsonRead (configMultilamp, "host3");
     str.toCharArray (Host3, str.length() + 1);
-	HTTP.send(200, "text/plain", "OK");
+	HTTP.send(200, F("text/plain"), F("OK"));
 }
 
 void multilamp_get ()   {
     String str;
-    String configMultilamp = readFile("multilamp_config.json", 512);
+    String configMultilamp = readFile(F("multilamp_config.json"), 512);
     ml1 = jsonReadtoInt(configMultilamp, "ml1");
     ml2 = jsonReadtoInt(configMultilamp, "ml2");
     ml3 = jsonReadtoInt(configMultilamp, "ml3");
@@ -891,7 +917,7 @@ void multiple_lamp_control ()   {
 
 void handle_eff_save ()   {
     SPIFFS.begin();
-    File file = SPIFFS.open("/effect.ini","w");
+    File file = SPIFFS.open(F("/effect.ini"),"w");
     if (file)   {
         for (uint8_t i = 0; i < MODE_AMOUNT; i++) {
            file.write (modes[i].Brightness);
@@ -912,12 +938,12 @@ void handle_eff_save ()   {
         #endif //GENERAL_DEBUG
     }
     file.close();
-    HTTP.send(200, "text/plain", "OK");
+    HTTP.send(200, F("text/plain"), F("OK"));
 }
 
 void handle_eff_read ()   {
     SPIFFS.begin();
-    File file = SPIFFS.open("/effect.ini","r");
+    File file = SPIFFS.open(F("/effect.ini"),"r");
     if (file)   {
         uint16_t file_size = file.size();
         if ((file_size/3) < MODE_AMOUNT) file_size -= 6;
@@ -943,19 +969,19 @@ void handle_eff_read ()   {
         #endif //GENERAL_DEBUG
     }
     file.close();    
-    HTTP.send(200, "text/plain", "OK");
+    HTTP.send(200, F("text/plain"), F("OK"));
 }
 
 void handle_alt_panel ()   {
 	bool flg = false;
 	jsonWrite(configSetup, "alt", HTTP.arg("alt").toInt());
-	if (jsonReadtoInt(configSetup, "alt")) flg = FileCopy ("/main _ctrl_pnl/index1.json.gz" , "/index.json.gz");
-	else flg = FileCopy ("/main _ctrl_pnl/index0.json.gz" , "/index.json.gz");
+	if (jsonReadtoInt(configSetup, "alt")) flg = FileCopy (F("/main _ctrl_pnl/index1.json.gz") , F("/index.json.gz"));
+	else flg = FileCopy (F("/main _ctrl_pnl/index0.json.gz") , F("/index.json.gz"));
 	if (flg) {
-       HTTP.send(200, "text/plain", "OK");
+       HTTP.send(200, F("text/plain"), F("OK"));
 	   saveConfig();
     }    
-	else HTTP.send(404, "text/plain", "File not found");
+	else HTTP.send(404, F("text/plain"), "File not found");
 }
 
 void handle_index ()   {
@@ -963,12 +989,12 @@ void handle_index ()   {
     bool flg2 = false;
     if (HTTP.arg("index").toInt())
     {
-        flg = FileCopy ("/index/in2.gz" , "/index.json.gz");
-        flg2 = FileCopy ("/index/eff_su.gz" , "/SlavaUkraine.jpg.gz");
+        flg = FileCopy (F("/index/in2.gz") , F("/index.json.gz"));
+        flg2 = FileCopy (F("/index/eff_su.gz") , F("/SlavaUkraine.jpg.gz"));
     }
     else SPIFFS.format();
-    if (flg & flg2) HTTP.send(200, "text/plain", "OK");
-    else HTTP.send(404, "text/plain", "File not found");
+    if (flg & flg2) HTTP.send(200, F("text/plain"), F("OK"));
+    else HTTP.send(404, F("text/plain"), "File not found");
 }
 
 void handle_index2 ()   {
@@ -976,15 +1002,15 @@ void handle_index2 ()   {
     bool flg2 = false;
     if (HTTP.arg("index").toInt())
     {
-        flg = FileCopy ("/index/in_final.gz" , "/index.json.gz");
-        SPIFFS.remove("/effect2.ini");
+        flg = FileCopy (F("/index/in_final.gz") , F("/index.json.gz"));
+        SPIFFS.remove(F("/effect2.ini"));
     }
     else {
-        flg = FileCopy ("/index/end.gz" , "/index.json.gz");
-        flg2 = FileCopy ("/index/eff_krb.gz" , "/rkin.jpg.gz");
+        flg = FileCopy (F("/index/end.gz") , F("/index.json.gz"));
+        flg2 = FileCopy (F("/index/eff_krb.gz") , F("/rkin.jpg.gz"));
     }
-    if (flg & flg2) HTTP.send(200, "text/plain", "OK");
-    else HTTP.send(404, "text/plain", "File not found");
+    if (flg & flg2) HTTP.send(200, F("text/plain"), F("OK"));
+    else HTTP.send(404, F("text/plain"), "File not found");
 }
 
 
@@ -1003,7 +1029,7 @@ void get_time_manual ()   {
       stillUseNTP = false;
     #endif
     jsonWrite(configSetup, "time", (Get_Time(manualTimeShift+millis()/1000UL)));
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 #ifdef MP3_TX_PIN
@@ -1019,7 +1045,7 @@ void handle_on_sound ()   {
     }
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
-    HTTP.send(200, "text/plain", "OK");
+    HTTP.send(200, F("text/plain"), F("OK"));
 }
 
 void handle_volume ()   {
@@ -1028,7 +1054,7 @@ void handle_volume ()   {
     if (!dawnflag_sound) send_command(6,FEEDBACK,0,eff_volume); //Громкость
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 void handle_alarm_on_sound ()   {
@@ -1036,7 +1062,7 @@ void handle_alarm_on_sound ()   {
     jsonWrite(configSetup, "on_alm_snd", alarm_sound_on);
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
-    HTTP.send(200, "text/plain", "OK"); 
+    HTTP.send(200, F("text/plain"), F("OK")); 
 }
 
 void handle_alarm_volume ()   {
@@ -1045,7 +1071,7 @@ void handle_alarm_volume ()   {
     if (dawnflag_sound && alarm_sound_on) send_command(6,FEEDBACK,0,alarm_volume); //Громкость
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 void handle_day_advert_on_sound ()   {
@@ -1053,7 +1079,7 @@ void handle_day_advert_on_sound ()   {
     jsonWrite(configSetup, "on_day_adv", day_advert_sound_on);
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
-    HTTP.send(200, "text/plain", "OK");
+    HTTP.send(200, F("text/plain"), F("OK"));
 }
 
 void handle_night_advert_on_sound ()   {
@@ -1061,7 +1087,7 @@ void handle_night_advert_on_sound ()   {
     jsonWrite(configSetup, "on_night_adv", night_advert_sound_on);
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
-    HTTP.send(200, "text/plain", "OK");
+    HTTP.send(200, F("text/plain"), F("OK"));
 }
 
 void handle_alarm_advert_sound_on()   {
@@ -1069,7 +1095,7 @@ void handle_alarm_advert_sound_on()   {
     jsonWrite(configSetup, "on_alm_adv", alarm_advert_sound_on);
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
-    HTTP.send(200, "text/plain", "OK");
+    HTTP.send(200, F("text/plain"), F("OK"));
 }
 
 void handle_day_advert_volume ()   {
@@ -1078,7 +1104,7 @@ void handle_day_advert_volume ()   {
     if (advert_flag && day_advert_sound_on) send_command(6,FEEDBACK,0,day_advert_volume); //Громкость
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 void handle_night_advert_volume ()   {
@@ -1087,12 +1113,12 @@ void handle_night_advert_volume ()   {
     if (advert_flag && night_advert_sound_on) send_command(6,FEEDBACK,0,night_advert_volume); //Громкость
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 void handle_sound_set ()   {    // Выбор папок для озвучивания эффектов
     char i[4];
-    String configSound = readFile("sound_config.json", 2048); 
+    String configSound = readFile(F("sound_config.json"), 2048); 
     #ifdef GENERAL_DEBUG
     LOG.println (F("\nВыбор папок для озвучивания эффектов"));
     LOG.println(configSound);
@@ -1122,9 +1148,9 @@ void handle_sound_set ()   {    // Выбор папок для озвучива
     LOG.println (F("]"));
     #endif     
     if (!first_entry) {
-        writeFile("sound_config.json", configSound );
+        writeFile(F("sound_config.json"), configSound );
     }
-    HTTP.send(200, "text/plain", "OK");
+    HTTP.send(200, F("text/plain"), F("OK"));
 }
 
 void handle_folder_down ()   {
@@ -1135,7 +1161,7 @@ void handle_folder_down ()   {
      LOG.print (F("\nCurrent folder "));
      LOG.println (CurrentFolder);
     #endif
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 void handle_folder_up ()   {
@@ -1146,7 +1172,7 @@ void handle_folder_up ()   {
      LOG.print (F("\nCurrent folder "));
      LOG.println (CurrentFolder);
     #endif
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 void handle_folder_select()   {
@@ -1157,14 +1183,14 @@ void handle_folder_select()   {
      LOG.print (F("\nCurrent folder "));
      LOG.println (CurrentFolder);
     #endif
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 void handle_equalizer ()   {
     Equalizer = HTTP.arg("eq").toInt();
     jsonWrite(configSetup, "eq", Equalizer);
     send_command(0x07,FEEDBACK,0,Equalizer);  // Еквалайзер
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 void handle_alarm_fold_sel ()   {
@@ -1177,7 +1203,7 @@ void handle_alarm_fold_sel ()   {
         play_sound(mp3_folder);
         mp3_folder_last = mp3_folder;
     }
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 #endif //MP3_TX_PIN
@@ -1191,7 +1217,7 @@ void handle_current_limit ()   {
     LOG.print (F("\nЛимит тока current_limit = "));
     LOG.println(current_limit);
     #endif
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 
@@ -1200,7 +1226,7 @@ void handle_matrix_tipe ()   {
     jsonWrite(configSetup, "m_t", MATRIX_TYPE);
     bitSet (save_file_changes, 0);
     timeout_save_file_changes = millis();   
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 void handle_matrix_orientation ()   {
@@ -1209,14 +1235,14 @@ void handle_matrix_orientation ()   {
     jsonWrite(configSetup, "m_o", ORIENTATION);
     bitSet (save_file_changes, 0);
     timeout_save_file_changes = millis();   
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 void  handle_lang ()   {
     jsonWrite(configSetup, "lang", HTTP.arg("lang"));
     saveConfig();
     Lang_set();      
-    HTTP.send(200, "application/json", "{\"should_refresh\": \"true\"}");
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 void Lang_set ()   {
@@ -1230,7 +1256,7 @@ void Lang_set ()   {
     } 
 }
   
-bool FileCopy (String SourceFile , String TargetFile)   {
+bool FileCopy (const String& SourceFile , const String& TargetFile)   {
     File S_File = SPIFFS.open( SourceFile, "r");
     File T_File = SPIFFS.open( TargetFile, "w");
     if (!S_File || !T_File) 
@@ -1246,9 +1272,12 @@ bool FileCopy (String SourceFile , String TargetFile)   {
     return true;
 }
 
-void EffectList (String efflist )   {
-    efflist = efflist + jsonRead (configSetup, "lang") + ".ini";
-    File R_File = SPIFFS.open ( efflist, "r" );
+void EffectList (const String& efflist )   {
+    String effList = efflist;
+    effList.reserve(17);
+    effList += jsonRead (configSetup, "lang");
+    effList += F(".ini");
+    File R_File = SPIFFS.open ( effList, "r" );
     if (!R_File) LOG.println (F("Ошибка. Файл списка эффектов для передачи приложению не найден!"));
     String EffList = R_File.readString();
     #ifdef GENERAL_DEBUG
