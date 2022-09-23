@@ -14,13 +14,11 @@ uint32_t effTimer;
 
 void effectsTick()
 {
-  //bool flag = false;
   if (!dawnFlag)
   {
     // ------------------------------------- у эффектов до EFF_MATRIX (все перед Матрицей) бегунок Скорость не регулирует задержку между кадрами
-    if (ONflag )//if (ONflag && (millis() - effTimer >= ((currentMode >= EFF_MATRIX ) ? 256U - modes[currentMode].Speed : (currentMode <= EFF_OCEAN ) ? 50 : 15)))
+    if (ONflag )
     {
-      //effTimer = millis();
       switch (currentMode)
       {
 
@@ -137,18 +135,6 @@ void effectsTick()
         if (!timeSynched)
           noTimeWarning();
       #endif
-/*
-      #ifdef USE_MULTIPLE_LAMPS_CONTROL
-      if (repeat_multiple_lamp_control && flag)  {
-		  jsonWrite(configSetup, "eff_sel", currentMode);
-		  jsonWrite(configSetup, "br", modes[currentMode].Brightness);
-		  jsonWrite(configSetup, "sp", modes[currentMode].Speed);
-		  jsonWrite(configSetup, "sc", modes[currentMode].Scale);          
-          multiple_lamp_control ();
-          repeat_multiple_lamp_control = false;
-      }
-      #endif  //USE_MULTIPLE_LAMPS_CONTROL
-*/
     }
     #ifdef WARNING_IF_NO_TIME
     else if (!timeSynched && !ONflag && !((uint8_t)millis())){
@@ -192,24 +178,16 @@ void changePower()
     digitalWrite(MOSFET_PIN, !MOSFET_LEVEL);
     #endif
   }
-/*
-  #if defined(MOSFET_PIN) && defined(MOSFET_LEVEL)          // установка сигнала в пин, управляющий MOSFET транзистором, соответственно состоянию вкл/выкл матрицы
-  digitalWrite(MOSFET_PIN, ONflag ? MOSFET_LEVEL : !MOSFET_LEVEL);
-  #endif
-*/
   TimerManager::TimerRunning = false;
   TimerManager::TimerHasFired = false;
   TimerManager::TimeToFire = 0ULL;
   jsonWrite(configSetup, "tmr", 0);
-  //#ifdef AUTOMATIC_OFF_TIME      
     if (ONflag && AUTOMATIC_OFF_TIME) {
       TimerManager::TimerRunning = true;
       TimerManager::TimeToFire = millis() + AUTOMATIC_OFF_TIME;
-    }
-  //#endif    
-  
-  if (FavoritesManager::UseSavedFavoritesRunning == 0U)     // если выбрана опция Сохранять состояние (вкл/выкл) "избранного", то ни выключение модуля, ни выключение матрицы не сбрасывают текущее состояние (вкл/выкл) "избранного"
-  {
+    }  
+  if (!ONflag && FavoritesManager::UseSavedFavoritesRunning == 0U) // если выбрана опция Сохранять состояние (вкл/выкл) "избранного",
+  {                                                                // то ни выключение модуля, ни выключение матрицы не сбрасывают текущее состояние (вкл/выкл) "избранного"
       FavoritesManager::TurnFavoritesOff();
       jsonWrite(configSetup, "cycle_on", 0);
   }
@@ -262,7 +240,6 @@ void Eff_Tick () {
                   break;
               }
           } 
-		  //jsonWrite(configSetup, "eff_sel", currentMode);
 		  jsonWrite(configSetup, "br", modes[currentMode].Brightness);
 		  jsonWrite(configSetup, "sp", modes[currentMode].Speed);
 		  jsonWrite(configSetup, "sc", modes[currentMode].Scale);          

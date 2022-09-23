@@ -1,32 +1,30 @@
 void SSDP_init(void) {
-  String chipID = String( ESP.getChipId() ) + "-" + String( ESP.getFlashChipId() );
+  //String chipID = String( ESP.getChipId() ) + "-" + String( ESP.getFlashChipId() );
   // SSDP дескриптор
-  HTTP.on("/description.xml", HTTP_GET, []() {
+  HTTP.on(F("/description.xml"), HTTP_GET, []() {
     SSDP.schema(HTTP.client());
   });
-   // --------------------Получаем SSDP со страницы
-  HTTP.on("/ssdp", HTTP_GET, []() {
-    String ssdp = HTTP.arg("ssdp");
+  // --------------------Получаем SSDP со страницы
+  //HTTP.on("/ssdp", HTTP_GET, []() {
+    //String ssdp = HTTP.arg("ssdp");
  // configSetup=jsonWrite(configJson, "SSDP", ssdp);
-  jsonWrite(configSetup, "SSDP", ssdp);
-  SSDP.setName(jsonRead(configSetup, "SSDP"));
-  saveConfig();                 // Функция сохранения данных во Flash
-  LAMP_NAME = jsonRead(configSetup, "SSDP");
-  HTTP.send(200, "text/plain", "OK"); // отправляем ответ о выполнении
-  });
+  //jsonWrite(configSetup, "SSDP", HTTP.arg("ssdp"));
+  //saveConfig();                 // Функция сохранения данных во Flash
+  //HTTP.send(200, F("text/plain"), "OK"); // отправляем ответ о выполнении
+  //});
   //Если версия  2.0.0 закаментируйте следующую строчку
-  SSDP.setDeviceType("upnp:rootdevice");
-  SSDP.setSchemaURL("description.xml");
+  LAMP_NAME = jsonRead(configSetup, "SSDP");
+  SSDP.setName(jsonRead(configSetup, "SSDP"));
+  SSDP.setDeviceType(F("upnp:rootdevice"));
+  SSDP.setSchemaURL(F("description.xml"));
   SSDP.setHTTPPort(80);
   SSDP.setName(jsonRead(configSetup, "SSDP"));
-  SSDP.setSerialNumber(chipID);
+  SSDP.setSerialNumber(ESP.getChipId());
   SSDP.setURL("/");
-  SSDP.setModelName("gunner47_v2.2_web_v2.1_94in1");
-  SSDP.setModelNumber(chipID + "/" + jsonRead(configSetup, "SSDP"));
-  
-  
-  SSDP.setModelURL("https://community.alexgyver.ru/threads/wifi-lampa-budilnik-obsuzhdenie-proshivki-ot-gunner47.2418/page-72#post-33652");
-  SSDP.setManufacturer("alvikskor");
-  SSDP.setManufacturerURL("https://community.alexgyver.ru/threads/wifi-lampa-budilnik-obsuzhdenie-proshivki-ot-gunner47.2418/page-72#post-33652");
+  SSDP.setModelName(F("FieryLedLamp"));
+  SSDP.setModelNumber(jsonRead(configSetup, "SSDP") + FLL_VERSION);  
+  SSDP.setModelURL(F("https://github.com/alvikskor/FieryLedLampMultilingual"));
+  SSDP.setManufacturer(F("alvikskor"));
+  SSDP.setManufacturerURL(F("https://github.com/alvikskor/FieryLedLampMultilingual"));
   SSDP.begin();
 }

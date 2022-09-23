@@ -40,7 +40,7 @@ void timeTick()
         //save_file_changes = 0;
         switch (save_file_changes) {
         case 1:
-            writeFile("config.json", configSetup );
+            writeFile(F("config.json"), configSetup );
             save_file_changes = 0;
             break;
         case 2:
@@ -49,7 +49,7 @@ void timeTick()
             break;
         case 3:
             save_alarms();
-            writeFile("config.json", configSetup );
+            writeFile(F("config.json"), configSetup );
             save_file_changes = 0;
             break;
         case 4:
@@ -58,7 +58,7 @@ void timeTick()
             break;
         case 5:
             cycle_get();
-            writeFile("config.json", configSetup );
+            writeFile(F("config.json"), configSetup );
             save_file_changes = 0;
             break;
         case 6:
@@ -69,7 +69,7 @@ void timeTick()
         case 7:
             save_alarms();
             cycle_get();
-            writeFile("config.json", configSetup );
+            writeFile(F("config.json"), configSetup );
             save_file_changes = 0;
             break;
         }
@@ -312,7 +312,7 @@ void resolveNtpServerAddress(bool &ntpServerAddressResolved)              // ф�
     LOG.print(F("IP адрес NTP: "));
     LOG.println(ntpServerIp);
     #endif
-    LOG.println(F("Подключение к интернету отсутствует"));
+    LOG.println(F("\nПідключення до Інтернету відсутнє\n"));
     ntpServerAddressResolved = false;
   }
   else
@@ -322,7 +322,7 @@ void resolveNtpServerAddress(bool &ntpServerAddressResolved)              // ф�
     LOG.println(ntpServerIp);
     #endif
 
-    LOG.println(F("Подключение к интернету установлено"));
+    LOG.println(F("\nПідключення до Інтернету встановлено\n"));
     ntpServerAddressResolved = true;
   }
 }

@@ -22,7 +22,6 @@ void buttonTick()
     if (dawnFlag) {
         #ifdef MP3_TX_PIN
         if (alarm_sound_flag) {
-           //myDFPlayer.pause();
            send_command(0x0E,0,0,0); //Пауза
            mp3_stop = true;
            alarm_sound_flag = false;
@@ -44,18 +43,15 @@ void buttonTick()
     {
       ONflag = !ONflag;
 	  jsonWrite(configSetup, "Power", ONflag);
-      changePower();
     }
-    settChanged = true;
-    save_file_changes = 7;
-    if (ONflag)  {
-        eepromTimeout = millis();
-        timeout_save_file_changes = millis();
-    }
-    else {
-        eepromTimeout = millis() - EEPROM_WRITE_DELAY;
-        timeout_save_file_changes = millis() - SAVE_FILE_DELAY_TIMEOUT;
-    }
+        if (!ONflag)  {
+        //eepromTimeout = millis() - EEPROM_WRITE_DELAY; // eepromTimeout = millis(); // 
+            timeout_save_file_changes = millis() - SAVE_FILE_DELAY_TIMEOUT;
+        if (!FavoritesManager::FavoritesRunning) EepromManager::EepromPut(modes);
+            save_file_changes = 7;
+        }
+    else EepromManager::EepromGet(modes);
+    changePower();
     loadingFlag = true;
 
     #if (USE_MQTT)
@@ -94,8 +90,6 @@ void buttonTick()
       
   if (ONflag)    
   {
-    //String Name = "correct." + jsonRead (configSetup, "lang") + ".json";
-    //String Correct = readFile(Name, 2048);
     uint8_t temp = jsonReadtoInt(configSetup, "eff_sel");
     if (Favorit_only)
 	{
@@ -118,10 +112,6 @@ void buttonTick()
     jsonWrite(configSetup, "sc", modes[currentMode].Scale);
     FastLED.setBrightness(modes[currentMode].Brightness);
     loadingFlag = true;
-    settChanged = true;
-    eepromTimeout = millis();
-    //FastLED.clear();
-    //delay(1);
 
       if (random_on && FavoritesManager::FavoritesRunning)
         selectedSettings = 1U;
@@ -144,8 +134,6 @@ void buttonTick()
   // трёхкратное нажатие
   if (ONflag && clickCount == 3U)
   {
-    //String Name = "correct." + jsonRead (configSetup, "lang") + ".json";
-    //String Correct = readFile(Name, 2048);
     uint8_t temp = jsonReadtoInt(configSetup, "eff_sel");
 	if (Favorit_only) 
 	{
@@ -168,10 +156,6 @@ void buttonTick()
     jsonWrite(configSetup, "sc", modes[currentMode].Scale);
     FastLED.setBrightness(modes[currentMode].Brightness);
     loadingFlag = true;
-    settChanged = true;
-    eepromTimeout = millis();
-    //FastLED.clear();
-    //delay(1);
 
       if (random_on && FavoritesManager::FavoritesRunning)
         selectedSettings = 1U;
@@ -194,8 +178,6 @@ void buttonTick()
   // четырёхкратное нажатие
   if (clickCount == 4U)
   {
-  
-	//bool ota = false;
     #ifdef OTA
     if (otaManager.RequestOtaUpdate())
     {
@@ -206,10 +188,7 @@ void buttonTick()
 	  jsonWrite(configSetup, "br", modes[currentMode].Brightness);
       jsonWrite(configSetup, "sp", modes[currentMode].Speed);
       jsonWrite(configSetup, "sc", modes[currentMode].Scale);
-      //FastLED.clear();
-      //delay(1);
       changePower();
-	  //ota = true;
     }
     else
     #endif
@@ -222,8 +201,7 @@ void buttonTick()
     ONflag = true;
     changePower();
 	jsonWrite(configSetup, "Power", ONflag);
-    settChanged = true;
-    eepromTimeout = millis();
+    jsonWrite(configSetup, "tmr", 1);
     #ifdef USE_BLYNK
     updateRemoteBlynkParams();
     #endif
@@ -314,7 +292,6 @@ void buttonTick()
   #endif  //MP3_TX_PIN
 
   // кнопка только начала удерживаться
-  //if (ONflag && touch.isHolded())
   if (touch.isHolded()) // пускай для выключенной лампы удержание кнопки включает белую лампу
   {
     brightDirection = !brightDirection;
@@ -323,7 +300,6 @@ void buttonTick()
 
 
   // кнопка нажата и удерживается
-//  if (ONflag && touch.isStep())
 if (touch.isStep())
   if (ONflag && !Button_Holding)
   {
@@ -345,6 +321,10 @@ if (touch.isStep())
           1, 255);
 		jsonWrite(configSetup, "br", modes[currentMode].Brightness);
         FastLED.setBrightness(modes[currentMode].Brightness);
+        #ifdef TM1637_USE
+        DisplayFlag = 3;
+        Display_Timer(modes[currentMode].Brightness);
+        #endif    
 
         #ifdef GENERAL_DEBUG
         LOG.printf_P(PSTR("Новое значение яркости: %d\n"), modes[currentMode].Brightness);
@@ -368,6 +348,10 @@ if (touch.isStep())
         #ifdef USE_MULTIPLE_LAMPS_CONTROL
         repeat_multiple_lamp_control = true;
         #endif  //USE_MULTIPLE_LAMPS_CONTROL
+        #ifdef TM1637_USE
+        DisplayFlag = 3;
+        Display_Timer(modes[currentMode].Speed);
+        #endif    
 
         break;
       }
@@ -384,6 +368,10 @@ if (touch.isStep())
         #ifdef USE_MULTIPLE_LAMPS_CONTROL
         repeat_multiple_lamp_control = true;
         #endif  //USE_MULTIPLE_LAMPS_CONTROL
+        #ifdef TM1637_USE
+        DisplayFlag = 3;
+        Display_Timer(modes[currentMode].Scale);
+        #endif
 
         break;
       }
@@ -397,8 +385,7 @@ if (touch.isStep())
 		ONflag = true;
 		changePower();
 		jsonWrite(configSetup, "Power", ONflag);
-		settChanged = true;
-		eepromTimeout = millis();
+        jsonWrite(configSetup, "tmr", 1);
 		#ifdef USE_BLYNK
 		updateRemoteBlynkParams();
 		#endif
@@ -411,9 +398,6 @@ if (touch.isStep())
       default:
         break;
     }		
-
-    settChanged = true;
-    eepromTimeout = millis();
   }
   else
   {
@@ -443,8 +427,6 @@ if (touch.isStep())
 		ONflag = true;
 		jsonWrite(configSetup, "Power", ONflag);
 		changePower();
-		settChanged = true;
-		eepromTimeout = millis();
 		#ifdef USE_BLYNK
 		updateRemoteBlynkParams();
 		#endif
@@ -459,8 +441,7 @@ if (touch.isStep())
 		ONflag = true;
 		changePower();
 		jsonWrite(configSetup, "Power", ONflag);
-		settChanged = true;
-		eepromTimeout = millis();
+        jsonWrite(configSetup, "tmr", 1);
 		#ifdef USE_BLYNK
 		updateRemoteBlynkParams();
 		#endif
