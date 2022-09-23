@@ -30,10 +30,10 @@ void IR_Receive_Handle ()   {       // Обробка прийнятого си�
         jsonWrite(configSetup, "sc", modes[currentMode].Scale);
         FastLED.setBrightness(modes[currentMode].Brightness);
         loadingFlag = true;
-        settChanged = true;
-        eepromTimeout = millis();
-        timeout_save_file_changes = millis();
-        bitSet (save_file_changes, 0);
+        //settChanged = true;
+        //eepromTimeout = millis();
+        //timeout_save_file_changes = millis();
+        //bitSet (save_file_changes, 0);
         if (random_on && FavoritesManager::FavoritesRunning)
             selectedSettings = 1U;
         #if (USE_MQTT)
@@ -331,23 +331,16 @@ void IR_Power()   {
     }
     else
     {
-    //Serial.print ("До ONflag=");
-    //Serial.println (ONflag);
         ONflag = !ONflag;
 	    jsonWrite(configSetup, "Power", ONflag);
+        if (!ONflag)  {
+            //eepromTimeout = millis() - EEPROM_WRITE_DELAY;
+            timeout_save_file_changes = millis() - SAVE_FILE_DELAY_TIMEOUT;
+            if (!FavoritesManager::FavoritesRunning) EepromManager::EepromPut(modes);
+            save_file_changes = 7;
+        }
+        else EepromManager::EepromGet(modes);
         changePower();
-    //Serial.print ("После ONflag=");
-   // Serial.println (ONflag);
-    }
-    settChanged = true;
-    save_file_changes = 7;
-    if (ONflag)  {
-        eepromTimeout = millis();
-        timeout_save_file_changes = millis();
-    }
-    else {
-        eepromTimeout = millis() - EEPROM_WRITE_DELAY;
-        timeout_save_file_changes = millis() - SAVE_FILE_DELAY_TIMEOUT;
     }
     loadingFlag = true;
 
@@ -436,8 +429,8 @@ void Prev_Next_eff(bool direction)   {
     jsonWrite(configSetup, "sc", modes[currentMode].Scale);
     FastLED.setBrightness(modes[currentMode].Brightness);
     loadingFlag = true;
-    settChanged = true;
-    eepromTimeout = millis();
+    //settChanged = true;
+    //eepromTimeout = millis();
     #ifdef TM1637_USE
     DisplayFlag = 0;
     Display_Timer();
@@ -465,8 +458,15 @@ void Cycle_on_off()   {
         jsonReadtoInt(configSetup, "cycle_on") == 0? tmp = 1 : tmp = 0;
 	    jsonWrite(configSetup, "cycle_on", tmp);
 	    FavoritesManager::FavoritesRunning = tmp;
-        if (tmp) showWarning(CRGB::Blue, 500, 250U);        // мигание синим цветом 0.5 секунды
-        else showWarning(CRGB::Red, 500, 250U);        // мигание красным цветом 0.5 секунды
+        if (tmp){
+            showWarning(CRGB::Blue, 500, 250U);        // мигание синим цветом 0.5 секунды
+            EepromManager::EepromPut(modes);
+            //eepromTimeout = millis() - EEPROM_WRITE_DELAY;
+        }
+        else {
+            showWarning(CRGB::Red, 500, 250U);        // мигание красным цветом 0.5 секунды
+            EepromManager::EepromGet(modes);
+        }
         #if (USE_MQTT)
         if (espMode == 1U)
         {
@@ -488,10 +488,10 @@ void Bright_Up_Down(bool direction)   {
     #ifdef GENERAL_DEBUG
         LOG.printf_P(PSTR("Новое значение яркости: %d\n"), modes[currentMode].Brightness);
     #endif
-    timeout_save_file_changes = millis();
-    bitSet (save_file_changes, 0);
-    settChanged = true;
-    eepromTimeout = millis();
+    //timeout_save_file_changes = millis();
+    //bitSet (save_file_changes, 0);
+    //settChanged = true;
+    //eepromTimeout = millis();
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
         repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
@@ -515,10 +515,10 @@ void Speed_Up_Down(bool direction)   {
     #ifdef GENERAL_DEBUG
         LOG.printf_P(PSTR("Новое значение скорости: %d\n"), modes[currentMode].Speed);
     #endif
-    timeout_save_file_changes = millis();
-    bitSet (save_file_changes, 0);
-    settChanged = true;
-    eepromTimeout = millis();
+    //timeout_save_file_changes = millis();
+    //bitSet (save_file_changes, 0);
+    //settChanged = true;
+    //eepromTimeout = millis();
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
         repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
@@ -543,10 +543,10 @@ void Scale_Up_Down(bool direction)   {
     #ifdef GENERAL_DEBUG
         LOG.printf_P(PSTR("Новое значение масштаба: %d\n"), modes[currentMode].Scale);
     #endif
-    timeout_save_file_changes = millis();
-    bitSet (save_file_changes, 0);
-    settChanged = true;
-    eepromTimeout = millis();
+    //timeout_save_file_changes = millis();
+    //bitSet (save_file_changes, 0);
+    //settChanged = true;
+    //eepromTimeout = millis();
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
         repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
@@ -567,8 +567,8 @@ void Volum_Up_Down (bool direction)   {
     DisplayFlag = 3;
     Display_Timer(eff_volume);
     #endif
-    timeout_save_file_changes = millis();
-    bitSet (save_file_changes, 0);
+    //timeout_save_file_changes = millis();
+    //bitSet (save_file_changes, 0);
     #endif  //MP3_TX_PIN
 }
 
@@ -677,10 +677,8 @@ void Digit_Handle (uint8_t digit)   {
         jsonWrite(configSetup, "sc", modes[currentMode].Scale);
         FastLED.setBrightness(modes[currentMode].Brightness);
         loadingFlag = true;
-        settChanged = true;
-        eepromTimeout = millis();
-        timeout_save_file_changes = millis();
-        bitSet (save_file_changes, 0);
+        //timeout_save_file_changes = millis();
+        //bitSet (save_file_changes, 0);
         if (random_on && FavoritesManager::FavoritesRunning)
             selectedSettings = 1U;
         #if (USE_MQTT)

@@ -2235,7 +2235,6 @@ void whiteColorStripeRoutine()
 }
 
 // ------------- мигающий цвет (не эффект! используется для отображения краткосрочного предупреждения; блокирующий код!) -------------
-#define WARNING_BRIGHTNESS    (10U)                         // яркость вспышки
 void showWarning(
   CRGB color,                                               /* цвет вспышки                                                 */
   uint32_t duration,                                        /* продолжительность отображения предупреждения (общее время)   */
@@ -2247,7 +2246,7 @@ void showWarning(
 
   uint32_t blinkTimer = millis();
   enum BlinkState { OFF = 0, ON = 1 } blinkState = BlinkState::OFF;
-  FastLED.setBrightness(WARNING_BRIGHTNESS);                // установка яркости для предупреждения
+  FastLED.setBrightness(day_night ? WARNING_BRI_DAY : WARNING_BRI_NIGHT); //FastLED.setBrightness(WARNING_BRIGHTNESS);  // установка яркости для предупреждения
   FastLED.clear();
   delay(2);
   FastLED.show();
@@ -2263,7 +2262,7 @@ void showWarning(
     {
       blinkTimer = millis();
       blinkState = (BlinkState)!blinkState;
-      FastLED.setBrightness(blinkState == BlinkState::OFF ? 0 : WARNING_BRIGHTNESS);
+      FastLED.setBrightness(blinkState == BlinkState::OFF ? 0 : day_night ? WARNING_BRI_DAY : WARNING_BRI_NIGHT); //FastLED.setBrightness(blinkState == BlinkState::OFF ? 0 : WARNING_BRIGHTNESS);
       delay(1);
       FastLED.show();
     }

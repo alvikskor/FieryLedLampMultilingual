@@ -44,8 +44,8 @@ void parseUDP()
 void updateSets()
 {
       loadingFlag = true;
-      settChanged = true;
-      eepromTimeout = millis();
+      //settChanged = true;
+      //eepromTimeout = millis();
 
       #if (USE_MQTT)
       if (espMode == 1U)
@@ -97,7 +97,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
 #endif    
     else if (!strncmp_P(inputBuffer, PSTR("EFF"), 3))
     {
-      EepromManager::SaveModesSettings(&currentMode, modes);
+      //EepromManager::SaveModesSettings(&currentMode, modes);
       memcpy(buff, &inputBuffer[3], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 4
       uint8_t temp = (uint8_t)atoi(buff);
       currentMode = eff_num_correct[temp];
@@ -230,8 +230,8 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       #endif  //USE_MULTIPLE_LAMPS_CONTROL
       FastLED.setBrightness(modes[currentMode].Brightness);
       //loadingFlag = true; //не хорошо делать перезапуск эффекта после изменения яркости, но в некоторых эффектах от чётности яркости мог бы зависеть внешний вид
-      settChanged = true;
-      eepromTimeout = millis();
+      //settChanged = true;
+      //eepromTimeout = millis();
       sendCurrent(inputBuffer);
 
       #if (USE_MQTT)
@@ -291,6 +291,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       else {
         ONflag = true;
 		jsonWrite(configSetup, "Power", ONflag);
+        EepromManager::EepromGet(modes);
         updateSets();
         changePower();
         loadingFlag = true;
@@ -319,9 +320,9 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       else {
         ONflag = false;
 		jsonWrite(configSetup, "Power", ONflag);
-        settChanged = true;
+        if (!FavoritesManager::FavoritesRunning) EepromManager::EepromPut(modes);
         save_file_changes = 7;
-        eepromTimeout = millis() - EEPROM_WRITE_DELAY;
+        //eepromTimeout = millis() - EEPROM_WRITE_DELAY;
         timeout_save_file_changes = millis() - SAVE_FILE_DELAY_TIMEOUT;
         changePower();
         loadingFlag = true;
@@ -450,14 +451,18 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       if (!strncmp_P(inputBuffer, PSTR("FAV_SET"), 7))
       {
         FavoritesManager::ConfigureFavorites(inputBuffer);
+        if (!ONflag) FavoritesManager::FavoritesRunning = 0;
         FavoritesManager::SetStatus(inputBuffer);
-        //settChanged = true;
-        //eepromTimeout = millis();
         jsonWrite(configSetup, "cycle_on", FavoritesManager::FavoritesRunning);  // чтение состояния настроек режима Цикл 
         jsonWrite(configSetup, "time_eff", FavoritesManager::Interval);          // вкл/выкл,время переключения,дисперсия,вкл цикла после перезагрузки
         jsonWrite(configSetup, "disp", FavoritesManager::Dispersion);
         jsonWrite(configSetup, "cycle_allwase", FavoritesManager::UseSavedFavoritesRunning);
         //cycle_get();  // запмсь выбранных эффектов
+        if (FavoritesManager::FavoritesRunning){
+        EepromManager::EepromPut(modes);
+        //eepromTimeout = millis() - EEPROM_WRITE_DELAY;
+        }
+        else EepromManager::EepromGet(modes);
         timeout_save_file_changes = millis();
         bitSet (save_file_changes, 2);
     
@@ -650,10 +655,10 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
           for (uint8_t address = 0; address < 64; address ++){
               EEPROM.put((EEPROM_PASSWORD_START_ADDRESS + address), Pass_STA[address]);
               EEPROM.commit();
-              if (Pass_STA[address] == NULL) break;
+              if (Pass_STA[address] == 0) break;
           }
           #ifdef GENERAL_DEBUG
-          LOG.print("\Pass_STA = ");
+          LOG.print("\nPass_STA = ");
           LOG.println(Pass_STA );
           #endif
           delete [] Pass_STA;

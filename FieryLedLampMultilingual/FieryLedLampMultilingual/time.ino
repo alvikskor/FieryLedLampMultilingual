@@ -312,7 +312,7 @@ void resolveNtpServerAddress(bool &ntpServerAddressResolved)              // ф�
     LOG.print(F("IP адрес NTP: "));
     LOG.println(ntpServerIp);
     #endif
-    LOG.println(F("Подключение к интернету отсутствует"));
+    LOG.println(F("\nПідключення до Інтернету відсутнє\n"));
     ntpServerAddressResolved = false;
   }
   else
@@ -322,7 +322,7 @@ void resolveNtpServerAddress(bool &ntpServerAddressResolved)              // ф�
     LOG.println(ntpServerIp);
     #endif
 
-    LOG.println(F("Подключение к интернету установлено"));
+    LOG.println(F("\nПідключення до Інтернету встановлено\n"));
     ntpServerAddressResolved = true;
   }
 }
