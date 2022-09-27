@@ -44,12 +44,12 @@ void buttonTick()
       ONflag = !ONflag;
 	  jsonWrite(configSetup, "Power", ONflag);
     }
-        if (!ONflag)  {
+    if (!ONflag)  {
         //eepromTimeout = millis() - EEPROM_WRITE_DELAY; // eepromTimeout = millis(); // 
-            timeout_save_file_changes = millis() - SAVE_FILE_DELAY_TIMEOUT;
+        timeout_save_file_changes = millis() - SAVE_FILE_DELAY_TIMEOUT;
         if (!FavoritesManager::FavoritesRunning) EepromManager::EepromPut(modes);
-            save_file_changes = 7;
-        }
+        save_file_changes = 7;
+    }
     else EepromManager::EepromGet(modes);
     changePower();
     loadingFlag = true;
@@ -198,6 +198,7 @@ void buttonTick()
 	{
     // мигать об успехе операции лучше до вызова changePower(), иначе сперва мелькнут кадры текущего эффекта
     showWarning(CRGB::Blue, 1000, 250U);                    // мигание синим цветом 1 секунду
+    if (!ONflag) EepromManager::EepromGet(modes);
     ONflag = true;
     changePower();
 	jsonWrite(configSetup, "Power", ONflag);
@@ -438,6 +439,7 @@ if (touch.isStep())
 		Button_Holding = true;
 		// мигать об успехе операции лучше до вызова changePower(), иначе сперва мелькнут кадры текущего эффекта
 		showWarning(CRGB::Blue, 1500U, 250U);                    // мигание синим цветом 1 секунду
+        EepromManager::EepromGet(modes);
 		ONflag = true;
 		changePower();
 		jsonWrite(configSetup, "Power", ONflag);
