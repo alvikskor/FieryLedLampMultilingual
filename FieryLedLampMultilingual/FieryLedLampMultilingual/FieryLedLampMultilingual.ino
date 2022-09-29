@@ -507,7 +507,7 @@ void setup()  //================================================================
   modes[currentMode].Brightness = jsonReadtoInt (configSetup, "br");
   modes[currentMode].Speed = jsonReadtoInt (configSetup, "sp");
   modes[currentMode].Scale = jsonReadtoInt (configSetup, "sc");
-
+/*
   {
     File file = SPIFFS.open(F("/index.json.gz"),"r");
     if ((EEPROM.read(EEPROM_FIRST_RUN_ADDRESS+1)!= MODE_AMOUNT) && (file.size() > 700UL))
@@ -521,7 +521,7 @@ void setup()  //================================================================
     }
     file.close();
   }
-
+*/
   first_entry = 1;
   handle_alarm ();
   first_entry = 0;
