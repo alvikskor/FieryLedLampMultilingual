@@ -71,7 +71,7 @@
  #endif  //MP3_DEBUG
 #endif  //MP3_TX_PIN
 #ifdef IR_RECEIVER_USE
- #include <IRremoteESP8266.h>
+ #include <IRremoteESP8266.h>  // https://github.com/crankyoldgit/IRremoteESP8266
  #include <IRrecv.h>
  #include "IR_Receiver.h"
 #endif  //IR_RECEIVER_USE
