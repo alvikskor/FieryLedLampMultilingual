@@ -56,248 +56,312 @@ void IR_Receive_Button_Handle()   {     //Обробка прийнятих ко
         if (IR_Data_Ready != 2)  // No repeat
         IR_Power();
         break;
+        #ifdef USE_2_PULTS
         case IR2_ON_OFF:
         if (IR_Data_Ready != 2)  // No repeat
         IR_Power();
         break;
+        #endif //USE_2_PULTS
         
         case IR_MUTE:
         if (IR_Data_Ready != 2)  // No repeat
         Mute();
         break;
+        #ifdef USE_2_PULTS
         case IR2_MUTE:
         if (IR_Data_Ready != 2)  // No repeat
         Mute();
         break;
+        #endif //USE_2_PULTS
         
         case IR_PREV:
         Prev_Next_eff(false);
         break;
+        #ifdef USE_2_PULTS
         case IR2_PREV:
         Prev_Next_eff(false);
         break;
+        #endif //USE_2_PULTS
         case IR_NEXT:
         Prev_Next_eff(true);
         break;
+        #ifdef USE_2_PULTS
         case IR2_NEXT:
         Prev_Next_eff(true);
         break;
+        #endif //USE_2_PULTS
         
         case IR_CYCLE:
         if (IR_Data_Ready != 2)  // No repeat
         Cycle_on_off();
         break;
+        #ifdef USE_2_PULTS
         case IR2_CYCLE:
         if (IR_Data_Ready != 2)  // No repeat
         Cycle_on_off();
         break;
-        
+        #endif //USE_2_PULTS
+       
         case IR_BR_UP:
         Bright_Up_Down(true);
         break;
+        #ifdef USE_2_PULTS
         case IR2_BR_UP:
         Bright_Up_Down(true);
         break;
+        #endif //USE_2_PULTS
         case IR_BR_DOWN:
         Bright_Up_Down(false);
         break;
+        #ifdef USE_2_PULTS
         case IR2_BR_DOWN:
         Bright_Up_Down(false);
         break;
+        #endif //USE_2_PULTS
        
         case IR_SP_UP:
         Speed_Up_Down(true);
         break;
+        #ifdef USE_2_PULTS
         case IR2_SP_UP:
         Speed_Up_Down(true);
         break;
-        case IR_SP_DOWN:
+         #endif //USE_2_PULTS
+       case IR_SP_DOWN:
         Speed_Up_Down(false);
         break;
+        #ifdef USE_2_PULTS
         case IR2_SP_DOWN:
         Speed_Up_Down(false);
         break;
+        #endif //USE_2_PULTS
        
         case IR_SC_UP:
         Scale_Up_Down(true);
         break;
+        #ifdef USE_2_PULTS
         case IR2_SC_UP:
         Scale_Up_Down(true);
         break;
-        case IR_SC_DOWN:
+        #endif //USE_2_PULTS
+       case IR_SC_DOWN:
         Scale_Up_Down(false);
         break;
+        #ifdef USE_2_PULTS
         case IR2_SC_DOWN:
         Scale_Up_Down(false);
         break;
+        #endif //USE_2_PULTS
        
         case IR_VOL_UP:
         Volum_Up_Down(true);
         break;
+        #ifdef USE_2_PULTS
         case IR2_VOL_UP:
         Volum_Up_Down(true);
         break;
+        #endif //USE_2_PULTS
         case IR_VOL_DOWN:
         Volum_Up_Down(false);
         break;
+        #ifdef USE_2_PULTS
         case IR2_VOL_DOWN:
         Volum_Up_Down(false);
         break;
+        #endif //USE_2_PULTS
         
         case IR_TIME:
         if (IR_Data_Ready != 2)  // No repeat
         printTime(thisTime, true, ONflag);
         break;
+        #ifdef USE_2_PULTS
         case IR2_TIME:
         if (IR_Data_Ready != 2)  // No repeat
         printTime(thisTime, true, ONflag);
         break;
+        #endif //USE_2_PULTS
         
         case IR_IP:
         if (IR_Data_Ready != 2)  // No repeat
         Print_IP();
         break;
+        #ifdef USE_2_PULTS
         case IR2_IP:
         if (IR_Data_Ready != 2)  // No repeat
         Print_IP();
         break;
+        #endif //USE_2_PULTS
         
         case IR_FOLD_PREV:
         Folder_Next_Prev(false);
         break;
+        #ifdef USE_2_PULTS
         case IR2_FOLD_PREV:
         Folder_Next_Prev(false);
         break;
-        case IR_FOLD_NEXT:
+        #endif //USE_2_PULTS
+       case IR_FOLD_NEXT:
         Folder_Next_Prev(true);
         break;
+        #ifdef USE_2_PULTS
         case IR2_FOLD_NEXT:
         Folder_Next_Prev(true);
         break;
+        #endif //USE_2_PULTS
         
         case IR_RND:
         if (IR_Data_Ready != 2)  // No repeat
         Current_Eff_Rnd_Def(true);
         break;
+        #ifdef USE_2_PULTS
         case IR2_RND:
         if (IR_Data_Ready != 2)  // No repeat
         Current_Eff_Rnd_Def(true);
         break;
+        #endif //USE_2_PULTS
         case IR_DEF:
         if (IR_Data_Ready != 2)  // No repeat
         Current_Eff_Rnd_Def(false);
         break;
+        #ifdef USE_2_PULTS
         case IR2_DEF :
         if (IR_Data_Ready != 2)  // No repeat
         Current_Eff_Rnd_Def(false);
         break;
+        #endif //USE_2_PULTS
         
         case IR_EQ:
         if (IR_Data_Ready != 2)  // No repeat
         IR_Equalizer();
         break;
+        #ifdef USE_2_PULTS
         case IR2_EQ:
         if (IR_Data_Ready != 2)  // No repeat
         IR_Equalizer();
         break;
+        #endif //USE_2_PULTS
         
         case IR_FAV_ADD:
         if (IR_Data_Ready != 2)  // No repeat
         Favorit_Add_Del(true);
         break;
+        #ifdef USE_2_PULTS
         case IR2_FAV_ADD:
         if (IR_Data_Ready != 2)  // No repeat
         Favorit_Add_Del(true);
         break;
+        #endif //USE_2_PULTS
         case IR_FAV_DEL:
         if (IR_Data_Ready != 2)  // No repeat
         Favorit_Add_Del(false);
         break;
+        #ifdef USE_2_PULTS
         case IR2_FAV_DEL :
         if (IR_Data_Ready != 2)  // No repeat
         Favorit_Add_Del(false);
         break;
+        #endif //USE_2_PULTS
 
         case IR_1:
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(1);
         break;
+        #ifdef USE_2_PULTS
         case IR2_1 :
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(1);
         break;
+        #endif //USE_2_PULTS
         case IR_2:
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(2);
         break;
+        #ifdef USE_2_PULTS
         case IR2_2 :
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(2);
         break;
+        #endif //USE_2_PULTS
         case IR_3:
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(3);
         break;
+        #ifdef USE_2_PULTS
         case IR2_3 :
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(3);
         break;
+        #endif //USE_2_PULTS
         case IR_4:
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(4);
         break;
+        #ifdef USE_2_PULTS
         case IR2_4 :
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(4);
         break;
+        #endif //USE_2_PULTS
         case IR_5:
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(5);
         break;
+        #ifdef USE_2_PULTS
         case IR2_5 :
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(5);
         break;
+        #endif //USE_2_PULTS
         case IR_6:
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(6);
         break;
-        case IR2_6 :
+        #ifdef USE_2_PULTS
+       case IR2_6 :
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(6);
         break;
+        #endif //USE_2_PULTS
         case IR_7:
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(7);
         break;
-        case IR2_7 :
+        #ifdef USE_2_PULTS
+       case IR2_7 :
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(7);
         break;
+        #endif //USE_2_PULTS
         case IR_8:
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(8);
         break;
+        #ifdef USE_2_PULTS
         case IR2_8 :
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(8);
         break;
+        #endif //USE_2_PULTS
         case IR_9:
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(9);
         break;
+        #ifdef USE_2_PULTS
         case IR2_9 :
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(9);
         break;
+        #endif //USE_2_PULTS
         case IR_0:
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(0);
         break;
+        #ifdef USE_2_PULTS
         case IR2_0 :
         if (IR_Data_Ready != 2)  // No repeat
         Digit_Handle(0);
         break;
+        #endif //USE_2_PULTS
 
         default: break;
     }

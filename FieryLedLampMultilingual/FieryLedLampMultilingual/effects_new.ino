@@ -2193,3 +2193,121 @@ void Contacts() {
     }
   }
 }
+
+// ============ Magic Lantern ===========
+//             © SlingMaster
+//            Чарівний Ліхтар
+// --------------------------------------
+void MagicLantern() {
+  static uint8_t saturation;
+  static uint8_t brightness;
+  static uint8_t low_br;
+  uint8_t delta;
+  const uint8_t PADDING = HEIGHT * 0.25;
+  const uint8_t WARM_LIGHT = 55U;
+  const uint8_t STEP = 4U;
+  if (loadingFlag) {
+#if defined(USE_RANDOM_SETS_IN_APP) || defined(RANDOM_SETTINGS_IN_CYCLE_MODE)
+    if (selectedSettings) {
+      //                     scale | speed 210
+      setModeSettings(random8(100U), random8(40, 200U));
+    }
+#endif
+    loadingFlag = false;
+    deltaValue = 0;
+    step = deltaValue;
+    if (modes[currentMode].Speed > 52) {
+      // brightness = 50 + modes[currentMode].Speed;
+      brightness = map(modes[currentMode].Speed, 1, 255, 50U, 250U);
+      low_br = 50U;
+    } else {
+      brightness = 0U;
+      low_br = 0U;
+    }
+    saturation = (modes[currentMode].Scale > 50U) ? 64U : 0U;
+    if (abs (70 - modes[currentMode].Scale) <= 5) saturation = 170U;
+    FastLED.clear();
+
+  }
+  dimAll(170);
+  hue = (modes[currentMode].Scale > 95) ? floor(step / 32) * 32U : modes[currentMode].Scale * 2.55;
+
+  // ------
+  for (uint8_t x = 0U; x < WIDTH + 1 ; x++) {
+
+    // light ---
+    if (low_br > 0) {
+      gradientVertical( x - deltaValue, CENTER_Y_MAJOR, x + 1U - deltaValue, HEIGHT - PADDING - 1,  WARM_LIGHT, WARM_LIGHT, brightness, low_br, saturation);
+      gradientVertical( WIDTH - x + deltaValue, CENTER_Y_MAJOR, WIDTH - x + 1U + deltaValue, HEIGHT - PADDING - 1,  WARM_LIGHT, WARM_LIGHT, brightness, low_br, saturation);
+      gradientVertical( x - deltaValue, PADDING + 1, x + 1U - deltaValue, CENTER_Y_MAJOR, WARM_LIGHT, WARM_LIGHT, low_br + 10, brightness, saturation);
+      gradientVertical( WIDTH - x + deltaValue, PADDING + 1, WIDTH - x + 1U + deltaValue, CENTER_Y_MAJOR, WARM_LIGHT, WARM_LIGHT, low_br + 10, brightness, saturation);
+    } else {
+      if (x % (STEP + 1) == 0) {
+        leds[XY(random8(WIDTH), random8(PADDING + 2, HEIGHT - PADDING - 2))] = CHSV(step - 32U, random8(128U, 255U), 255U);
+      }
+      if ((modes[currentMode].Speed < 25) & (low_br == 0)) {
+        deltaValue = 0;
+        if (x % 2 != 0) {
+          gradientVertical( x - deltaValue, HEIGHT - PADDING, x + 1U - deltaValue, HEIGHT,  hue, hue + 2, 64U, 20U, 255U);
+          gradientVertical( (WIDTH - x + deltaValue), 0U,  (WIDTH - x + 1U + deltaValue), PADDING,  hue, hue, 42U, 64U, 255U);
+        }
+        //        deltaValue = 0;
+      }
+    }
+    if (x % STEP == 0) {
+      // body --
+      gradientVertical( x - deltaValue, HEIGHT - PADDING, x + 1U - deltaValue, HEIGHT,  hue, hue + 2, 255U, 20U, 255U);
+      gradientVertical( (WIDTH - x + deltaValue), 0U,  (WIDTH - x + 1U + deltaValue), PADDING,  hue, hue, 42U, 255U, 255U);
+    }
+  }
+  // ------
+
+  deltaValue++;
+  if (deltaValue >= STEP) {
+    deltaValue = 0;
+  }
+
+  step++;
+}
+
+// ============ Octopus ===========
+//        © Stepko and Sutaburosu
+//    Adapted and modifed © alvikskor
+//             Восьминіг
+// --------------------------------------
+//Idea from https://www.youtube.com/watch?v=HsA-6KIbgto&ab_channel=GreatScott%21
+
+void Octopus() {
+    
+  //FastLED.clear();
+  if (loadingFlag) {
+#if defined(USE_RANDOM_SETS_IN_APP) || defined(RANDOM_SETTINGS_IN_CYCLE_MODE)
+    if (selectedSettings) {
+      // scale | speed
+      setModeSettings(random(10U, 101U), random(150U, 255U));
+    }
+#endif
+    loadingFlag = false;
+    for (int8_t x = -CENTER_X_MAJOR; x < CENTER_X_MAJOR + (WIDTH % 2); x++) {
+      for (int8_t y = -CENTER_Y_MAJOR; y < CENTER_Y_MAJOR + (HEIGHT % 2); y++) {
+        noise3d[0][x + CENTER_X_MAJOR][y + CENTER_Y_MAJOR] = (atan2(x, y) / PI) * 128 + 127; // thanks ldirko
+        noise3d[1][x + CENTER_X_MAJOR][y + CENTER_Y_MAJOR] = hypot(x, y); // thanks Sutaburosu
+      }
+    }
+  }
+  
+  uint8_t legs = modes[currentMode].Scale / 10;
+  uint16_t color_speed;
+  step = modes[currentMode].Scale % 10;
+  if (step < 5) color_speed = scale / (3 - step/2);
+  else color_speed = scale * (step/2 - 1);
+  scale ++;
+  for (uint8_t x = 0; x < WIDTH; x++) {
+    for (uint8_t y = 0; y < HEIGHT; y++) {
+      byte angle = noise3d[0][x][y];
+      byte radius = noise3d[1][x][y];
+      leds[XY(x, y)] = CHSV(color_speed - radius * (255 / WIDTH), 255,sin8(sin8((angle*4-(radius * (255 / WIDTH)))/4+scale) + radius * (255 / WIDTH) - scale*2 + angle * legs));
+    }
+  }
+  //delay(255 - modes[currentMode].Speed);
+}
