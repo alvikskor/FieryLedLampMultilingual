@@ -35,13 +35,18 @@ void mp3_setup()   {
       first_entry = 0;
       delay(mp3_delay);
       send_command(0x0C,FEEDBACK,0,0);  //Сброс модуля
+      mp3_timer = millis();
       #ifdef GENERAL_DEBUG
       LOG.println(F("\n mp3 Reset "));
       #endif
       mp3_player_connect = 2;
       return;
   }
-  tmp = read_command (MP3_READ_TIMEOUT);
+  //tmp = read_command (MP3_READ_TIMEOUT);
+  if(mp3_receive_buf[3] == 0x3F) tmp = mp3_receive_buf[6];
+  else tmp = -1;
+  //Serial.print ("\nTMP=");
+  //Serial.println (tmp);
   send_command(6,FEEDBACK,0,0);                     // Устанавливаем громкость равной 0 (от 0 до 30)
   delay(mp3_delay);
   #ifndef CHECK_MP3_CONNECTION
@@ -59,11 +64,11 @@ void mp3_setup()   {
       //read_command (MP3_READ_TIMEOUT);
       send_command(0x0E,FEEDBACK,0,0);              //Пауза
       delay(mp3_delay);
-        delay(mp3_delay);
-        send_command(0x07,FEEDBACK,0,Equalizer);             // Устанавливаем эквалайзер в положение Equalizer
-        delay(mp3_delay);
-        send_command(6,FEEDBACK,0,eff_volume);               // Устанавливаем громкость равной eff_volume (от 0 до 30)
-        mp3_player_connect = 4;
+      delay(mp3_delay);
+      send_command(0x07,FEEDBACK,0,Equalizer);             // Устанавливаем эквалайзер в положение Equalizer
+      delay(mp3_delay);
+      send_command(6,FEEDBACK,0,eff_volume);               // Устанавливаем громкость равной eff_volume (от 0 до 30)
+      mp3_player_connect = 4;
       LOG.print (F("\nMP3 плеєр підключено. "));
       if (tmp == 2) LOG.println (F("Встановлено SD-картку\n"));
       if (tmp == 1 || tmp == 3) LOG.println (F("Встановлено Флешку\n"));

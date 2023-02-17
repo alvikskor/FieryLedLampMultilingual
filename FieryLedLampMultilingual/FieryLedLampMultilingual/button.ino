@@ -7,8 +7,25 @@ static bool Button_Holding = false;
 
 void buttonTick()
 {
-  if (!buttonEnabled)                                       // события кнопки не обрабатываются, если она заблокирована
+  if (!buttonEnabled) // события кнопки не обрабатываются, если она заблокирована , но обрабатывается сброс в default
   {
+    touch.tick();
+    if (touch.isStep() && touch.getHoldClicks() == 14U) {
+        LOG.println("\n*** Reset to Default ***");
+        showWarning(CRGB::Red, 500, 250U);
+        ESP.wdtFeed();
+        setModeSettings();
+        updateSets();    
+        if(FileCopy (F("/default/config.json"), F("/config.json"))) {
+            ESP.wdtFeed();
+            showWarning(CRGB::Green, 500, 250U);
+            ESP.restart();
+        }
+        else {
+            ESP.wdtFeed();
+            showWarning(CRGB::Red, 500, 250U);
+        }
+    }  
     return;
   }
 
@@ -72,7 +89,7 @@ void buttonTick()
   // двухкратное нажатие
   if (clickCount == 2U)
      #ifdef MP3_TX_PIN
-     if (dawnFlag && alarm_sound_flag) {
+     if (dawnFlag) {            //if (dawnFlag && alarm_sound_flag) {
         //myDFPlayer.pause();
         send_command(0x0E,0,0,0);  //Пауза
         mp3_stop = true;
@@ -395,6 +412,88 @@ if (touch.isStep())
 		break;
 	  }
 		#endif //BUTTON_CAN_SET_SLEEP_TIMER
+	  case 14U:
+	  {
+          showWarning(CRGB::Red, 500, 250U);
+          ESP.wdtFeed();
+          setModeSettings();
+          updateSets();    
+          if(FileCopy (F("/default/config.json"), F("/config.json"))){
+              ESP.wdtFeed();
+              showWarning(CRGB::Green, 2500, 250U);
+              ESP.restart();
+          }
+          else {
+              ESP.wdtFeed();
+              showWarning(CRGB::Red, 2500, 250U);
+          }
+          break;
+      }
+      case 19U:
+	  {
+          showWarning(CRGB::Red, 500, 250U);
+          ESP.wdtFeed();
+          setModeSettings();
+          updateSets();    
+          if(FileCopy (F("/default/config.json"), F("/config.json"))) {
+              ESP.wdtFeed();
+              showWarning(CRGB::Green, 500, 250U);
+          }
+          else {
+              ESP.wdtFeed();
+              showWarning(CRGB::Red, 500, 250U);
+          }
+          if(FileCopy (F("/default/cycle_config.json"), F("/cycle_config.json"))) {
+              ESP.wdtFeed();
+              showWarning(CRGB::Green, 500, 250U);
+          }
+          else {
+              ESP.wdtFeed();
+              showWarning(CRGB::Red, 500, 250U);
+          }
+          if(FileCopy (F("/default/sound_config.json"), F("/sound_config.json"))) {
+              ESP.wdtFeed();
+              showWarning(CRGB::Green, 500, 250U);
+          }
+          else {
+              ESP.wdtFeed();
+              showWarning(CRGB::Red, 500, 250U);
+          }
+          if(FileCopy (F("/default/alarm_config.json"), F("/alarm_config.json"))) {
+              ESP.wdtFeed();
+              showWarning(CRGB::Green, 500, 250U);
+          }
+          else {
+              ESP.wdtFeed();
+              showWarning(CRGB::Red, 500, 250U);
+          }
+          if(FileCopy (F("/default/hardware_config.json"), F("/hardware_config.json"))) {
+              ESP.wdtFeed();
+              showWarning(CRGB::Green, 500, 250U);
+          }
+          else {
+              ESP.wdtFeed();
+              showWarning(CRGB::Red, 500, 250U);
+          }
+          if(FileCopy (F("/default/multilamp_config.json"), F("/multilamp_config.json"))) {
+              ESP.wdtFeed();
+              showWarning(CRGB::Green, 500, 250U);
+          }
+          else {
+              ESP.wdtFeed();
+              showWarning(CRGB::Red, 500, 250U);
+          }
+          if(FileCopy (F("/default/index.json.gz"), F("/index.json.gz"))) {
+             ESP.wdtFeed();
+             showWarning(CRGB::Green, 500, 250U);
+          }
+          else {
+             ESP.wdtFeed();
+             showWarning(CRGB::Red, 500, 250U);
+          }
+          ESP.restart();
+          break;
+      }
 
       default:
         break;
@@ -451,7 +550,79 @@ if (touch.isStep())
 		TimerManager::TimerRunning = true;
 		break;		
 	  }
-		#endif //BUTTON_CAN_SET_SLEEP_TIMER	  
+		#endif //BUTTON_CAN_SET_SLEEP_TIMER
+/*        
+      case 14U:
+	  {
+          showWarning(CRGB::Red, 500, 250U);
+          ESP.wdtFeed();
+          if(FileCopy (F("/default/config.json"), F("/config.json"))) {
+              ESP.wdtFeed();
+              showWarning(CRGB::Green, 2500, 250U);
+              ESP.restart();
+          }
+          else {
+              ESP.wdtFeed();
+              showWarning(CRGB::Red, 2500, 250U);
+          }
+          break;
+      }
+      case 19U:
+	  {
+          showWarning(CRGB::Red, 500, 250U);
+          ESP.wdtFeed();
+          if(FileCopy (F("/default/config.json"), F("/config.json"))) {
+              ESP.wdtFeed();
+              showWarning(CRGB::Green, 500, 250U);
+          }
+          else {
+              ESP.wdtFeed();
+              showWarning(CRGB::Red, 500, 250U);
+          }
+          if(FileCopy (F("/default/cycle_config.json"), F("/cycle_config.json"))) {
+              ESP.wdtFeed();
+              showWarning(CRGB::Green, 500, 250U);
+          }
+          else {
+              ESP.wdtFeed();
+              showWarning(CRGB::Red, 500, 250U);
+          }
+          if(FileCopy (F("/default/sound_config.json"), F("/sound_config.json"))) {
+              ESP.wdtFeed();
+              showWarning(CRGB::Green, 500, 250U);
+          }
+          else {
+              ESP.wdtFeed();
+              showWarning(CRGB::Red, 500, 250U);
+          }
+          if(FileCopy (F("/default/alarm_config.json"), F("/alarm_config.json"))) {
+              ESP.wdtFeed();
+              showWarning(CRGB::Green, 500, 250U);
+          }
+          else {
+              ESP.wdtFeed();
+              showWarning(CRGB::Red, 500, 250U);
+          }
+          if(FileCopy (F("/default/hardware_config.json"), F("/hardware_config.json"))) {
+              ESP.wdtFeed();
+              showWarning(CRGB::Green, 500, 250U);
+          }
+          else {
+              ESP.wdtFeed();
+              showWarning(CRGB::Red, 500, 250U);
+          }
+          if(FileCopy (F("/default/multilamp_config.json"), F("/multilamp_config.json"))) {
+              ESP.wdtFeed();
+              showWarning(CRGB::Green, 500, 250U);
+          }
+          else {
+              ESP.wdtFeed();
+              showWarning(CRGB::Red, 500, 250U);
+          }
+          ESP.restart();
+          break;
+      }
+*/      
 	}
    }
   }

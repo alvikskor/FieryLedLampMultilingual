@@ -8438,11 +8438,11 @@ void lumenjerRoutine() {
   deltaHue = random8(3) ? deltaHue : -deltaHue;
   deltaHue2 = random8(3) ? deltaHue2 : -deltaHue2;
 #if (WIDTH % 2 == 0 && HEIGHT % 2 == 0)
-  hue = (WIDTH + hue + deltaHue * (bool)random8(64)) % WIDTH;
+  hue = (WIDTH + hue + (int8_t)deltaHue * (bool)random8(64)) % WIDTH;
 #else
-  hue = (WIDTH + hue + deltaHue) % WIDTH;
+  hue = (WIDTH + hue + (int8_t)deltaHue) % WIDTH;
 #endif
-  hue2 = (HEIGHT + hue2 + deltaHue2) % HEIGHT;
+  hue2 = (HEIGHT + hue2 + (int8_t)deltaHue2) % HEIGHT;
 
   if (modes[currentMode].Scale == 100U)
     leds[XY(hue, hue2)] += CHSV(random8(), 255U, 255U);
@@ -8514,7 +8514,7 @@ void RadialWave() {
       }
     }
   }
-  
+
   uint8_t legs = modes[currentMode].Scale / 10;
   uint16_t color_speed;
   step = modes[currentMode].Scale % 10;
