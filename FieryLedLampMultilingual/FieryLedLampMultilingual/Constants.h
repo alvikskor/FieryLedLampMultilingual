@@ -75,6 +75,9 @@ uint32_t AUTOMATIC_OFF_TIME = (0UL);                        // Не удаляй
 #ifdef MP3_TX_PIN
   #define CHECK_MP3_CONNECTION                              // Закоментируйте эту строку если нужно, чтобы лампа не проверяла наличие связи с МР3 плеером
   //#define DF_PLAYER_IS_ORIGINAL                           // Если используеися плеер с чипом, отличным от AS20HGN402 ,закоментируйте эту строку
+  #ifndef  DF_PLAYER_IS_ORIGINAL
+    //#define DF_PLAYER_GD3200x                               // Якщо у вас такій чіп у плеєрі и цей рядок не закоментований, то для озвучування часу використовуються декілька мов
+  #endif  //DF_PLAYER_IS_ORIGINAL
 #endif  //MP3_TX_PIN
 
 #define IR_RECEIVER_USE                                     // Если не используется ИК ДУ - Закомментировать эту строку
