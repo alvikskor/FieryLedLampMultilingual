@@ -73,6 +73,7 @@ void User_setings ()  {
  HTTP.on("/lang", handle_lang);  // Зміна мови
  HTTP.on("/ssid", handle_ssid);  // Пароль від роутеру
  HTTP.on("/ssdp", handle_ssdp);  // Ім'я лампи
+ HTTP.on("/res_to_def", handle_reset_to_default);  // Скидання всіх налаштувань до "заводьских"
  HTTP.on("/ssidap", HTTP_GET, []() {   // Получаем SSID AP со страницы
      jsonWrite(configSetup, "ssidAP", HTTP.arg("ssidAP"));
      jsonWrite(configSetup, "passwordAP", HTTP.arg("passwordAP"));
@@ -1102,9 +1103,12 @@ void handle_sound_set ()   {    // Выбор папок для озвучива
 }
 
 void handle_folder_down ()   {
-    CurrentFolder = constrain(CurrentFolder-1, 0, 99);
-    jsonWrite(configSetup, "fold_sel", CurrentFolder);
-    send_command(0x17,FEEDBACK,0,CurrentFolder);           //  Попередня папка
+    if (!pause_on && !mp3_stop && eff_sound_on) {
+        CurrentFolder = constrain(CurrentFolder-1, 0, 99);
+        jsonWrite(configSetup, "fold_sel", CurrentFolder);
+        send_command(0x17,FEEDBACK,0,CurrentFolder);           //  Попередня папка
+        delay(mp3_delay);
+    }
     #ifdef GENERAL_DEBUG
      LOG.print (F("\nCurrent folder "));
      LOG.println (CurrentFolder);
@@ -1113,9 +1117,12 @@ void handle_folder_down ()   {
 }
 
 void handle_folder_up ()   {
-    CurrentFolder = constrain(CurrentFolder+1, 0, 99);
-    jsonWrite(configSetup, "fold_sel", CurrentFolder);
-    send_command(0x17,FEEDBACK,0,CurrentFolder);          // Наступна папка
+    if (!pause_on && !mp3_stop && eff_sound_on) {
+        CurrentFolder = constrain(CurrentFolder+1, 0, 99);
+        jsonWrite(configSetup, "fold_sel", CurrentFolder);
+        send_command(0x17,FEEDBACK,0,CurrentFolder);          // Наступна папка
+        delay(mp3_delay);
+    }
     #ifdef GENERAL_DEBUG
      LOG.print (F("\nCurrent folder "));
      LOG.println (CurrentFolder);
@@ -1124,9 +1131,12 @@ void handle_folder_up ()   {
 }
 
 void handle_folder_select()   {
-    CurrentFolder = HTTP.arg("fold_sel").toInt();          // Вибрана папка
-    jsonWrite(configSetup, "fold_sel", CurrentFolder);
-    send_command(0x17,FEEDBACK,0,CurrentFolder);  
+    if (!pause_on && !mp3_stop && eff_sound_on) {
+        CurrentFolder = HTTP.arg("fold_sel").toInt();          // Вибрана папка
+        jsonWrite(configSetup, "fold_sel", CurrentFolder);
+        send_command(0x17,FEEDBACK,0,CurrentFolder);
+        delay(mp3_delay);
+    }
     #ifdef GENERAL_DEBUG
      LOG.print (F("\nCurrent folder "));
      LOG.println (CurrentFolder);
@@ -1229,6 +1239,74 @@ void Lang_set ()   {
         eff_num_correct[n] = jsonReadtoInt (Correct, String(n));
         if (eff_num_correct[n] == currentMode) jsonWrite(configSetup, "eff_sel", n);
     } 
+}
+
+void handle_reset_to_default ()   {
+    LOG.println("\n*** Reset to Default ***");
+    showWarning(CRGB::Red, 500, 250U);
+    ESP.wdtFeed();
+    setModeSettings();
+    updateSets();    
+    if(FileCopy (F("/default/config.json"), F("/config.json"))) {
+        ESP.wdtFeed();
+        showWarning(CRGB::Green, 500, 250U);
+    }
+    else {
+        ESP.wdtFeed();
+        showWarning(CRGB::Red, 500, 250U);
+    }
+    if(FileCopy (F("/default/cycle_config.json"), F("/cycle_config.json"))) {
+        ESP.wdtFeed();
+        showWarning(CRGB::Green, 500, 250U);
+    }
+    else {
+        ESP.wdtFeed();
+        showWarning(CRGB::Red, 500, 250U);
+    }
+    if(FileCopy (F("/default/sound_config.json"), F("/sound_config.json"))) {
+        ESP.wdtFeed();
+        showWarning(CRGB::Green, 500, 250U);
+    }
+    else {
+        ESP.wdtFeed();
+        showWarning(CRGB::Red, 500, 250U);
+    }
+    if(FileCopy (F("/default/alarm_config.json"), F("/alarm_config.json"))) {
+        ESP.wdtFeed();
+        showWarning(CRGB::Green, 500, 250U);
+    }
+    else {
+        ESP.wdtFeed();
+        showWarning(CRGB::Red, 500, 250U);
+    }
+    if(FileCopy (F("/default/hardware_config.json"), F("/hardware_config.json"))) {
+        ESP.wdtFeed();
+        showWarning(CRGB::Green, 500, 250U);
+    }
+    else {
+        ESP.wdtFeed();
+        showWarning(CRGB::Red, 500, 250U);
+    }
+    if(FileCopy (F("/default/multilamp_config.json"), F("/multilamp_config.json"))) {
+        ESP.wdtFeed();
+        showWarning(CRGB::Green, 500, 250U);
+    }
+    else {
+        ESP.wdtFeed();
+        showWarning(CRGB::Red, 500, 250U);
+    }
+    if(FileCopy (F("/default/index.json.gz"), F("/index.json.gz"))) {
+        ESP.wdtFeed();
+        showWarning(CRGB::Green, 500, 250U);
+    }
+    else {
+        ESP.wdtFeed();
+        showWarning(CRGB::Red, 500, 250U);
+    }
+    HTTP.send(200, F("text/plain"), F("OK"));
+    delay(100);
+    ESP.restart();
+
 }
   
 bool FileCopy (const String& SourceFile , const String& TargetFile)   {

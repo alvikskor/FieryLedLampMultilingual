@@ -659,9 +659,12 @@ void Print_IP()   {
 }
 
 void Folder_Next_Prev(bool direction)    {
+    if (!pause_on && !mp3_stop && eff_sound_on) {
     CurrentFolder = constrain(direction ? CurrentFolder + 1 : CurrentFolder - 1, 0, 99);
     jsonWrite(configSetup, "fold_sel", CurrentFolder);
-    send_command(0x17,FEEDBACK,0,CurrentFolder);           //  Попередня папка
+    send_command(0x17,FEEDBACK,0,CurrentFolder);   //  Попередня папка / Наступна папка
+    delay(mp3_delay);
+    }
     #ifdef GENERAL_DEBUG
      LOG.print (F("\nCurrent folder "));
      LOG.println (CurrentFolder);

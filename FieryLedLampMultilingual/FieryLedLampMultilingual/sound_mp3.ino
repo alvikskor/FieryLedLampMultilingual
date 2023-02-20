@@ -35,13 +35,15 @@ void mp3_setup()   {
       first_entry = 0;
       delay(mp3_delay);
       send_command(0x0C,FEEDBACK,0,0);  //Сброс модуля
+      mp3_timer = millis();
       #ifdef GENERAL_DEBUG
       LOG.println(F("\n mp3 Reset "));
       #endif
       mp3_player_connect = 2;
       return;
   }
-  tmp = read_command (MP3_READ_TIMEOUT);
+  if(mp3_receive_buf[3] == 0x3F) tmp = mp3_receive_buf[6];
+  else tmp = -1;
   send_command(6,FEEDBACK,0,0);                     // Устанавливаем громкость равной 0 (от 0 до 30)
   delay(mp3_delay);
   #ifndef CHECK_MP3_CONNECTION
@@ -56,14 +58,13 @@ void mp3_setup()   {
           send_command(0x09,FEEDBACK,0,2);          // Устанавливаем источником SDкарту
           delay(MP3_DELAY);
       }
-      //read_command (MP3_READ_TIMEOUT);
       send_command(0x0E,FEEDBACK,0,0);              //Пауза
       delay(mp3_delay);
-        delay(mp3_delay);
-        send_command(0x07,FEEDBACK,0,Equalizer);             // Устанавливаем эквалайзер в положение Equalizer
-        delay(mp3_delay);
-        send_command(6,FEEDBACK,0,eff_volume);               // Устанавливаем громкость равной eff_volume (от 0 до 30)
-        mp3_player_connect = 4;
+      delay(mp3_delay);
+      send_command(0x07,FEEDBACK,0,Equalizer);             // Устанавливаем эквалайзер в положение Equalizer
+      delay(mp3_delay);
+      send_command(6,FEEDBACK,0,eff_volume);               // Устанавливаем громкость равной eff_volume (от 0 до 30)
+      mp3_player_connect = 4;
       LOG.print (F("\nMP3 плеєр підключено. "));
       if (tmp == 2) LOG.println (F("Встановлено SD-картку\n"));
       if (tmp == 1 || tmp == 3) LOG.println (F("Встановлено Флешку\n"));
@@ -78,26 +79,73 @@ void play_time_ADVERT()   {
        if (first_entry==1 && advert_hour) {
            advert_flag = true;
            first_entry = 3;
-           send_command(0x06,FEEDBACK,0,0);
-           delay(mp3_delay);
-           if ((pause_on || mp3_stop) && !alarm_sound_flag) {  //+++++-----------+++++++++---------+++++++++
-              send_command(0x0D,FEEDBACK,0,0);  //Старт
-              delay(ADVERT_TIMER_1);
-           }
-           int pt_h=(uint8_t)((thisTime - thisTime % 60U) / 60U);
-           if (pt_h==0) pt_h=24;
-           send_command(0x13,FEEDBACK,0,pt_h);  //Старт Адверт №... Часы
-           //Serial.print ("Start ADVERT Hour");
-           mp3_timer = millis();           
+           #ifdef DF_PLAYER_GD3200x
+             if ((!pause_on && !mp3_stop) || alarm_sound_flag)
+           #endif
+           send_command(0x0E,FEEDBACK,0,0);  //Пауза
            delay(mp3_delay);
            if (day_night) send_command(0x06,FEEDBACK,0,day_advert_volume);  //Громкость днём
            else send_command(0x06,FEEDBACK,0,night_advert_volume);  //Громкость ночью
+           delay(mp3_delay);
+           send_command(0x1A,FEEDBACK,0,1);     //mute on
+           delay(mp3_delay);
+           //if ((pause_on || mp3_stop) && !alarm_sound_flag) {  //+++++-----------+++++++++---------+++++++++
+              send_command(0x0D,FEEDBACK,0,0);  //Старт
+              delay(ADVERT_TIMER_1);
+           //}
+           int pt_h=(uint8_t)((thisTime - thisTime % 60U) / 60U);
+           if (pt_h==0) pt_h=24;
+           #ifdef DF_PLAYER_GD3200x
+           {
+           String lng = jsonRead (configSetup, "lang");
+               if(lng == "ua") send_command(0x25,FEEDBACK,1,pt_h);  //Старт Адверт1 №... Години UA
+               else
+               if(lng == "ru") send_command(0x25,FEEDBACK,3,pt_h);  //Старт Адверт3 №... Години RUS
+               else
+               if(lng == "en") send_command(0x25,FEEDBACK,2,pt_h);  //Старт Адверт2 №... Години EN
+               else
+               if(lng == "fr") send_command(0x25,FEEDBACK,6,pt_h);  //Старт Адверт6 №... Години FR
+               else
+               if(lng == "pl") send_command(0x25,FEEDBACK,4,pt_h);  //Старт Адверт4 №... Години PL
+               else
+               if(lng == "es") send_command(0x25,FEEDBACK,5,pt_h);  //Старт Адверт5 №... Години ES
+               else
+               send_command(0x13,FEEDBACK,0,pt_h);  //Старт Адверт №... Години
+           }
+            #else
+            send_command(0x13,FEEDBACK,0,pt_h);  //Старт Адверт №... Години
+            #endif  //DF_PLAYER_GD3200x
+           delay(mp3_delay);
+           send_command(0x1A,FEEDBACK,0,0);         // Mute off
+           delay(mp3_delay);
+           //Serial.println ("Start ADVERT Hour");
+           mp3_timer = millis();           
         }
         if (advert_hour && (millis() - mp3_timer > ADVERT_TIMER_H)) {
+            delay(mp3_delay);
            advert_hour = false;
            int pt_m=(uint8_t)(thisTime % 60U);
-           send_command(0x13,FEEDBACK,0,pt_m+100);  //Старт Адверт №... Минуты
-           //Serial.print ("Start ADVERT Minute");
+           #ifdef DF_PLAYER_GD3200x
+           {
+           String lng = jsonRead (configSetup, "lang");
+               if(lng == "ua") send_command(0x25,FEEDBACK,1,pt_m + 100);  //Старт Адверт1 №... хвилини UA
+               else
+               if(lng == "ru") send_command(0x25,FEEDBACK,3,pt_m + 100);  //Старт Адверт3 №... хвилини RUS
+               else
+               if(lng == "en") send_command(0x25,FEEDBACK,2,pt_m + 100);  //Старт Адверт2 №... хвилини EN
+               else
+               if(lng == "fr") send_command(0x25,FEEDBACK,6,pt_m + 100);  //Старт Адверт6 №... хвилини FR
+               else
+               if(lng == "pl") send_command(0x25,FEEDBACK,4,pt_m + 100);  //Старт Адверт4 №... хвилини PL
+               else
+               if(lng == "es") send_command(0x25,FEEDBACK,5,pt_m + 100);  //Старт Адверт5 №... хвилини ES
+               else
+               send_command(0x13,FEEDBACK,0,pt_m + 100);  //Старт Адверт №... хвилини
+           }
+            #else
+            send_command(0x13,FEEDBACK,0,pt_m + 100);  //Старт Адверт №... хвилини
+            #endif  //DF_PLAYER_GD3200x
+           //Serial.println ("Start ADVERT Minute");
            mp3_timer = millis();
         }
         if (!advert_hour && millis() - mp3_timer > ADVERT_TIMER_M) {
