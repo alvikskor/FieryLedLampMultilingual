@@ -1,10 +1,10 @@
-// Поточна версія / Current version : v3.3_sound_Multilingual_IR 107 ефектов
+// Поточна версія / Current version : v3.4_sound_Multilingual_IR 110 ефектов
 // УВАГА!!! Більшість установок перенесено у файл data/config і може змінюватися в процесі експлуатації лампи.
 // Уважно читайте файл ПРОЧИТИ МЕНЕ!!!.txt і ПРОЧТИ МЕНЕ.doc (тут з картинками)
 
 #pragma once
 
-#define FLL_VERSION           (" Ver.3.3.107")
+#define FLL_VERSION           (" Ver.3.4.110")
 
 //#include <ESP8266WebServer.h>
 
