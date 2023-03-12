@@ -76,6 +76,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
           #if defined(PHONE_N_MANUAL_TIME_PRIORITY) && defined(USE_NTP)
             stillUseNTP = false;
           #endif
+          getBrightnessForPrintTime();
         }
       }
       #endif // GET_TIME_FROM_PHONE
@@ -324,6 +325,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
         save_file_changes = 7;
         //eepromTimeout = millis() - EEPROM_WRITE_DELAY;
         timeout_save_file_changes = millis() - SAVE_FILE_DELAY_TIMEOUT;
+        timeTick();
         changePower();
         loadingFlag = true;
         #ifdef USE_MULTIPLE_LAMPS_CONTROL
@@ -704,6 +706,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
               #if defined(PHONE_N_MANUAL_TIME_PRIORITY) && defined(USE_NTP)
                 stillUseNTP = false;
               #endif
+              getBrightnessForPrintTime();
               showWarning(CRGB::Blue, 2000U, 500U);     // мигание голубым цветом 2 секунды (2 раза) - время установлено
             }
             else

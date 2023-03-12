@@ -453,6 +453,7 @@ void handle_Power ()  {
             timeout_save_file_changes = millis() - SAVE_FILE_DELAY_TIMEOUT;
             if (!FavoritesManager::FavoritesRunning) EepromManager::EepromPut(modes);
             save_file_changes = 7;
+            timeTick();
         }
         else EepromManager::EepromGet(modes);
 	changePower();
@@ -974,6 +975,7 @@ void get_time_manual ()   {
       noTimeClear();
     #endif // WARNING_IF_NO_TIME  
     timeSynched = true;
+    getBrightnessForPrintTime();
     #if defined(PHONE_N_MANUAL_TIME_PRIORITY) && defined(USE_NTP)
       stillUseNTP = false;
     #endif
@@ -1160,7 +1162,7 @@ void handle_alarm_fold_sel ()   {
     timeout_save_file_changes = millis();
     if (alarm_sound_flag) {
         mp3_folder = AlarmFolder;  // Папка будильника
-        play_sound(mp3_folder);
+        play_sound();
         mp3_folder_last = mp3_folder;
     }
     HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));

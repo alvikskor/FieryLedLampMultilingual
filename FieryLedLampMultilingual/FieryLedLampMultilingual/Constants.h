@@ -654,8 +654,8 @@ void setModeSettings(uint8_t Scale = 0U, uint8_t Speed = 0U);
 #ifdef USE_MULTIPLE_LAMPS_CONTROL
 void multiple_lamp_control ();
 bool repeat_multiple_lamp_control = false;
-
 #endif  //USE_MULTIPLE_LAMPS_CONTROL
 
 uint8_t eff_num_correct [MODE_AMOUNT]; //Корректировка номеров эффектов для разных языков
 void Display_Timer (uint8_t argument = 0);
+void timeTick();
