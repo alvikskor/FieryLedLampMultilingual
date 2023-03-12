@@ -118,6 +118,7 @@ if (stillUseNTP)
          #ifdef PHONE_N_MANUAL_TIME_PRIORITY
            stillUseNTP = false;
          #endif
+         getBrightnessForPrintTime();
       }
 //    }//if (!timeSynched || millis() > ntpTimeLastSync + NTP_INTERVAL)
 }
@@ -174,7 +175,8 @@ if (stillUseNTP)
     #ifdef MP3_TX_PIN
       if (minute_tmp != minute(currentLocalTime)) {
           minute_tmp = minute(currentLocalTime);
-          if (minute_tmp == 1) getBrightnessForPrintTime();
+          if (minute_tmp == 1)
+              getBrightnessForPrintTime();
           if (alarm_advert_sound_on && mp3_player_connect == 4 && dawnFlag && dawnPosition >= 245) {
              //Serial.println ("Alarm");
              first_entry = 1;

@@ -44,7 +44,8 @@ void mp3_setup()   {
   }
   if(mp3_receive_buf[3] == 0x3F) tmp = mp3_receive_buf[6];
   else tmp = -1;
-  send_command(6,FEEDBACK,0,0);                     // Устанавливаем громкость равной 0 (от 0 до 30)
+  delay(mp3_delay);  
+  send_command(0x06,FEEDBACK,0,0);                     // Устанавливаем громкость равной 0 (от 0 до 30)
   delay(mp3_delay);
   #ifndef CHECK_MP3_CONNECTION
     if (tmp == -1) tmp = 0;                         // Не проверяем, есть ли связь с МР3 плеером
@@ -52,19 +53,26 @@ void mp3_setup()   {
   if (tmp != -1) {                                  // Проверяем, есть ли связь с плеером и, если есть, то...
       if (tmp == 1 || tmp == 3) {
           send_command(0x09,FEEDBACK,0,1);          // Устанавливаем источником Flash
-          delay(MP3_DELAY);                         // ----------????????????---------
       }
       if (tmp == 2) {
           send_command(0x09,FEEDBACK,0,2);          // Устанавливаем источником SDкарту
-          delay(MP3_DELAY);
       }
-      send_command(0x0E,FEEDBACK,0,0);              //Пауза
+      delay(MP3_DELAY);                             // ----------????????????---------
+      //delay(mp3_delay * 2);
+      send_command(0x17,FEEDBACK,0,mp3_folder);     // Попереднє встановлення папки озвучування
+      #ifndef DF_PLAYER_GD3200x
+      delay(MP3_DELAY);                             // ----------????????????---------
+      #else
+      delay(mp3_delay * 3);
+      #endif
+      send_command(0x16,FEEDBACK,0,0);              // Пауза Stop
       delay(mp3_delay);
-      delay(mp3_delay);
+      //delay(mp3_delay);
       send_command(0x07,FEEDBACK,0,Equalizer);             // Устанавливаем эквалайзер в положение Equalizer
       delay(mp3_delay);
       send_command(6,FEEDBACK,0,eff_volume);               // Устанавливаем громкость равной eff_volume (от 0 до 30)
       mp3_player_connect = 4;
+      delay(mp3_delay);
       LOG.print (F("\nMP3 плеєр підключено. "));
       if (tmp == 2) LOG.println (F("Встановлено SD-картку\n"));
       if (tmp == 1 || tmp == 3) LOG.println (F("Встановлено Флешку\n"));
@@ -171,22 +179,27 @@ void play_time_ADVERT()   {
   }
 }
 
-void play_sound(uint8_t folder)   {
+void play_sound()   {
     if (!mp3_folder) {
         delay(mp3_delay);
         send_command(0x0E,FEEDBACK,0,0);  //Пауза
         mp3_stop = true;
+        CurrentFolder = mp3_folder;
     }
     else {
         delay(mp3_delay);
-        if ( folder >= 20 && folder <= 90 )
+        uint8_t folder;
+        if ( mp3_folder >= 20 && mp3_folder <= 90 )
         {
-            folder = (uint8_t) random (folder, constrain (folder + 10, 20, 99));
+            CurrentFolder = (uint8_t) random (mp3_folder, constrain (mp3_folder + 10, 20, 99));
         }
-        send_command(0x17,FEEDBACK,0,folder); // Включить непрерывное воспроизведение указанной папки
+        else
+        {
+            CurrentFolder = mp3_folder;
+        }
+        send_command(0x17,FEEDBACK,0,CurrentFolder); // Включить непрерывное воспроизведение указанной папки
         mp3_stop = false;
     }
-    CurrentFolder = folder;
     jsonWrite(configSetup, "fold_sel", CurrentFolder);
     #ifdef GENERAL_DEBUG
      LOG.print (F("\nCurrent folder "));
@@ -211,7 +224,7 @@ void mp3_loop()   {
         mp3_folder = AlarmFolder;  // Папка будильника
         alarm_timer = millis();
         send_command(0x06,FEEDBACK,0,0);  //Громкость
-        play_sound(mp3_folder);
+        play_sound();
         mp3_folder_last = mp3_folder;
         alarm_sound_flag = true;
      }
@@ -239,14 +252,16 @@ void mp3_loop()   {
   if (!mp3_stop && !set_mp3_play_now && !pause_on) {
     send_command(0x0E,FEEDBACK,0,0);  //Пауза
     pause_on = true;
+    delay(mp3_delay);
   }   
   if (!mp3_stop && set_mp3_play_now && pause_on) {
     send_command(0x0D,FEEDBACK,0,0);  //Старт
     pause_on = false;
+    delay(mp3_delay);
   }
   
   
-  if ((set_mp3_play_now) && (mp3_folder_last != mp3_folder)) {
+  if ((set_mp3_play_now) && (mp3_folder_last != mp3_folder)) {  //Перевірка потреби зміни папки озвучування
         #ifdef MP3_DEBUG
           LOG.print (F("mp3_folder_last = "));
           LOG.println (mp3_folder_last);
@@ -254,7 +269,7 @@ void mp3_loop()   {
           LOG.println (mp3_folder);
         #endif   
     mp3_folder_last = mp3_folder;
-    play_sound(mp3_folder);
+    play_sound();
   }
   
 }

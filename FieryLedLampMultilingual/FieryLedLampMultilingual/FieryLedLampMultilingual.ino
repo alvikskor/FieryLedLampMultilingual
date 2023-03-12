@@ -658,6 +658,7 @@ void setup()  //================================================================
   DisplayTimer = millis();
  #ifdef MP3_TX_PIN
     CurrentFolder = effects_folders[currentMode];
+    mp3_folder = CurrentFolder;
     jsonWrite(configSetup, "fold_sel", CurrentFolder);
  #endif  //MP3_TX_PIN
 #endif  //TM1637_USE

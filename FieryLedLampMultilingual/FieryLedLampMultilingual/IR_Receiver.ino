@@ -402,6 +402,7 @@ void IR_Power()   {
             timeout_save_file_changes = millis() - SAVE_FILE_DELAY_TIMEOUT;
             if (!FavoritesManager::FavoritesRunning) EepromManager::EepromPut(modes);
             save_file_changes = 7;
+            timeTick();
         }
         else EepromManager::EepromGet(modes);
         changePower();
