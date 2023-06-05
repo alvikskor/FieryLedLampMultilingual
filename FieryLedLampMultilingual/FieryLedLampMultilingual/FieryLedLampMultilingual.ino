@@ -157,6 +157,9 @@ bool dawnFlag = false;
 uint32_t thisTime;
 bool manualOff = false;
 
+int16_t offset = WIDTH;
+uint32_t scrollTimer = 0LL;
+
 uint8_t currentMode;
 bool loadingFlag = true;
 bool ONflag = false;
@@ -282,6 +285,10 @@ uint32_t mem_timer;
  decode_results results;
 #endif  //IR_RECEIVER_USE
 
+uint8_t RuninTextOverEffects = 0;
+uint8_t SpeedRunningText;
+uint8_t ColorRunningText;
+uint8_t ColorTextFon;
 
 void setup()  //==================================================================  void setup()  =========================================================================
 {
@@ -372,7 +379,11 @@ void setup()  //================================================================
   DAY_HOURS_BRIGHTNESS = jsonReadtoInt(configSetup, "day_bright");
   DONT_TURN_ON_AFTER_SHUTDOWN = jsonReadtoInt(configSetup, "effect_always"); 
   FavoritesManager::rndCycle = jsonReadtoInt(configSetup, "rnd_cycle");  // Перемешать Цикл
-  AUTOMATIC_OFF_TIME = (30UL * 60UL * 1000UL) * ( uint32_t )(jsonReadtoInt(configSetup, "timer5h"));  
+  AUTOMATIC_OFF_TIME = (30UL * 60UL * 1000UL) * ( uint32_t )(jsonReadtoInt(configSetup, "timer5h"));
+  RuninTextOverEffects = jsonReadtoInt(configSetup, "toe");  // Виводити рядок, що бежить поверх єфектів
+  SpeedRunningText = jsonReadtoInt(configSetup, "spt");  // Швидкість рядка, що бежить
+  ColorRunningText = jsonReadtoInt(configSetup, "sct");  // Колір рядка, що бежить
+  ColorTextFon = jsonReadtoInt(configSetup, "ctf");      //виводити рядок, що бежить, на кольоровом фоні
   #ifdef USE_NTP
   (jsonRead(configSetup, "ntp")).toCharArray (NTP_ADDRESS, (jsonRead(configSetup, "ntp")).length()+1);
   #endif
@@ -668,7 +679,7 @@ void setup()  //================================================================
   #ifdef HEAP_SIZE_PRINT
    mem_timer = millis();
   #endif //HEAP_SIZE_PRINT 
-  
+  WiFiClient client;  //Declare an object of class HTTPClient
 }
 
 
@@ -771,7 +782,7 @@ do {	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=========
   #endif
 
  if (Painting == 0) {
-
+     
   effectsTick();
   
   #ifdef HEAP_SIZE_PRINT

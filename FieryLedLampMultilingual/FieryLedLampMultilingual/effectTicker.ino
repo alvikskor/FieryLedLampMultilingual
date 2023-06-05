@@ -57,7 +57,7 @@ void effectsTick()
         case EFF_LOTUS:               DYNAMIC_DELAY_TICK { effTimer = millis(); LotusFlower();                Eff_Tick (); }  break;  // ( 32U) Квітка лотоса
         case EFF_LLAND:               DYNAMIC_DELAY_TICK { effTimer = millis(); LLandRoutine();               Eff_Tick (); }  break;  // ( 33U) Кипіння
         case EFF_RINGS:               DYNAMIC_DELAY_TICK { effTimer = millis(); ringsRoutine();               Eff_Tick (); }  break;  // ( 34U) Кодовий замок
-        case EFF_COLOR:               HIGH_DELAY_TICK    { effTimer = millis(); colorRoutine();               Eff_Tick (); }  break;  // ( 35U) Колір
+        case EFF_COLOR:               LOW_DELAY_TICK    { effTimer = millis(); colorRoutine();               Eff_Tick (); }  break;  // ( 35U) Колір
         case EFF_SAND:                DYNAMIC_DELAY_TICK { effTimer = millis(); sandRoutine();                Eff_Tick (); }  break;  // ( 36U) Кольорові драже
         case EFF_COLOR_FRIZZLES:      SOFT_DELAY_TICK    { effTimer = millis(); ColorFrizzles();              Eff_Tick (); }  break;  // ( 37U) Кольорові кучері
         case EFF_COMET:               DYNAMIC_DELAY_TICK { effTimer = millis(); RainbowCometRoutine();        Eff_Tick (); }  break;  // ( 38U) Комета
@@ -106,7 +106,7 @@ void effectsTick()
         case EFF_LIQUIDLAMP_AUTO:     LOW_DELAY_TICK     { effTimer = millis(); LiquidLampRoutine(false);     Eff_Tick (); }  break;  // ( 81U) Рідка лампа авто
         case EFF_RAIN:                DYNAMIC_DELAY_TICK { effTimer = millis(); RainRoutine();                Eff_Tick (); }  break;  // ( 82U) Різнобарвний дощ
         case EFF_RIVERS:              DYNAMIC_DELAY_TICK { effTimer = millis(); BotswanaRivers();             Eff_Tick (); }  break;  // ( 83U) Річки Ботсвани
-        case EFF_TEXT:                DYNAMIC_DELAY_TICK { effTimer = millis(); text_running();               Eff_Tick (); }  break;  // ( 84U) Рядок що біжить
+        case EFF_TORNADO:             LOW_DELAY_TICK     { effTimer = millis(); Tornado();                    Eff_Tick (); }  break;  // ( 84U) Торнадо
         case EFF_LIGHTERS:            DYNAMIC_DELAY_TICK { effTimer = millis(); lightersRoutine();            Eff_Tick (); }  break;  // ( 85U) Світлячки
         case EFF_LIGHTER_TRACES:      DYNAMIC_DELAY_TICK { effTimer = millis(); ballsRoutine();               Eff_Tick (); }  break;  // ( 86U) Світлячки зі шлейфом
         case EFF_FEATHER_CANDLE:      DYNAMIC_DELAY_TICK { effTimer = millis(); FeatherCandleRoutine();       Eff_Tick (); }  break;  // ( 87U) Свічка
@@ -126,12 +126,14 @@ void effectsTick()
         case EFF_SIMPLE_RAIN:         DYNAMIC_DELAY_TICK { effTimer = millis(); simpleRain();                 Eff_Tick (); }  break;  // (101U) Хмарка в банці
         case EFF_MADNESS:             HIGH_DELAY_TICK    { effTimer = millis(); madnessNoiseRoutine();        Eff_Tick (); }  break;  // (102U) Шаленство
         case EFF_CONTACTS:            DYNAMIC_DELAY_TICK { effTimer = millis(); Contacts();                   Eff_Tick (); }  break;  // (103U) Контакти
-        case EFF_RADIAL_WAWE:         DYNAMIC_DELAY_TICK { effTimer = millis(); RadialWave();                 Eff_Tick (); }  break;  // (104U) Радіальна хвиля
+        case EFF_RADIAL_WAVE:         DYNAMIC_DELAY_TICK { effTimer = millis(); RadialWave();                 Eff_Tick (); }  break;  // (104U) Радіальна хвиля
         case EFF_MOSAIC:              DYNAMIC_DELAY_TICK { effTimer = millis(); squaresNdotsRoutine();        Eff_Tick (); }  break;  // (105U) Мозайка
         case EFF_FIREWORK_2:          DYNAMIC_DELAY_TICK { effTimer = millis(); fireworksRoutine();           Eff_Tick (); }  break;  // (106U) Феєрверк 2
         case EFF_OCTOPUS:             DYNAMIC_DELAY_TICK { effTimer = millis(); Octopus();                    Eff_Tick (); }  break;  // (107U) Восьминіг
         case EFF_DROP_IN_WATER:       DYNAMIC_DELAY_TICK { effTimer = millis(); DropInWater();                Eff_Tick (); }  break;  // (108U) Краплі  на воді
         case EFF_MAGIC_LANTERN :      DYNAMIC_DELAY_TICK { effTimer = millis(); MagicLantern();               Eff_Tick (); }  break;  // (109U) Чарівний ліхтарик
+        case EFF_COLORED_PYTHON:      LOW_DELAY_TICK     { effTimer = millis(); Colored_Python();             Eff_Tick (); }  break;  // (110U) Кольоровий Пітон
+        case EFF_PLASMA_WAVES:        SOFT_DELAY_TICK    { effTimer = millis(); Plasma_Waves();               Eff_Tick (); }  break;  // (111U) Плазмові хвілі
 
       }
       #ifdef WARNING_IF_NO_TIME_ON_EFFECTS_TOO
@@ -233,7 +235,6 @@ void Eff_Tick () {
     #ifdef MP3_TX_PIN
     mp3_folder=effects_folders[currentMode];
     #endif  //MP3_TX_PIN
-    FastLED.show();
       #ifdef USE_MULTIPLE_LAMPS_CONTROL
       if (repeat_multiple_lamp_control)  {
           for ( uint8_t n=0; n< MODE_AMOUNT; n++)
@@ -250,4 +251,11 @@ void Eff_Tick () {
           repeat_multiple_lamp_control = false;
       }
       #endif  //USE_MULTIPLE_LAMPS_CONTROL
+  
+  if (RuninTextOverEffects)
+  {
+      fillString(TextTicker, CHSV(ColorRunningText, 255U, 255U), true);
+  }
+  
+  FastLED.show();
 }
