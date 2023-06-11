@@ -1650,12 +1650,16 @@ void colorRoutine()
 #endif //#if defined(USE_RANDOM_SETS_IN_APP) || defined(RANDOM_SETTINGS_IN_CYCLE_MODE)
 
     loadingFlag = false;
+  }
     //FastLED.clear(); нафига тут это было?!
 
     //for (int16_t i = 0U; i < NUM_LEDS; i++)
     //  leds[i] = CHSV(modes[currentMode].Scale * 2.55, modes[currentMode].Speed, 255U);
-    fillAll(CHSV(modes[currentMode].Scale * 2.55, modes[currentMode].Speed, 255U));
-  }
+    if (modes[currentMode].Scale < 3 && RuninTextOverEffects)
+        FastLED.clear();
+    else
+        fillAll(CHSV(modes[currentMode].Scale * 2.55, modes[currentMode].Speed, 255U));
+  //}
 }
 
 // ------------- снегопад ----------
@@ -3431,22 +3435,28 @@ void PrismataRoutine() {
 
 // ============= ЭФФЕКТ БЕГУЩАЯ СТРОКА ===============
 void text_running() {
+  if (loadingFlag)
+  {
+    offset = WIDTH + 3;
+    loadingFlag = false;
 #if defined(USE_RANDOM_SETS_IN_APP) || defined(RANDOM_SETTINGS_IN_CYCLE_MODE)
   if (selectedSettings) {
     setModeSettings(1U + random8(100U), 50U + random8(100U));
   }
 #endif //#if defined(USE_RANDOM_SETS_IN_APP) || defined(RANDOM_SETTINGS_IN_CYCLE_MODE)
+  }
 
-  while (!fillString(TextTicker, CHSV(modes[EFF_TEXT].Scale * 2.55, 255U, 255U), true) && currentMode == EFF_TEXT) {
+  //while (!fillString(TextTicker, CHSV(modes[EFF_TEXT].Scale * 2.55, 255U, 255U), true) && currentMode == EFF_TEXT)
+     fillString(TextTicker, CHSV(ColorRunningText, 255U, 255U), true);
+/*  {
     HTTP.handleClient();
     parseUDP();
     delay (1);
     HTTP.handleClient();
-#ifdef ESP_USE_BUTTON
-    //if (buttonEnabled) в процедуре ведь есть эта проверка
-    buttonTick();
-#endif
-  }
+    #ifdef ESP_USE_BUTTON
+     buttonTick();
+    #endif
+  }*/
 }
 
 // ============= ЭФФЕКТ СТАЯ ===============

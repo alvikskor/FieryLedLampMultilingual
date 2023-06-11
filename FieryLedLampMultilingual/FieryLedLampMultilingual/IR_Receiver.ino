@@ -660,6 +660,7 @@ void Print_IP()   {
 }
 
 void Folder_Next_Prev(bool direction)    {
+    #ifdef MP3_TX_PIN
     if (!pause_on && !mp3_stop && eff_sound_on) {
     CurrentFolder = constrain(direction ? CurrentFolder + 1 : CurrentFolder - 1, 0, 99);
     jsonWrite(configSetup, "fold_sel", CurrentFolder);
@@ -674,6 +675,7 @@ void Folder_Next_Prev(bool direction)    {
     DisplayFlag = 0;
     Display_Timer();
     #endif
+    #endif  //MP3_TX_PIN
 }
 
 void Current_Eff_Rnd_Def(bool direction)   {
@@ -696,6 +698,7 @@ void Current_Eff_Rnd_Def(bool direction)   {
 }
 
 void IR_Equalizer()   {     // Устанавливаем эквалайзер
+    #ifdef MP3_TX_PIN
     Equalizer++;
     if (Equalizer > 5) Equalizer = 0;
     jsonWrite(configSetup, "eq", Equalizer);
@@ -706,6 +709,7 @@ void IR_Equalizer()   {     // Устанавливаем эквалайзер
     DisplayFlag = 3;
     Display_Timer(Equalizer);
     #endif
+    #endif  //MP3_TX_PIN
 }
 
 void Favorit_Add_Del(bool direction)   {

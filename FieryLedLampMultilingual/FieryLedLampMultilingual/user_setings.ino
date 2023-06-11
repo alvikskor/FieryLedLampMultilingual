@@ -74,6 +74,10 @@ void User_setings ()  {
  HTTP.on("/ssid", handle_ssid);  // Пароль від роутеру
  HTTP.on("/ssdp", handle_ssdp);  // Ім'я лампи
  HTTP.on("/res_to_def", handle_reset_to_default);  // Скидання всіх налаштувань до "заводьских"
+ HTTP.on("/toe", handle_runing_text_over_effects );  // Виводити рядок, що бежить, поверх єфектів
+ HTTP.on("/spt", handle_spt);  // Швидкість рядка, що бежить 
+ HTTP.on("/sct", handle_sct);  // Колір рядка, що бежить
+ HTTP.on("/ctf", handle_color_text_fon);  // Виводити рядок, що бежить, на кольоровом фоні
  HTTP.on("/ssidap", HTTP_GET, []() {   // Получаем SSID AP со страницы
      jsonWrite(configSetup, "ssidAP", HTTP.arg("ssidAP"));
      jsonWrite(configSetup, "passwordAP", HTTP.arg("passwordAP"));
@@ -1309,6 +1313,38 @@ void handle_reset_to_default ()   {
     delay(100);
     ESP.restart();
 
+}
+
+void handle_runing_text_over_effects ()  { //виводити рядок, що бежить, поверх єфектів
+    RuninTextOverEffects = HTTP.arg("toe").toInt();
+    jsonWrite(configSetup, "toe", RuninTextOverEffects);
+    bitSet (save_file_changes, 0);
+    timeout_save_file_changes = millis();    
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
+}
+
+void handle_spt ()   {
+    SpeedRunningText = HTTP.arg("spt").toInt();
+    jsonWrite(configSetup, "spt", SpeedRunningText);
+    bitSet (save_file_changes, 0);
+    timeout_save_file_changes = millis();    
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));    
+}
+
+void handle_sct ()   {
+    ColorRunningText = HTTP.arg("sct").toInt();
+    jsonWrite(configSetup, "sct", ColorRunningText);
+    bitSet (save_file_changes, 0);
+    timeout_save_file_changes = millis();    
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));    
+}
+
+void handle_color_text_fon ()  { //виводити рядок, що бежить, на кольоровом фоні
+    ColorTextFon = HTTP.arg("ctf").toInt();
+    jsonWrite(configSetup, "ctf", ColorTextFon);
+    bitSet (save_file_changes, 0);
+    timeout_save_file_changes = millis();    
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
   
 bool FileCopy (const String& SourceFile , const String& TargetFile)   {

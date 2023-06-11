@@ -984,7 +984,13 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
      jsonWrite(configSetup, "sp", modes[currentMode].Speed);      //для правильного отображения
      jsonWrite(configSetup, "sc", modes[currentMode].Scale);
      jsonWrite(configSetup, "eff_sel", currentMode);
-     jsonWrite(configSetup, "Power", ONflag);    
+     
+     for ( uint8_t n=0; n< MODE_AMOUNT; n++)
+     {
+         if (eff_num_correct[n] == currentMode) jsonWrite(configSetup, "eff_sel", n);
+     } 
+
+     //jsonWrite(configSetup, "Power", ONflag);    
      }
      inputBuffer[0] = '\0';
      //outputBuffer[0] = '\0';
