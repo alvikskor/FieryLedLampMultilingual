@@ -505,6 +505,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
     }
     #endif // OTA
 
+    #ifdef ESP_USE_BUTTON
     else if (!strncmp_P(inputBuffer, PSTR("BTN"), 3))
     {
       if (strstr_P(inputBuffer, PSTR("ON")) - inputBuffer == 4)
@@ -530,6 +531,8 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       }
       #endif
     }
+    #endif //ESP_USE_BUTTON
+    
     else if (!strncmp_P(inputBuffer, PSTR("GBR"), 3)) // выставляем общую яркость для всех эффектов без сохранения в EEPROM, если приложение присылает такую строку
     {
       memcpy(buff, &inputBuffer[3], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 4
@@ -814,7 +817,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
               //EepromManager::SaveAlarmsSettings(&alarmNum, alarms);
             }
           }
-*/
+
           else if (!strncmp_P(inputBuffer, PSTR("TXT-dawn="), 9)){
             memcpy(buff, &inputBuffer[9], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 10
             uint8_t temp = atoi(buff);
@@ -861,6 +864,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
               #endif                
             }
           }
+*/          
           else if (!strncmp_P(inputBuffer, PSTR("TXT-random="), 11)){
             if (strstr_P(inputBuffer, PSTR("on")) - inputBuffer == 11)
             {
@@ -1075,7 +1079,11 @@ void sendCurrent(char *outputBuffer)
   #endif
 
   sprintf_P(outputBuffer, PSTR("%s %u"), outputBuffer, (uint8_t)TimerManager::TimerRunning);
+  #ifdef ESP_USE_BUTTON
   sprintf_P(outputBuffer, PSTR("%s %u"), outputBuffer, (uint8_t)buttonEnabled);
+  #else
+  sprintf_P(outputBuffer, PSTR("%s %u"), outputBuffer, 0);
+  #endif //ESP_USE_BUTTON
 
   //#ifdef USE_NTP
   #if defined(USE_NTP) || defined(USE_MANUAL_TIME_SETTING) || defined(GET_TIME_FROM_PHONE)
