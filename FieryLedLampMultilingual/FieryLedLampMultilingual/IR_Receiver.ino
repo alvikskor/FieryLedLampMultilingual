@@ -645,7 +645,7 @@ void Print_IP()   {
     {
       loadingFlag = true;
       while(!fillString(WiFi.localIP().toString().c_str(), CRGB::White, false)) { delay(1); ESP.wdtFeed();}
-      if (ColorTextFon  & !ONflag){
+      if (ColorTextFon  & (!ONflag || (currentMode == EFF_COLOR && modes[currentMode].Scale < 3))){
         FastLED.clear();
         delay(1);
         FastLED.show();
@@ -657,7 +657,7 @@ void Print_IP()   {
       loadingFlag = true;
       String str = "Access Point 192.168.4.1";
       while(!fillString(str.c_str(), CRGB::White, false)) { delay(1); ESP.wdtFeed();}
-      if (ColorTextFon  & !ONflag){
+      if (ColorTextFon  & (!ONflag || (currentMode == EFF_COLOR && modes[currentMode].Scale < 3))){
         FastLED.clear();
         delay(1);
         FastLED.show();

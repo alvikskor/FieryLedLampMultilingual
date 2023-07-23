@@ -761,7 +761,7 @@ void loop()  //=================================================================
         digitalWrite(MOSFET_PIN, MOSFET_LEVEL);
       #endif
         while(!fillString(WiFi.localIP().toString().c_str(), CRGB::White, false)) { delay(1); ESP.wdtFeed(); }
-        if (ColorTextFon  & !ONflag){
+        if (ColorTextFon  & (!ONflag || (currentMode == EFF_COLOR && modes[currentMode].Scale < 3))){
           FastLED.clear();
           delay(1);
           FastLED.show();
