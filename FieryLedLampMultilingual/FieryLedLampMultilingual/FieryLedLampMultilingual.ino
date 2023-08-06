@@ -286,6 +286,8 @@ uint32_t mem_timer;
 #endif  //IR_RECEIVER_USE
 
 uint8_t RuninTextOverEffects = 0;
+uint32_t Last_Time_RuninText = 0;
+bool Fill_String = false;
 uint8_t SpeedRunningText;
 uint8_t ColorRunningText;
 uint8_t ColorTextFon;

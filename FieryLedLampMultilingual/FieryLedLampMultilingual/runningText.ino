@@ -89,7 +89,7 @@ void printTime(uint32_t thisTime, bool onDemand, bool ONflag) // периоди�
       if ( thisTime % PRINT_TIME == 0U)      // вывод каждый час (красным цветом) + каждые PRINT_TIME минут (синим цветом)
        {
         needToPrint = true;
-        letterColor = CRGB::Blue;
+        letterColor = CRGB::Yellow;
        }
      }
   }

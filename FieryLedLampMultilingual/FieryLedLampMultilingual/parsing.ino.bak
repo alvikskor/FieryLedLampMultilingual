@@ -994,7 +994,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
          if (eff_num_correct[n] == currentMode) jsonWrite(configSetup, "eff_sel", n);
      } 
 
-     jsonWrite(configSetup, "Power", ONflag);
+     //jsonWrite(configSetup, "Power", ONflag);    
      }
      inputBuffer[0] = '\0';
      //outputBuffer[0] = '\0';
