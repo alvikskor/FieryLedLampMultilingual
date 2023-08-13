@@ -393,6 +393,7 @@ void setup()  //================================================================
   SpeedRunningText = jsonReadtoInt(configSetup, "spt");  // Швидкість рядка, що бежить
   ColorRunningText = jsonReadtoInt(configSetup, "sct");  // Колір рядка, що бежить
   ColorTextFon = jsonReadtoInt(configSetup, "ctf");      //виводити рядок, що бежить, на кольоровом фоні
+  jsonWrite(configSetup, "ver", FLL_VERSION); 
   #ifdef USE_NTP
   (jsonRead(configSetup, "ntp")).toCharArray (NTP_ADDRESS, (jsonRead(configSetup, "ntp")).length()+1);
   #endif
