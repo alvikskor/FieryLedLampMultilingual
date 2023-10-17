@@ -51,7 +51,7 @@ void buttonTick()
             #ifdef TM1637_USE
             clockTicker_blink();
             #endif
-            FastLED.setBrightness(modes[currentMode].Brightness);
+            SetBrightness(modes[currentMode].Brightness);
             changePower();
        }
        return;
@@ -59,16 +59,19 @@ void buttonTick()
     else
     {
       ONflag = !ONflag;
-	  jsonWrite(configSetup, "Power", ONflag);
+      jsonWrite(configSetup, "Power", ONflag);
     }
     if (!ONflag)  {
-        //eepromTimeout = millis() - EEPROM_WRITE_DELAY; // eepromTimeout = millis(); // 
         timeout_save_file_changes = millis() - SAVE_FILE_DELAY_TIMEOUT;
         if (!FavoritesManager::FavoritesRunning) EepromManager::EepromPut(modes);
         save_file_changes = 7;
         timeTick();
     }
-    else EepromManager::EepromGet(modes);
+    else {
+        EepromManager::EepromGet(modes);
+        timeout_save_file_changes = millis();
+        bitSet (save_file_changes, 0);
+    }
     changePower();
     loadingFlag = true;
 
@@ -82,7 +85,12 @@ void buttonTick()
     updateRemoteBlynkParams();
     #endif
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    if (ONflag) {
+        repeat_multiple_lamp_control=true;
+    }
+    else {
+        multiple_lamp_control ();
+    }
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
   }
 
@@ -100,7 +108,7 @@ void buttonTick()
         #ifdef TM1637_USE
         clockTicker_blink();
         #endif
-        FastLED.setBrightness(modes[currentMode].Brightness);
+        SetBrightness(modes[currentMode].Brightness);
         changePower();
        }
        else
@@ -110,7 +118,7 @@ void buttonTick()
   {
     uint8_t temp = jsonReadtoInt(configSetup, "eff_sel");
     if (Favorit_only)
-	{
+    {
       uint8_t lastMode = currentMode;
       do 
       {
@@ -120,15 +128,15 @@ void buttonTick()
       if (currentMode == lastMode) // если ни один режим не добавлен в избранное, всё равно куда-нибудь переключимся
         if (++temp >= MODE_AMOUNT) temp = 0;
         currentMode = eff_num_correct[temp];
-	}
+    }
     else
       if (++temp >= MODE_AMOUNT) temp = 0;
     currentMode = eff_num_correct[temp];
-	jsonWrite(configSetup, "eff_sel", temp);
-	jsonWrite(configSetup, "br", modes[currentMode].Brightness);
+    jsonWrite(configSetup, "eff_sel", temp);
+    jsonWrite(configSetup, "br", modes[currentMode].Brightness);
     jsonWrite(configSetup, "sp", modes[currentMode].Speed);
     jsonWrite(configSetup, "sc", modes[currentMode].Scale);
-    FastLED.setBrightness(modes[currentMode].Brightness);
+    SetBrightness(modes[currentMode].Brightness);
     loadingFlag = true;
 
       if (random_on && FavoritesManager::FavoritesRunning)
@@ -153,8 +161,8 @@ void buttonTick()
   if (ONflag && clickCount == 3U)
   {
     uint8_t temp = jsonReadtoInt(configSetup, "eff_sel");
-	if (Favorit_only) 
-	{
+    if (Favorit_only) 
+    {
       uint8_t lastMode = currentMode;
       do
       {
@@ -164,15 +172,15 @@ void buttonTick()
       if (currentMode == lastMode) // если ни один режим не добавлен в избранное, всё равно куда-нибудь переключимся
         if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
         currentMode = eff_num_correct[temp];
-	}
-	else 
-	  if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
+    }
+    else 
+      if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
     currentMode = eff_num_correct[temp];
-	jsonWrite(configSetup, "eff_sel", temp);
-	jsonWrite(configSetup, "br", modes[currentMode].Brightness);
+    jsonWrite(configSetup, "eff_sel", temp);
+    jsonWrite(configSetup, "br", modes[currentMode].Brightness);
     jsonWrite(configSetup, "sp", modes[currentMode].Speed);
     jsonWrite(configSetup, "sc", modes[currentMode].Scale);
-    FastLED.setBrightness(modes[currentMode].Brightness);
+    SetBrightness(modes[currentMode].Brightness);
     loadingFlag = true;
 
       if (random_on && FavoritesManager::FavoritesRunning)
@@ -200,34 +208,34 @@ void buttonTick()
     if (otaManager.RequestOtaUpdate())
     {
       ONflag = true;
-	  jsonWrite(configSetup, "Power", ONflag);
+      jsonWrite(configSetup, "Power", ONflag);
       currentMode = EFF_MATRIX;                             // принудительное включение режима "Матрица" для индикации перехода в режим обновления по воздуху
-	  jsonWrite(configSetup, "eff_sel", currentMode);
-	  jsonWrite(configSetup, "br", modes[currentMode].Brightness);
+      jsonWrite(configSetup, "eff_sel", currentMode);
+      jsonWrite(configSetup, "br", modes[currentMode].Brightness);
       jsonWrite(configSetup, "sp", modes[currentMode].Speed);
       jsonWrite(configSetup, "sc", modes[currentMode].Scale);
       changePower();
     }
     else
     #endif
-	
-	#ifdef BUTTON_CAN_SET_SLEEP_TIMER
-	//if (!ota)
-	{
+    
+    #ifdef BUTTON_CAN_SET_SLEEP_TIMER
+    //if (!ota)
+    {
     // мигать об успехе операции лучше до вызова changePower(), иначе сперва мелькнут кадры текущего эффекта
     showWarning(CRGB::Blue, 1000, 250U);                    // мигание синим цветом 1 секунду
     if (!ONflag) EepromManager::EepromGet(modes);
     ONflag = true;
     changePower();
-	jsonWrite(configSetup, "Power", ONflag);
+    jsonWrite(configSetup, "Power", ONflag);
     jsonWrite(configSetup, "tmr", 1);
     #ifdef USE_BLYNK
     updateRemoteBlynkParams();
     #endif
     TimerManager::TimeToFire = millis() + BUTTON_SET_SLEEP_TIMER1 * 60UL * 1000UL;
     TimerManager::TimerRunning = true;
-	}
-    #endif //BUTTON_CAN_SET_SLEEP_TIMER	
+    }
+    #endif //BUTTON_CAN_SET_SLEEP_TIMER 
     ;
   }
 
@@ -271,8 +279,8 @@ void buttonTick()
       if (espMode) wifiManager.resetSettings();                             // сброс сохранённых SSID и пароля (сброс настроек подключения к роутеру)
     #endif
     espMode = (espMode == 0U) ? 1U : 0U;
-	jsonWrite(configSetup, "ESP_mode", (int)espMode);
-	saveConfig();  
+    jsonWrite(configSetup, "ESP_mode", (int)espMode);
+    saveConfig();  
 
     #ifdef GENERAL_DEBUG
     LOG.printf_P(PSTR("Рабочий режим лампы изменён и сохранён в энергонезависимую память\nНовый рабочий режим: ESP_MODE = %d, %s\nРестарт...\n"),
@@ -285,8 +293,9 @@ void buttonTick()
   }
 
   #ifdef MP3_TX_PIN
+  
   // Восьмикратное нажатие
-  if (clickCount == 8U)  {                // Вкл / Откл звука
+  if (clickCount == 8U)  {                                  // Вкл / Откл звука
     if (mp3_player_connect == 4) {
       if (eff_sound_on) {
         eff_sound_on = 0;
@@ -310,6 +319,9 @@ void buttonTick()
         #endif
     }
     jsonWrite(configSetup, "on_sound", constrain (eff_sound_on,0,1));
+    #ifdef USE_MULTIPLE_LAMPS_CONTROL
+    repeat_multiple_lamp_control = true;
+    #endif  //USE_MULTIPLE_LAMPS_CONTROL
   }
   #endif  //MP3_TX_PIN
 
@@ -341,8 +353,8 @@ if (touch.isStep())
             ? modes[currentMode].Brightness + delta
             : modes[currentMode].Brightness - delta,
           1, 255);
-		jsonWrite(configSetup, "br", modes[currentMode].Brightness);
-        FastLED.setBrightness(modes[currentMode].Brightness);
+        jsonWrite(configSetup, "br", modes[currentMode].Brightness);
+        SetBrightness(modes[currentMode].Brightness);
         #ifdef TM1637_USE
         DisplayFlag = 3;
         Display_Timer(modes[currentMode].Brightness);
@@ -354,14 +366,13 @@ if (touch.isStep())
         #ifdef USE_MULTIPLE_LAMPS_CONTROL
         repeat_multiple_lamp_control = true;
         #endif  //USE_MULTIPLE_LAMPS_CONTROL
-
         break;
       }
 
       case 1U:                                              // удержание после одного клика - изменение скорости
       {
         modes[currentMode].Speed = constrain(brightDirection ? modes[currentMode].Speed + 1 : modes[currentMode].Speed - 1, 1, 255);
-		jsonWrite(configSetup, "sp", modes[currentMode].Speed);
+        jsonWrite(configSetup, "sp", modes[currentMode].Speed);
         loadingFlag = true; // без перезапуска эффекта ничего и не увидишь
 
         #ifdef GENERAL_DEBUG
@@ -374,14 +385,16 @@ if (touch.isStep())
         DisplayFlag = 3;
         Display_Timer(modes[currentMode].Speed);
         #endif    
-
+        #ifdef USE_MULTIPLE_LAMPS_CONTROL
+        repeat_multiple_lamp_control = true;
+        #endif  //USE_MULTIPLE_LAMPS_CONTROL
         break;
       }
 
       case 2U:                                              // удержание после двух кликов - изменение масштаба
       {
         modes[currentMode].Scale = constrain(brightDirection ? modes[currentMode].Scale + 1 : modes[currentMode].Scale - 1, 1, 100);
-		jsonWrite(configSetup, "sc", modes[currentMode].Scale);
+        jsonWrite(configSetup, "sc", modes[currentMode].Scale);
         loadingFlag = true; // без перезапуска эффекта ничего и не увидишь
 
         #ifdef GENERAL_DEBUG
@@ -394,30 +407,33 @@ if (touch.isStep())
         DisplayFlag = 3;
         Display_Timer(modes[currentMode].Scale);
         #endif
-
+        #ifdef USE_MULTIPLE_LAMPS_CONTROL
+        repeat_multiple_lamp_control = true;
+        #endif  //USE_MULTIPLE_LAMPS_CONTROL
         break;
       }
-	  
-	    #ifdef BUTTON_CAN_SET_SLEEP_TIMER
-	  case 3U:
-	  {
-		Button_Holding = true;
-		// мигать об успехе операции лучше до вызова changePower(), иначе сперва мелькнут кадры текущего эффекта
-		showWarning(CRGB::Blue, 1500U, 250U);                    // мигание синим цветом 1 секунду
-		ONflag = true;
-		changePower();
-		jsonWrite(configSetup, "Power", ONflag);
+      
+        #ifdef BUTTON_CAN_SET_SLEEP_TIMER
+      case 3U:                                               // Таймер сну 10 хв.
+      {
+        Button_Holding = true;
+        // мигать об успехе операции лучше до вызова changePower(), иначе сперва мелькнут кадры текущего эффекта
+        showWarning(CRGB::Blue, 1500U, 250U);                    // мигание синим цветом 1 секунду
+        ONflag = true;
+        changePower();
+        jsonWrite(configSetup, "Power", ONflag);
         jsonWrite(configSetup, "tmr", 1);
-		#ifdef USE_BLYNK
-		updateRemoteBlynkParams();
-		#endif
-		TimerManager::TimeToFire = millis() + BUTTON_SET_SLEEP_TIMER2 * 60UL * 1000UL;
-		TimerManager::TimerRunning = true;
-		break;
-	  }
-		#endif //BUTTON_CAN_SET_SLEEP_TIMER
-	  case 14U:
-	  {
+        #ifdef USE_BLYNK
+        updateRemoteBlynkParams();
+        #endif
+        TimerManager::TimeToFire = millis() + BUTTON_SET_SLEEP_TIMER2 * 60UL * 1000UL;
+        TimerManager::TimerRunning = true;
+        break;
+      }
+        #endif //BUTTON_CAN_SET_SLEEP_TIMER
+        
+      case 14U:                                             // Скидання основних налаштувань, які зберігаються у файлі config.json
+      {
           showWarning(CRGB::Red, 500, 250U);
           ESP.wdtFeed();
           setModeSettings();
@@ -433,8 +449,9 @@ if (touch.isStep())
           }
           break;
       }
-      case 19U:
-	  {
+      
+      case 19U:                                            // Скидання усіх налаштувань в "заводські"
+      {
           showWarning(CRGB::Red, 500, 250U);
           ESP.wdtFeed();
           setModeSettings();
@@ -501,7 +518,7 @@ if (touch.isStep())
 
       default:
         break;
-    }		
+    }       
   }
   else
   {
@@ -512,9 +529,9 @@ if (touch.isStep())
     switch (but )
     {
       case 0U:                                              // просто удержание (до удержания кнопки кликов не было) - белый свет
-	  {
-		Button_Holding = true;
-		currentMode = EFF_WHITE_COLOR;
+      {
+        Button_Holding = true;
+        currentMode = EFF_WHITE_COLOR;
     //String Name = "correct." + jsonRead (configSetup, "lang") + ".json";
     //String Correct = readFile(Name, 2048);
     for ( uint8_t n=0; n< MODE_AMOUNT; n++)
@@ -525,39 +542,39 @@ if (touch.isStep())
             break;
         }
     }
-		jsonWrite(configSetup, "br", modes[currentMode].Brightness);
-		jsonWrite(configSetup, "sp", modes[currentMode].Speed);
-		jsonWrite(configSetup, "sc", modes[currentMode].Scale);
-		ONflag = true;
-		jsonWrite(configSetup, "Power", ONflag);
-		changePower();
-		#ifdef USE_BLYNK
-		updateRemoteBlynkParams();
-		#endif
-		break;
-	  }
-	    #ifdef BUTTON_CAN_SET_SLEEP_TIMER	  
-	  case 3U:
-	  {
-		Button_Holding = true;
-		// мигать об успехе операции лучше до вызова changePower(), иначе сперва мелькнут кадры текущего эффекта
-		showWarning(CRGB::Blue, 1500U, 250U);                    // мигание синим цветом 1 секунду
+        jsonWrite(configSetup, "br", modes[currentMode].Brightness);
+        jsonWrite(configSetup, "sp", modes[currentMode].Speed);
+        jsonWrite(configSetup, "sc", modes[currentMode].Scale);
+        ONflag = true;
+        jsonWrite(configSetup, "Power", ONflag);
+        changePower();
+        #ifdef USE_BLYNK
+        updateRemoteBlynkParams();
+        #endif
+        break;
+      }
+        #ifdef BUTTON_CAN_SET_SLEEP_TIMER     
+      case 3U:
+      {
+        Button_Holding = true;
+        // мигать об успехе операции лучше до вызова changePower(), иначе сперва мелькнут кадры текущего эффекта
+        showWarning(CRGB::Blue, 1500U, 250U);                    // мигание синим цветом 1 секунду
         EepromManager::EepromGet(modes);
-		ONflag = true;
-		changePower();
-		jsonWrite(configSetup, "Power", ONflag);
+        ONflag = true;
+        changePower();
+        jsonWrite(configSetup, "Power", ONflag);
         jsonWrite(configSetup, "tmr", 1);
-		#ifdef USE_BLYNK
-		updateRemoteBlynkParams();
-		#endif
-		TimerManager::TimeToFire = millis() + BUTTON_SET_SLEEP_TIMER2 * 60UL * 1000UL;
-		TimerManager::TimerRunning = true;
-		break;		
-	  }
-		#endif //BUTTON_CAN_SET_SLEEP_TIMER
-/*        
+        #ifdef USE_BLYNK
+        updateRemoteBlynkParams();
+        #endif
+        TimerManager::TimeToFire = millis() + BUTTON_SET_SLEEP_TIMER2 * 60UL * 1000UL;
+        TimerManager::TimerRunning = true;
+        break;      
+      }
+        #endif //BUTTON_CAN_SET_SLEEP_TIMER
+        
       case 14U:
-	  {
+      {
           showWarning(CRGB::Red, 500, 250U);
           ESP.wdtFeed();
           if(FileCopy (F("/default/config.json"), F("/config.json"))) {
@@ -572,7 +589,7 @@ if (touch.isStep())
           break;
       }
       case 19U:
-	  {
+      {
           showWarning(CRGB::Red, 500, 250U);
           ESP.wdtFeed();
           if(FileCopy (F("/default/config.json"), F("/config.json"))) {
@@ -626,8 +643,8 @@ if (touch.isStep())
           ESP.restart();
           break;
       }
-*/      
-	}
+      
+    }
    }
   }
 

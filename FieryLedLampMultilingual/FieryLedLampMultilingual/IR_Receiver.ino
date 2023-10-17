@@ -24,11 +24,11 @@ void IR_Receive_Handle ()   {       // Обробка прийнятого си�
     if (Enter_Digit_1 && millis() - IR_Dgit_Enter_Timer > IR_DIGIT_ENTER_TIMER){  // Якщо одна цифра натиснута та час очікування натискання другої цифри вийшов
         Enter_Digit_1 = 0;
         currentMode = eff_num_correct[Enter_Number];
-	    jsonWrite(configSetup, "eff_sel", Enter_Number);
-	    jsonWrite(configSetup, "br", modes[currentMode].Brightness);
+        jsonWrite(configSetup, "eff_sel", Enter_Number);
+        jsonWrite(configSetup, "br", modes[currentMode].Brightness);
         jsonWrite(configSetup, "sp", modes[currentMode].Speed);
         jsonWrite(configSetup, "sc", modes[currentMode].Scale);
-        FastLED.setBrightness(modes[currentMode].Brightness);
+        SetBrightness(modes[currentMode].Brightness);
         loadingFlag = true;
         //settChanged = true;
         //eepromTimeout = millis();
@@ -388,7 +388,7 @@ void IR_Power()   {
             #ifdef TM1637_USE
             clockTicker_blink();
             #endif
-            FastLED.setBrightness(modes[currentMode].Brightness);
+            SetBrightness(modes[currentMode].Brightness);
             changePower();
        }
        return;
@@ -396,7 +396,7 @@ void IR_Power()   {
     else
     {
         ONflag = !ONflag;
-	    jsonWrite(configSetup, "Power", ONflag);
+        jsonWrite(configSetup, "Power", ONflag);
         if (!ONflag)  {
             //eepromTimeout = millis() - EEPROM_WRITE_DELAY;
             timeout_save_file_changes = millis() - SAVE_FILE_DELAY_TIMEOUT;
@@ -404,7 +404,11 @@ void IR_Power()   {
             save_file_changes = 7;
             timeTick();
         }
-        else EepromManager::EepromGet(modes);
+        else {
+            EepromManager::EepromGet(modes);
+            timeout_save_file_changes = millis();
+            bitSet (save_file_changes, 0);
+        }
         changePower();
     }
     loadingFlag = true;
@@ -419,7 +423,12 @@ void IR_Power()   {
     updateRemoteBlynkParams();
     #endif
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
-    multiple_lamp_control ();
+    if (ONflag) {
+        repeat_multiple_lamp_control=true;
+    }
+    else {
+        multiple_lamp_control ();
+    }
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
 }
 
@@ -448,6 +457,9 @@ void Mute()   {                // Вкл / Откл звука
     jsonWrite(configSetup, "on_sound", constrain (eff_sound_on,0,1));
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
+    #ifdef USE_MULTIPLE_LAMPS_CONTROL
+    repeat_multiple_lamp_control = true;
+    #endif  //USE_MULTIPLE_LAMPS_CONTROL
   #endif  //MP3_TX_PIN
 }
 
@@ -457,7 +469,7 @@ void Prev_Next_eff(bool direction)   {
       uint8_t temp = jsonReadtoInt(configSetup, "eff_sel");
       if (direction) {
           if (Favorit_only)
-	      {
+          {
             uint8_t lastMode = currentMode;
             do 
             {
@@ -467,13 +479,13 @@ void Prev_Next_eff(bool direction)   {
             if (currentMode == lastMode) // если ни один режим не добавлен в избранное, всё равно куда-нибудь переключимся
               if (++temp >= MODE_AMOUNT) temp = 0;
               currentMode = eff_num_correct[temp];
-	      }
+          }
           else
             if (++temp >= MODE_AMOUNT) temp = 0;
       }
       else {
-	      if (Favorit_only) 
-	      {
+          if (Favorit_only) 
+          {
             uint8_t lastMode = currentMode;
             do
             {
@@ -483,16 +495,16 @@ void Prev_Next_eff(bool direction)   {
             if (currentMode == lastMode) // если ни один режим не добавлен в избранное, всё равно куда-нибудь переключимся
               if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
               currentMode = eff_num_correct[temp];
-	      }
-	      else 
-	        if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
+          }
+          else 
+            if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
       }
     currentMode = eff_num_correct[temp];
-	jsonWrite(configSetup, "eff_sel", temp);
-	jsonWrite(configSetup, "br", modes[currentMode].Brightness);
+    jsonWrite(configSetup, "eff_sel", temp);
+    jsonWrite(configSetup, "br", modes[currentMode].Brightness);
     jsonWrite(configSetup, "sp", modes[currentMode].Speed);
     jsonWrite(configSetup, "sc", modes[currentMode].Scale);
-    FastLED.setBrightness(modes[currentMode].Brightness);
+    SetBrightness(modes[currentMode].Brightness);
     loadingFlag = true;
     //settChanged = true;
     //eepromTimeout = millis();
@@ -521,8 +533,8 @@ void Cycle_on_off()   {
     if (ONflag)   {
         uint8_t tmp;
         jsonReadtoInt(configSetup, "cycle_on") == 0? tmp = 1 : tmp = 0;
-	    jsonWrite(configSetup, "cycle_on", tmp);
-	    FavoritesManager::FavoritesRunning = tmp;
+        jsonWrite(configSetup, "cycle_on", tmp);
+        FavoritesManager::FavoritesRunning = tmp;
         if (tmp){
             showWarning(CRGB::Blue, 500, 250U);        // мигание синим цветом 0.5 секунды
             EepromManager::EepromPut(modes);
@@ -544,8 +556,8 @@ void Cycle_on_off()   {
 void Bright_Up_Down(bool direction)   {
     uint8_t delta = IR_Data_Ready == 1 ? 1U : 4U;
     modes[currentMode].Brightness = constrain(direction ? modes[currentMode].Brightness + delta : modes[currentMode].Brightness - delta, 1, 255);
-	jsonWrite(configSetup, "br", modes[currentMode].Brightness);
-    FastLED.setBrightness(modes[currentMode].Brightness);
+    jsonWrite(configSetup, "br", modes[currentMode].Brightness);
+    SetBrightness(modes[currentMode].Brightness);
     #ifdef TM1637_USE
     DisplayFlag = 3;
     Display_Timer(modes[currentMode].Brightness);
@@ -571,7 +583,7 @@ void Bright_Up_Down(bool direction)   {
 void Speed_Up_Down(bool direction)   {
     uint8_t delta = IR_Data_Ready == 1 ? 1U : 4U;
     modes[currentMode].Speed = constrain(direction ? modes[currentMode].Speed + delta : modes[currentMode].Speed - delta, 1, 255);
-	jsonWrite(configSetup, "sp", modes[currentMode].Speed);
+    jsonWrite(configSetup, "sp", modes[currentMode].Speed);
     loadingFlag = true; // без перезапуска эффекта ничего и не увидишь
     #ifdef TM1637_USE
     DisplayFlag = 3;
@@ -598,7 +610,7 @@ void Speed_Up_Down(bool direction)   {
 void Scale_Up_Down(bool direction)   {
     uint8_t delta = IR_Data_Ready == 1 ? 1U : 2U;
     modes[currentMode].Scale = constrain(direction ? modes[currentMode].Scale + delta : modes[currentMode].Scale - delta, 1, 100);
-	jsonWrite(configSetup, "sc", modes[currentMode].Scale);
+    jsonWrite(configSetup, "sc", modes[currentMode].Scale);
     loadingFlag = true; // без перезапуска эффекта ничего и не увидишь
     #ifdef TM1637_USE
     DisplayFlag = 3;
@@ -632,8 +644,9 @@ void Volum_Up_Down (bool direction)   {
     DisplayFlag = 3;
     Display_Timer(eff_volume);
     #endif
-    //timeout_save_file_changes = millis();
-    //bitSet (save_file_changes, 0);
+    #ifdef USE_MULTIPLE_LAMPS_CONTROL
+    repeat_multiple_lamp_control = true;
+    #endif  //USE_MULTIPLE_LAMPS_CONTROL
     #endif  //MP3_TX_PIN
 }
 
@@ -671,11 +684,13 @@ void Print_IP()   {
 
 void Folder_Next_Prev(bool direction)    {
     #ifdef MP3_TX_PIN
-    if (!pause_on && !mp3_stop && eff_sound_on) {
+    if (true) { //(!pause_on && !mp3_stop && eff_sound_on) {
     CurrentFolder = constrain(direction ? CurrentFolder + 1 : CurrentFolder - 1, 0, 99);
     jsonWrite(configSetup, "fold_sel", CurrentFolder);
-    send_command(0x17,FEEDBACK,0,CurrentFolder);   //  Попередня папка / Наступна папка
-    delay(mp3_delay);
+    if (!pause_on && !mp3_stop && eff_sound_on) {
+      send_command(0x17,FEEDBACK,0,CurrentFolder);           // Включити безперервне відтворення вказаної папки
+      delay(mp3_delay);
+    }
     }
     #ifdef GENERAL_DEBUG
      LOG.print (F("\nCurrent folder "));
@@ -685,6 +700,9 @@ void Folder_Next_Prev(bool direction)    {
     DisplayFlag = 0;
     Display_Timer();
     #endif
+    #ifdef USE_MULTIPLE_LAMPS_CONTROL
+    repeat_multiple_lamp_control = true;
+    #endif  //USE_MULTIPLE_LAMPS_CONTROL
     #endif  //MP3_TX_PIN
 }
 
@@ -753,11 +771,11 @@ void Digit_Handle (uint8_t digit)   {
         DisplayFlag = 3;
         Display_Timer(Enter_Number);
         #endif
-	    jsonWrite(configSetup, "eff_sel", Enter_Number);
-	    jsonWrite(configSetup, "br", modes[currentMode].Brightness);
+        jsonWrite(configSetup, "eff_sel", Enter_Number);
+        jsonWrite(configSetup, "br", modes[currentMode].Brightness);
         jsonWrite(configSetup, "sp", modes[currentMode].Speed);
         jsonWrite(configSetup, "sc", modes[currentMode].Scale);
-        FastLED.setBrightness(modes[currentMode].Brightness);
+        SetBrightness(modes[currentMode].Brightness);
         loadingFlag = true;
         //timeout_save_file_changes = millis();
         //bitSet (save_file_changes, 0);
