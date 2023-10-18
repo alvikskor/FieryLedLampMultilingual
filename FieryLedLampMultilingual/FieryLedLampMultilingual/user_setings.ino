@@ -1477,11 +1477,7 @@ void EffectList (const String& efflist )   {
  
 void SetBrightness(uint8_t brightness)   {
     if (AutoBrightness && !dawnFlag && !day_night) {
-        FastLED.setBrightness(constrain(brightness >> AutoBrightness, 1, 40));
-       // Serial.print("Set Brightness ");
-       // Serial.println(constrain(brightness / 5, 1, 40));
-       // Serial.print("Day night ");
-       // Serial.println(day_night);
+        FastLED.setBrightness(constrain(brightness >> AutoBrightness, 1, 100));
     }
     else
         FastLED.setBrightness(modes[currentMode].Brightness);

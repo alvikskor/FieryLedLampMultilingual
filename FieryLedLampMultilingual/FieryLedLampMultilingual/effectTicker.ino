@@ -161,7 +161,7 @@ void changePower()
 {
   uint8_t k;    
   if (AutoBrightness && !day_night)      
-    k = constrain(modes[currentMode].Brightness / 5, 5, 30);
+    k = constrain(modes[currentMode].Brightness >> AutoBrightness, 1, 100);
   else
     k = modes[currentMode].Brightness;
 
