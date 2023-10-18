@@ -1,4 +1,5 @@
-{"SSDP":"Led Lamp Web",
+{
+"SSDP":"Led Lamp Web",
 "ssidAP":"Led Lamp Web",
 "passwordAP":"31415926",
 "ssid":"",
@@ -48,8 +49,9 @@
 "alm_fold":98,
 "on_alm_adv":1,
 "lang":"ua",
+"spt":210,
+"sct":48,
 "toe":0,
-"sct":51,
-"spt":200,
-"ctf":0
+"ctf":0,
+"s_IP":0
 }

@@ -89,7 +89,7 @@ void printTime(uint32_t thisTime, bool onDemand, bool ONflag) // периоди�
       if ( thisTime % PRINT_TIME == 0U)      // вывод каждый час (красным цветом) + каждые PRINT_TIME минут (синим цветом)
        {
         needToPrint = true;
-        letterColor = CRGB::Blue;
+        letterColor = CRGB::Yellow;
        }
      }
   }
@@ -151,8 +151,14 @@ void printTime(uint32_t thisTime, bool onDemand, bool ONflag) // периоди�
     #if defined(MOSFET_PIN) && defined(MOSFET_LEVEL)        // установка сигнала в пин, управляющий MOSFET транзистором, соответственно состоянию вкл/выкл матрицы или будильника
     digitalWrite(MOSFET_PIN, ONflag || (dawnFlag && !manualOff) ? MOSFET_LEVEL : !MOSFET_LEVEL);
     #endif
-
-    FastLED.setBrightness(modes[currentMode].Brightness);
+    if (ColorTextFon  & (!ONflag || (currentMode == EFF_COLOR && modes[currentMode].Scale < 3))){
+      FastLED.clear();
+      delay(1);
+      FastLED.show();
+    }
+    //Serial.print("ColorTextFon=");
+    //Serial.println(ColorTextFon);
+    SetBrightness(modes[currentMode].Brightness);
     loadingFlag = true;
   }
 

