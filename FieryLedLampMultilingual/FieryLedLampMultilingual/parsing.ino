@@ -1040,7 +1040,9 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
           #endif //MP3_TX_PIN
         }
         if (onflg) {
+            #ifdef MP3_TX_PIN
             if (ONflag) mp3_folder=effects_folders[currentMode];
+            #endif
             changePower();   // Активация состояния ON/OFF
         }
  #ifdef GENERAL_DEBUG
