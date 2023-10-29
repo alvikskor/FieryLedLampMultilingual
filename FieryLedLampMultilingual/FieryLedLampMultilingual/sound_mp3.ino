@@ -253,7 +253,7 @@ void play_sound()   {
         {
             CurrentFolder = mp3_folder;
         }
-        if ((CurrentFolder_last != CurrentFolder) && (alarm_sound_flag || set_mp3_play_now)) {
+        if (((CurrentFolder_last != CurrentFolder) && set_mp3_play_now) || alarm_sound_flag) {
           send_command(0x17,FEEDBACK,0,CurrentFolder); // Включить непрерывное воспроизведение указанной папки
           delay(mp3_delay);
           //Serial.println ("play_sound");

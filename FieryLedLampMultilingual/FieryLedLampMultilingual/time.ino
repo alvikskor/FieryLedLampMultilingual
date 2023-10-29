@@ -360,10 +360,10 @@ void clockTicker_blink()
   //tm1637_brightness ();
   if (dawnFlag)  //если рассвет - мигаем  часами
   {
+    display.displayClock(hours, last_minute);                         // выводим время функцией часов
     if (millis() - tmr_blink > 100) {
       tmr_blink = millis();
       display.setBrightness((DispBrightness/51U)>4 ? 7 : DispBrightness/51U , DispBrightness);
-      display.displayClock(hours, last_minute);                         // выводим время функцией часов
       if (DispBrightness >= 204) {
         aDirection = false;
       }
