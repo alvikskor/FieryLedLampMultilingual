@@ -16,9 +16,7 @@ When downloading the firmware to the board over the wire, the firmware itself is
 
 5. When the lamp is turned on for the first time, it creates an access point called Led Lamp Web. You need to connect to it.
 The password for connecting to the access point is 31415926. The IP address for connecting to the web page of the lamp is 192.168.4.1
-In order for the lamp to immediately connect to your WiFi network, in the data/config.json file, in the ssid field, enter the name of your WiFi network,
-in the password field, enter the password, change the value of ESP_mode to 1.
-Save the file to the same location and upload the file system.
+
 
 6. When you turn it on for the first time, you need to activate the web interface. Activation consists in confirming tolerance towards Ukraine.
  The developer of the web interface is a citizen and patriot of this country.
@@ -28,7 +26,7 @@ There you can also set the lamp name, time zone parameters, summer time switch, 
 (I advise you to change the password to your own for the purpose of information security). After that, you can click the "Reload" button at the bottom of the page.
 The lamp will connect to the network. Its IP address can be found by pressing the button five times or in the Arduino IDE monitor.
 
-7. This firmware is fully compatible with the FireLamp program from Koteyka 🐱. To date, the version is 3.1.7. You can download here https://firelamp.pp.ua/links
+7. This firmware is fully compatible with the FireLamp program from Koteyka 🐱. To date, the version is 3.2.3. You can download here https://files.fm/f/m5cmkuukt7
 
 8. On the web page tab of the "User Settings" lamp, you can control the time display with a running line, turn on/off the random selection mode
 settings for effects in the cycle, return the default settings of effects (at the time of loading), on/off switching between effects with the lamp button
