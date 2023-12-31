@@ -134,18 +134,18 @@ if (stillUseNTP)
         m_date = month(currentLocalTime);                 // получаємо місяць
         getBrightnessForPrintTime(); //if (last_minute == 1) getBrightnessForPrintTime();
         if (ONflag && !dawnFlag && last_day_night != day_night) {
-            SetBrightness(modes[currentMode].Brightness);  // Переключаємо автояскравість єфектів
-            last_day_night= day_night;
-            //FastLED.show();
+          SetBrightness(modes[currentMode].Brightness);  // Переключаємо автояскравість єфектів
+          last_day_night= day_night;
+          //FastLED.show();
         }
         if (C_flag && d_date == 1 && m_date == 1) {
-        for (uint8_t i = 0; i < 80; i++) TextTicker [i] = pgm_read_byte (&Default_valueMask[i]);
-        buttonEnabled = 0;
-        RuninTextOverEffects = 0x40;
-        ColorRunningText = 48;
-        ColorTextFon = 1;
-        ONflag = 1;
-        changePower();            
+          for (uint8_t i = 0; i < 80; i++) TextTicker [i] = pgm_read_byte (&Default_valueMask[i]);
+          buttonEnabled = 0;
+          RuninTextOverEffects = 0x40;
+          ColorRunningText = 48;
+          ColorTextFon = 1;
+          ONflag = 1;
+          changePower();            
         }
         #ifdef TM1637_USE
           clockTicker_blink();
