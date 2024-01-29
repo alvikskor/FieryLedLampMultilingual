@@ -373,7 +373,7 @@ void IR_Receive_Button_Handle()   {     //Обробка прийнятих ко
 
 void IR_Power()   {
     if (dawnFlag) {
-        #ifdef MP3_TX_PIN
+        #ifdef MP3_PLAYER_USE
         if (alarm_sound_flag) {
            //myDFPlayer.pause();
            send_command(0x0E,0,0,0); //Пауза
@@ -381,7 +381,7 @@ void IR_Power()   {
            alarm_sound_flag = false;
         }
         else
-        #endif  //MP3_TX_PIN
+        #endif  // MP3_PLAYER_USE
         {
             manualOff = true;
             dawnFlag = false;
@@ -433,7 +433,7 @@ void IR_Power()   {
 }
 
 void Mute()   {                // Вкл / Откл звука
-    #ifdef MP3_TX_PIN
+    #ifdef MP3_PLAYER_USE
     if (mp3_player_connect == 4) {
       if (eff_sound_on) {
         eff_sound_on = 0;
@@ -454,13 +454,13 @@ void Mute()   {                // Вкл / Откл звука
         LOG.println (F("mp3 player не подключен"));
         #endif
     }
-    jsonWrite(configSetup, "on_sound", constrain (eff_sound_on,0,1));
+    jsonWrite(configSetup, "on_sound", eff_sound_on > 0 ? 1 : 0);
     timeout_save_file_changes = millis();
     bitSet (save_file_changes, 0);
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
-  #endif  //MP3_TX_PIN
+  #endif  // MP3_PLAYER_USE
 }
 
 void Prev_Next_eff(bool direction)   {
@@ -532,7 +532,7 @@ void Prev_Next_eff(bool direction)   {
 void Cycle_on_off()   {
     if (ONflag)   {
         uint8_t tmp;
-        jsonReadtoInt(configSetup, "cycle_on") == 0? tmp = 1 : tmp = 0;
+        jsonReadtoInt(configSetup, "cycle_on") == 0 ? tmp = 1 : tmp = 0;
         jsonWrite(configSetup, "cycle_on", tmp);
         FavoritesManager::FavoritesRunning = tmp;
         if (tmp){
@@ -636,7 +636,7 @@ void Scale_Up_Down(bool direction)   {
 }
 
 void Volum_Up_Down (bool direction)   {
-    #ifdef MP3_TX_PIN
+    #ifdef MP3_PLAYER_USE
     eff_volume = constrain(direction ? eff_volume + 1 : eff_volume - 1, 1, 30);
     jsonWrite(configSetup, "vol", eff_volume);
     if (!dawnflag_sound) send_command(6,FEEDBACK,0,eff_volume); //Громкость
@@ -647,7 +647,7 @@ void Volum_Up_Down (bool direction)   {
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
-    #endif  //MP3_TX_PIN
+    #endif  // MP3_PLAYER_USE
 }
 
 void Print_IP()   {
@@ -657,7 +657,14 @@ void Print_IP()   {
     if (espMode == 1U)
     {
       loadingFlag = true;
-      while(!fillString(WiFi.localIP().toString().c_str(), CRGB::White, false)) { delay(1); ESP.wdtFeed();}
+      while(!fillString(WiFi.localIP().toString().c_str(), CRGB::White, false)) {
+          delay(1);
+          #ifdef ESP32_USED
+           esp_task_wdt_reset();
+          #else
+           ESP.wdtFeed();
+          #endif
+          }
       if (ColorTextFon  & (!ONflag || (currentMode == EFF_COLOR && modes[currentMode].Scale < 3))){
         FastLED.clear();
         delay(1);
@@ -669,7 +676,14 @@ void Print_IP()   {
     {
       loadingFlag = true;
       String str = "Access Point 192.168.4.1";
-      while(!fillString(str.c_str(), CRGB::White, false)) { delay(1); ESP.wdtFeed();}
+      while(!fillString(str.c_str(), CRGB::White, false)) {
+          delay(1);
+          #ifdef ESP32_USED
+           esp_task_wdt_reset();
+          #else
+           ESP.wdtFeed();
+          #endif
+          }
       if (ColorTextFon  & (!ONflag || (currentMode == EFF_COLOR && modes[currentMode].Scale < 3))){
         FastLED.clear();
         delay(1);
@@ -683,7 +697,7 @@ void Print_IP()   {
 }
 
 void Folder_Next_Prev(bool direction)    {
-    #ifdef MP3_TX_PIN
+    #ifdef MP3_PLAYER_USE
     if (true) { //(!pause_on && !mp3_stop && eff_sound_on) {
     CurrentFolder = constrain(direction ? CurrentFolder + 1 : CurrentFolder - 1, 0, 99);
     jsonWrite(configSetup, "fold_sel", CurrentFolder);
@@ -703,7 +717,7 @@ void Folder_Next_Prev(bool direction)    {
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
-    #endif  //MP3_TX_PIN
+    #endif  // MP3_PLAYER_USE
 }
 
 void Current_Eff_Rnd_Def(bool direction)   {
@@ -726,7 +740,7 @@ void Current_Eff_Rnd_Def(bool direction)   {
 }
 
 void IR_Equalizer()   {     // Устанавливаем эквалайзер
-    #ifdef MP3_TX_PIN
+    #ifdef MP3_PLAYER_USE
     Equalizer++;
     if (Equalizer > 5) Equalizer = 0;
     jsonWrite(configSetup, "eq", Equalizer);
@@ -737,7 +751,7 @@ void IR_Equalizer()   {     // Устанавливаем эквалайзер
     DisplayFlag = 3;
     Display_Timer(Equalizer);
     #endif
-    #endif  //MP3_TX_PIN
+    #endif  // MP3_PLAYER_USE
 }
 
 void Favorit_Add_Del(bool direction)   {

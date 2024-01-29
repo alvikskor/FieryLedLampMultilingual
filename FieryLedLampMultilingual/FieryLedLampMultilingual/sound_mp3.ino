@@ -1,4 +1,4 @@
-#ifdef MP3_TX_PIN
+#ifdef MP3_PLAYER_USE
 
 #ifdef DF_PLAYER_IS_ORIGINAL
   #define ADVERT_TIMER_1 800UL        // Затримка між командою старт та адверт (колі озвучка не іграе)
@@ -277,7 +277,7 @@ void mp3_loop()   {
       if (dawnflag_sound ) {
           if (alarm_sound_flag && (millis() - alarm_timer > 1000)) {
               alarm_timer = millis();
-              send_command (0x06,FEEDBACK,0,constrain((uint8_t)(dawnPosition/8), 0, alarm_volume)); //Нарастание громкости в зависимости от стадии рассвета от 0 до alarm_volume
+              send_command (0x06,FEEDBACK,0, min(((uint8_t)(dawnPosition/8)), alarm_volume)); //(0x06,FEEDBACK,0,constrain((uint8_t)(dawnPosition/8), 0, alarm_volume)); //Нарастание громкости в зависимости от стадии рассвета от 0 до alarm_volume
           }
           return;
      }
@@ -350,8 +350,7 @@ void mp3_loop()   {
   
 }
 
-int16_t send_command(int8_t cmd, uint8_t feedback, uint8_t dat1, uint8_t dat2)
-{
+int16_t send_command(int8_t cmd, uint8_t feedback, uint8_t dat1, uint8_t dat2){
    uint8_t mp3_send_buf[8] = {0x7E, 0xFF, 06, 0x06, 00, 00, 00, 0xEF};
   // Посылка команды MP3 плееру
   //mp3_send_buf[0] = 0x7e; 
@@ -398,12 +397,13 @@ int16_t send_command(int8_t cmd, uint8_t feedback, uint8_t dat1, uint8_t dat2)
         return (((int16_t)mp3_receive_buf[5]) << 8) + mp3_receive_buf[6];
       }
     //Serial.println ("Ничего");
-}
+    return 0xEF00; // ???
+} 
 
 
 int16_t read_command (uint32_t mp3_read_timeout) {
-    uint8_t tmp, flag = 0;
-    int16_t Answer = 0;
+    uint8_t tmp;
+    //int16_t Answer = 0;
     uint32_t mp3_read_timer = millis();
     while ((tmp = mp3.read()) != 0x7E)
         if (millis() - mp3_read_timer > mp3_read_timeout) return -1;

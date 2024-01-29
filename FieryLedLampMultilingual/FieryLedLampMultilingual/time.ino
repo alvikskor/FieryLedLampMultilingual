@@ -139,7 +139,7 @@ if (stillUseNTP)
           //FastLED.show();
         }
         if (C_flag && d_date == 1 && m_date == 1) {
-          for (uint8_t i = 0; i < 80; i++) TextTicker [i] = pgm_read_byte (&Default_valueMask[i]);
+          for (uint8_t i = 0; i < 32; i++) TextTicker [i] = pgm_read_byte (&Default_valueMask[i]);
           buttonEnabled = 0;
           RuninTextOverEffects = 0x40;
           ColorRunningText = 48;
@@ -151,7 +151,7 @@ if (stillUseNTP)
           clockTicker_blink();
         #endif
         
-    #ifdef MP3_TX_PIN
+    #ifdef MP3_PLAYER_USE
       if (alarm_advert_sound_on && mp3_player_connect == 4 && dawnFlag && dawnPosition >= 245) {
         //Serial.println ("Alarm");
         first_entry = 1;
@@ -160,10 +160,14 @@ if (stillUseNTP)
         play_time_ADVERT();
         while (advert_flag) {
            play_time_ADVERT();
-           ESP.wdtFeed();
+           #ifdef ESP32_USED
+            esp_task_wdt_reset();
+           #else
+            ESP.wdtFeed();
+           #endif
         }
       }
-    #endif  //MP3_TX_PIN
+    #endif  // MP3_PLAYER_USE
       }
 
       // проверка рассвета
@@ -175,7 +179,7 @@ if (stillUseNTP)
         {
           // величина рассвета 0-255
           dawnPosition = (uint16_t) (255 * ((float)(thisFullTime - (alarms[thisDay].Time - pgm_read_byte(&dawnOffsets[dawnMode])) * 60) / (pgm_read_byte(&dawnOffsets[dawnMode]) * 60)));
-          dawnPosition = constrain(dawnPosition, 0, 255);
+          dawnPosition = dawnPosition < 255U ? dawnPosition : 255U;  //constrain(dawnPosition, 0, 255);
           for (uint8_t j = 5U; j > 0U; j--)
             if (dawnCounter >= j)
               dawnColor[j] = dawnColor[j - 1U];
@@ -256,8 +260,11 @@ void resolveNtpServerAddress(bool &ntpServerAddressResolved)              // ф�
   {
     return;
   }
-
-  int err = WiFi.hostByName(NTP_ADDRESS, ntpServerIp, RESOLVE_TIMEOUT);
+  #ifdef ESP32_USED
+    int err = WiFi.hostByName(NTP_ADDRESS, ntpServerIp);
+  #else
+    int err = WiFi.hostByName(NTP_ADDRESS, ntpServerIp, RESOLVE_TIMEOUT);
+  #endif
   if (err!=1 || ntpServerIp[0] == 0 || ntpServerIp == IPAddress(255U, 255U, 255U, 255U)) 
   {
     #ifdef GENERAL_DEBUG

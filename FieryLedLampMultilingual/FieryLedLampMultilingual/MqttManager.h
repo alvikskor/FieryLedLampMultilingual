@@ -61,11 +61,14 @@ static const char TopicBase[]          PROGMEM = "LedLamp";                     
 static const char TopicCmnd[]          PROGMEM = "cmnd";                        // часть командных топиков (входящие команды лампе)
 static const char TopicState[]         PROGMEM = "state";                       // часть топиков состояния (ответ от лампы)
 
-static const char MqttServer[]         PROGMEM = "192.168.0.100";               // строка с IP адресом MQTT брокера
-static const uint16_t MqttPort                 = 1883U;                         // порт MQTT брокера
-static const char MqttUser[]           PROGMEM = "";                            // пользователь MQTT брокера
-static const char MqttPassword[]       PROGMEM = "";                            // пароль пользователя MQTT брокера
-static const char MqttClientIdPrefix[] PROGMEM = "LedLamp_";                    // id клиента MQTT брокера (к нему будет добавлен ESP.getChipId)
+static IPAddress MqttServer         ;//(192,168,0,24);                  // строка с IP адресом MQTT брокера
+static bool mqttIPaddr              = true;                          // true - IP адреса, false - URL адреса
+static char MqttHost[32]            = "";                            // Рядок з URL адресою MQTT брокера
+static char MqttUser[32]            = "";                            // пользователь MQTT брокера
+static char MqttPassword[32]        = "";                            // пароль пользователя MQTT брокера
+static uint16_t MqttPort            = 1883U;                         // порт MQTT брокера
+static uint8_t MqttOn               = 1U;                            // MQTT on / off
+static const char MqttClientIdPrefix[] PROGMEM = "LedLamp_";         // id клиента MQTT брокера (к нему будет добавлен ESP.getChipId)
 
 
 class MqttManager
@@ -81,10 +84,11 @@ class MqttManager
     static void publishState();
     static bool needToPublish;
     static char mqttBuffer[MAX_UDP_BUFFER_SIZE];
+    //static IPAddress mqttServer;
+    //static char* mqttUser[32];
+    //static char* mqttPassword[32];
+
   private:
-    static char* mqttServer;
-    static char* mqttUser;
-    static char* mqttPassword;
     static char* topicInput;                                                    // TopicBase + '/' + MqttClientIdPrefix + ESP.getChipId + '/' + TopicCmnd
     static char* topicOutput;                                                   // TopicBase + '/' + MqttClientIdPrefix + ESP.getChipId + '/' + TopicState
     static char* clientId;
@@ -94,25 +98,32 @@ class MqttManager
     static const uint32_t connectionTimeout = MQTT_RECONNECT_TIME * 1000U;      // период времени для проверки (пере)подключения к MQTT брокеру, 10 секунд
     static char* byteToHex(char *out, uint8_t value);
     static bool allocStr(char **str, const char *src);
-    static bool allocStr_P(char **str, PGM_P src);
+    //static bool allocStr_P(char **str, PGM_P src);
     static SendCurrentDelegate sendCurrentDelegate;
 };
 
 
 void MqttManager::setupMqtt(AsyncMqttClient* mqttClient, char* lampInputBuffer, SendCurrentDelegate sendCurrentDelegate)
 {
-  allocStr_P(&MqttManager::mqttServer, MqttServer);
-  allocStr_P(&MqttManager::mqttUser, MqttUser);
-  allocStr_P(&MqttManager::mqttPassword, MqttPassword);
+  //allocStr_P(&MqttManager::mqttServer, MqttServer);
+  //allocStr_P(&MqttManager::mqttUser, MqttUser);
+  //allocStr_P(&MqttManager::mqttPassword, MqttPassword);
 
   MqttManager::mqttClient = mqttClient;
   MqttManager::lampInputBuffer = lampInputBuffer;
   MqttManager::sendCurrentDelegate = sendCurrentDelegate;
-  MqttManager::mqttClient->setServer(MqttManager::mqttServer, MqttPort);
+  if(mqttIPaddr)
+      MqttManager::mqttClient->setServer(MqttServer, MqttPort); // Якщо введено IP адресу
+  else
+      MqttManager::mqttClient->setServer(MqttHost, MqttPort);  // Ящо введено URL
 
   char clientIdBuf[sizeof(MqttClientIdPrefix) + 8];
   strcpy_P(clientIdBuf, MqttClientIdPrefix);
+  #ifdef ESP32_USED
+  uint32_t chipId = get_Chip_ID();
+  #else
   uint32_t chipId = ESP.getChipId();
+  #endif
   for (uint8_t i = 0; i < 4; ++i)
   {
     byteToHex(&clientIdBuf[i * 2 + sizeof(MqttClientIdPrefix) - 1], chipId >> ((3 - i) * 8));
@@ -120,9 +131,9 @@ void MqttManager::setupMqtt(AsyncMqttClient* mqttClient, char* lampInputBuffer, 
   allocStr(&clientId, clientIdBuf);
   MqttManager::mqttClient->setClientId(clientId);
 
-  if (MqttManager::mqttUser != NULL)
+  if (MqttUser != NULL) // if (MqttManager::mqttUser != NULL)
   {
-    MqttManager::mqttClient->setCredentials(MqttManager::mqttUser, MqttManager::mqttPassword);
+    MqttManager::mqttClient->setCredentials(MqttUser, MqttPassword);
   }
 
   uint8_t topicLength = sizeof(TopicBase) + 1 + strlen(clientId) + 1 + sizeof(TopicCmnd) + 1;
@@ -149,7 +160,10 @@ void MqttManager::mqttConnect()
   {
     #ifdef GENERAL_DEBUG
     LOG.print(F("Подключение к MQTT брокеру \""));
-    LOG.print(MqttManager::mqttServer);
+    if(mqttIPaddr)
+        LOG.print(MqttServer);
+    else
+        LOG.print(MqttHost);
     LOG.print(':');
     LOG.print(MqttPort);
     LOG.println(F("\"..."));
@@ -309,7 +323,7 @@ bool MqttManager::allocStr(char **str, const char *src)
 
   return true;
 }
-
+/*
 bool MqttManager::allocStr_P(char **str, PGM_P src)
 {
   if (src && pgm_read_byte(src))
@@ -345,5 +359,5 @@ bool MqttManager::allocStr_P(char **str, PGM_P src)
 
   return true;
 }
-
+*/
 #endif

@@ -49,7 +49,7 @@ void User_setings ()  {
  HTTP.on("/get_time", get_time_manual);  // Синхронизация времени лампы с браузером на устройстве (телефоне)
  HTTP.on("/index", handle_index);  // Начальная страница
  HTTP.on("/index2", handle_index2);  //
- #ifdef MP3_TX_PIN
+ #ifdef MP3_PLAYER_USE
  HTTP.on("/on_sound", handle_on_sound);  // Включить/Выключить звук эффектов
  HTTP.on("/vol", handle_volume);  // Громкость озвучивания эффектов
  HTTP.on("/on_alm_snd", handle_alarm_on_sound);  // Включить/Выключить звук будильника
@@ -81,6 +81,8 @@ void User_setings ()  {
  HTTP.on("/s_IP", handle_use_static_ip);  // Використовувати для підключення к роутеру стичну IP адресу
  HTTP.on("/set_ip", handle_set_static_ip);  // Встановлення стичну IP адресу, шлюз, маску підмережі та DNS серверу
  HTTP.on("/auto_bri", handle_auto_bri);  // Автоматичне зниження яскравості у нічний час
+ HTTP.on("/mqtt_set", handle_mqtt_set);  // Параметри налаштування MQTT 
+ HTTP.on("/mqtt_on", handle_mqtt_on);  // Публікація / Прийом повідомлень брокера ON/OFF
  HTTP.on("/ssidap", HTTP_GET, []() {   // Получаем SSID AP со страницы
      jsonWrite(configSetup, "ssidAP", HTTP.arg("ssidAP"));
      jsonWrite(configSetup, "passwordAP", HTTP.arg("passwordAP"));
@@ -539,9 +541,13 @@ void handle_alarm ()  {
              jsonWrite(configAlarm, m, HTTP.arg(m).toInt());
         }
          //сохранение установок будильника
-         alarms[k].State = (jsonReadtoInt(configAlarm, a));
-         alarms[k].Time = (jsonReadtoInt(configAlarm, h)) * 60 + (jsonReadtoInt(configAlarm, m));
-        ESP.wdtFeed();
+        alarms[k].State = (jsonReadtoInt(configAlarm, a));
+        alarms[k].Time = (jsonReadtoInt(configAlarm, h)) * 60 + (jsonReadtoInt(configAlarm, m));
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         yield();
     }
     if (!first_entry) {
@@ -567,7 +573,11 @@ void save_alarms()   {
      LOG.println (F("\nТекущие установки будильника"));
      LOG.println(configAlarm);
     #endif
-    ESP.wdtFeed();
+    #ifdef ESP32_USED
+     esp_task_wdt_reset();
+    #else
+     ESP.wdtFeed();
+    #endif
     for (byte i = 0; i < 7; i++) {
         itoa ((i+1), k, 10);
         k[1] = 0;
@@ -649,7 +659,11 @@ void handle_eff_all ()   {  //Выбрать все эффекты
     char i[4];
     String configCycle = readFile(F("cycle_config.json"), 2048); 
     // подготовка  строк с именами полей json 
-    ESP.wdtFeed();
+    #ifdef ESP32_USED
+     esp_task_wdt_reset();
+    #else
+     ESP.wdtFeed();
+    #endif
     for (uint8_t k=0; k<MODE_AMOUNT; k++) {
         itoa ((k), i, 10);
         String e = "e" + String (i) ;
@@ -665,7 +679,11 @@ void handle_eff_clr ()   {  //очистить все эффекты
       char i[4];
       String configCycle = readFile(F("cycle_config.json"), 2048); 
       // подготовка  строк с именами полей json 
-      ESP.wdtFeed();
+      #ifdef ESP32_USED
+       esp_task_wdt_reset();
+      #else
+       ESP.wdtFeed();
+      #endif
       for (uint8_t k=0; k<MODE_AMOUNT; k++)
       {
         itoa ((k), i, 10);
@@ -686,7 +704,11 @@ void handle_cycle_set ()  {  // Выбор эффектов для Цикла
       LOG.println(configCycle);
       #endif
       // подготовка  строк с именами полей json file
-      ESP.wdtFeed();
+      #ifdef ESP32_USED
+       esp_task_wdt_reset();
+      #else
+       ESP.wdtFeed();
+      #endif
       for (uint8_t k=0; k<MODE_AMOUNT; k++) {
        itoa ((k), i, 10);
           String e = "e" + String (i) ;
@@ -717,7 +739,11 @@ void cycle_get ()  { // сохранение выбранных эффектов
       LOG.println(configCycle);
       #endif
       // подготовка  строк с именами полей json file
-      ESP.wdtFeed();
+      #ifdef ESP32_USED
+       esp_task_wdt_reset();
+      #else
+       ESP.wdtFeed();
+      #endif
       for (uint8_t k=0; k<MODE_AMOUNT; k++) {
          itoa ((k), i, 10);
          String e = "e" + String (i) ;
@@ -772,7 +798,11 @@ void handle_rnd ()   { // Установка случайных настроек
 void handle_all_br ()   {  //Общая яркость
     jsonWrite(configSetup, "all_br", HTTP.arg("all_br").toInt());
     uint8_t ALLbri = jsonReadtoInt(configSetup, "all_br");
-    ESP.wdtFeed();
+    #ifdef ESP32_USED
+     esp_task_wdt_reset();
+    #else
+     ESP.wdtFeed();
+    #endif
     for (uint8_t i = 0; i < MODE_AMOUNT; i++) {
         modes[i].Brightness = ALLbri;    
       }
@@ -809,7 +839,7 @@ void handle_multiple_lamp () {
     str.toCharArray (Host2, str.length() + 1);
     str = jsonRead (configMultilamp, "host3");
     str.toCharArray (Host3, str.length() + 1);
-    #ifdef MP3_TX_PIN
+    #ifdef MP3_PLAYER_USE
     send_sound = HTTP.arg("s_s").toInt();
     jsonWrite(configSetup, "s_s", send_sound);
     send_eff_volume = HTTP.arg("s_e_v").toInt();
@@ -817,7 +847,7 @@ void handle_multiple_lamp () {
       send_eff_volume = 0;
     }
     jsonWrite(configSetup, "s_e_v", send_eff_volume);
-    #endif //MP3_TX_PIN
+    #endif // MP3_PLAYER_USE
     HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
@@ -837,14 +867,14 @@ void multilamp_get ()   {
 
 void multiple_lamp_control ()   {
     
-    char outputBuffer[24];
+    char outputBuffer[38];
     
   if (connect)   {
     if ( ml1 )   {
-      #ifdef MP3_TX_PIN
+      #ifdef MP3_PLAYER_USE
       if (send_sound && !send_eff_volume) {
       sprintf_P(outputBuffer, PSTR("MULTI,%u,%u,%u,%u,%u,%u"),
-        ONflag,
+        (uint8_t)ONflag,
         currentMode,
         modes[currentMode].Brightness,
         modes[currentMode].Speed,
@@ -853,7 +883,7 @@ void multiple_lamp_control ()   {
       }
     else if (send_sound && send_eff_volume) {
       sprintf_P(outputBuffer, PSTR("MULTI,%u,%u,%u,%u,%u,%u,%u,%u"),
-        ONflag,
+        (uint8_t)ONflag,
         currentMode,
         modes[currentMode].Brightness,
         modes[currentMode].Speed,
@@ -864,7 +894,7 @@ void multiple_lamp_control ()   {
       }
       else {
         sprintf_P(outputBuffer, PSTR("MULTI,%u,%u,%u,%u,%u"),
-        ONflag,
+        (uint8_t)ONflag,
         currentMode,
         modes[currentMode].Brightness,
         modes[currentMode].Speed,
@@ -872,14 +902,14 @@ void multiple_lamp_control ()   {
       }
       #else
       sprintf_P(outputBuffer, PSTR("MULTI,%u,%u,%u,%u,%u"),
-        ONflag,
+       (uint8_t) ONflag,
         currentMode,
         modes[currentMode].Brightness,
         modes[currentMode].Speed,
         modes[currentMode].Scale);
       #endif
       Udp.beginPacket(Host1,localPort);
-      Udp.write(outputBuffer);
+      Udp.print(outputBuffer);
       Udp.endPacket();
       #ifdef GENERAL_DEBUG
       LOG.print (F("Передача MULTI на IP "));
@@ -891,7 +921,7 @@ void multiple_lamp_control ()   {
     
     if ( ml2 )   {
       Udp.beginPacket(Host2,localPort);
-      Udp.write(outputBuffer);
+      Udp.print(outputBuffer);
       Udp.endPacket();
     #ifdef GENERAL_DEBUG
       LOG.print (F("Передача MULTI на IP "));
@@ -903,7 +933,7 @@ void multiple_lamp_control ()   {
     
     if ( ml3 )   {
       Udp.beginPacket(Host3,localPort);
-      Udp.write(outputBuffer);
+      Udp.print(outputBuffer);
       Udp.endPacket();
     #ifdef GENERAL_DEBUG
       LOG.print (F("Передача MULTI на IP "));
@@ -918,8 +948,8 @@ void multiple_lamp_control ()   {
 #endif //USE_MULTIPLE_LAMPS_CONTROL
 
 void handle_eff_save ()   {
-    SPIFFS.begin();
-    File file = SPIFFS.open(F("/effect.ini"),"w");
+    LittleFS.begin();
+    File file = LittleFS.open(F("/effect.ini"),"w");
     if (file)   {
         for (uint8_t i = 0; i < MODE_AMOUNT; i++) {
            file.write (modes[i].Brightness);
@@ -931,7 +961,11 @@ void handle_eff_save ()   {
         LOG.println (F("Настройки эффектов сохранены в файл"));
         #endif //GENERAL_DEBUG
         showWarning(CRGB::Blue, 2000U, 500U);                    // мигание синим цветом 2 секунды
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         yield();
     }
     else   {
@@ -944,12 +978,16 @@ void handle_eff_save ()   {
 }
 
 void handle_eff_read ()   {
-    SPIFFS.begin();
-    File file = SPIFFS.open(F("/effect.ini"),"r");
+    LittleFS.begin();
+    File file = LittleFS.open(F("/effect.ini"),"r");
     if (file)   {
         uint16_t file_size = file.size();
         if ((file_size/3) < MODE_AMOUNT) file_size -= 6;
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         for (uint8_t i = 0; i < (file_size/3); i++) {
            modes[i].Brightness = file.read ();
            modes[i].Speed = file.read ();
@@ -994,7 +1032,7 @@ void handle_index ()   {
         flg = FileCopy (F("/index/in2.gz") , F("/index.json.gz"));
         flg2 = FileCopy (F("/index/eff_su.gz") , F("/SlavaUkraine.jpg.gz"));
     }
-    else SPIFFS.format();
+    else LittleFS.format();
     if (flg & flg2) HTTP.send(200, F("text/plain"), F("OK"));
     else HTTP.send(404, F("text/plain"), "File not found");
 }
@@ -1033,7 +1071,7 @@ void get_time_manual ()   {
     HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
-#ifdef MP3_TX_PIN
+#ifdef MP3_PLAYER_USE
 void handle_on_sound ()   {
     uint8_t tmp;
     tmp = HTTP.arg("on_sound").toInt();
@@ -1131,7 +1169,11 @@ void handle_sound_set ()   {    // Выбор папок для озвучива
     LOG.println(configSound);
     #endif
     // подготовка  строк с именами полей json file
-    ESP.wdtFeed();
+    #ifdef ESP32_USED
+     esp_task_wdt_reset();
+    #else
+     ESP.wdtFeed();
+    #endif
     for (uint8_t k=0; k<MODE_AMOUNT; k++) {
         itoa ((k), i, 10);
         String e = "e" + String (i) ;
@@ -1146,7 +1188,11 @@ void handle_sound_set ()   {    // Выбор папок для озвучива
     LOG.println (F("\nВыбор папок для озвучивания эффектов после обработки"));
     LOG.println(configSound);
     LOG.print (F("Массив effects_folders [ "));
-    ESP.wdtFeed();
+    #ifdef ESP32_USED
+     esp_task_wdt_reset();
+    #else
+     ESP.wdtFeed();
+    #endif
     for (uint8_t k=0; k<MODE_AMOUNT; k++){
         LOG.print (effects_folders[k]);
         LOG.print (F(", "));
@@ -1265,7 +1311,7 @@ void handle_test ()   {
     #endif
 }
 
-#endif //MP3_TX_PIN
+#endif // MP3_PLAYER_USE
 
 
 void handle_current_limit ()   {
@@ -1318,63 +1364,123 @@ void Lang_set ()   {
 void handle_reset_to_default ()   {
     LOG.println("\n*** Reset to Default ***");
     showWarning(CRGB::Red, 500, 250U);
-    ESP.wdtFeed();
+    #ifdef ESP32_USED
+     esp_task_wdt_reset();
+    #else
+     ESP.wdtFeed();
+    #endif
     setModeSettings();
     updateSets();    
     if(FileCopy (F("/default/config.json"), F("/config.json"))) {
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         showWarning(CRGB::Green, 500, 250U);
     }
     else {
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         showWarning(CRGB::Red, 500, 250U);
     }
     if(FileCopy (F("/default/cycle_config.json"), F("/cycle_config.json"))) {
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         showWarning(CRGB::Green, 500, 250U);
     }
     else {
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         showWarning(CRGB::Red, 500, 250U);
     }
     if(FileCopy (F("/default/sound_config.json"), F("/sound_config.json"))) {
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         showWarning(CRGB::Green, 500, 250U);
     }
     else {
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         showWarning(CRGB::Red, 500, 250U);
     }
     if(FileCopy (F("/default/alarm_config.json"), F("/alarm_config.json"))) {
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         showWarning(CRGB::Green, 500, 250U);
     }
     else {
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         showWarning(CRGB::Red, 500, 250U);
     }
     if(FileCopy (F("/default/hardware_config.json"), F("/hardware_config.json"))) {
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         showWarning(CRGB::Green, 500, 250U);
     }
     else {
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         showWarning(CRGB::Red, 500, 250U);
     }
     if(FileCopy (F("/default/multilamp_config.json"), F("/multilamp_config.json"))) {
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         showWarning(CRGB::Green, 500, 250U);
     }
     else {
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         showWarning(CRGB::Red, 500, 250U);
     }
     if(FileCopy (F("/default/index.json.gz"), F("/index.json.gz"))) {
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         showWarning(CRGB::Green, 500, 250U);
     }
     else {
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         showWarning(CRGB::Red, 500, 250U);
     }
     HTTP.send(200, F("text/plain"), F("OK"));
@@ -1423,8 +1529,8 @@ void handle_use_static_ip() {
  }
 
 void handle_set_static_ip ()   {
-    uint8_t tmp;
-    String configIP = readFile(F("hardware_config.json"), 2048);
+    //uint8_t tmp;
+    String configIP = readFile(F("hardware_config.json"), 512);
     jsonWrite(configIP, "ip", HTTP.arg("ip1"));
     jsonWrite(configIP, "gateway", HTTP.arg("gateway"));
     jsonWrite(configIP, "subnet", HTTP.arg("subnet"));
@@ -1441,16 +1547,76 @@ void handle_auto_bri ()   {
     }
     HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
-  
+
+#if (USE_MQTT)
+
+void handle_mqtt_set ()   {
+    String configMQTT = readFile(F("mqtt_config.json"), 512);
+    String str = HTTP.arg("mq_ip");
+    if(!MqttServer.fromString(str)){
+        str.toCharArray(MqttHost, str.length()+1);
+        mqttIPaddr = false;
+/*        #ifdef ESP32_USED
+         WiFi.hostByName(MqttHost, MqttServer);
+        #else
+         WiFi.hostByName(MqttHost, MqttServer, RESOLVE_TIMEOUT);
+        #endif
+*/
+    }
+    else
+        mqttIPaddr = true;
+    jsonWrite(configMQTT, "mq_ip", str);
+    MqttPort = HTTP.arg("mq_port").toInt();
+    jsonWrite(configMQTT, "mq_port", MqttPort);
+    str = HTTP.arg("mq_user");
+    str.toCharArray(MqttUser, str.length()+1);
+    jsonWrite(configMQTT, "mq_user", str);
+    str = HTTP.arg("mq_pass");
+    str.toCharArray(MqttPassword, str.length()+1);
+    jsonWrite(configMQTT, "mq_pass", str);
+    //MqttOn = HTTP.arg("mq_on").toInt();
+    //jsonWrite(configMQTT, "mq_on", MqttOn);
+    writeFile(F("mqtt_config.json"), configMQTT );
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
+    #ifdef GENERAL_DEBUG
+     LOG.print("MQTT server ");
+     if(mqttIPaddr)
+         LOG.print(MqttServer);
+     else
+         LOG.print(MqttHost);
+     LOG.print(": ");
+     LOG.println(MqttPort);
+     LOG.print("MQTT User - ");
+     LOG.println(MqttUser);
+     LOG.print("MQTT Password - ");
+     LOG.println(MqttPassword);
+     #endif //GENERAL_DEBUG
+}
+
+void handle_mqtt_on ()   {
+    String configMQTT = readFile(F("mqtt_config.json"), 512);
+    MqttOn = HTTP.arg("mq_on").toInt();
+    jsonWrite(configMQTT, "mq_on", MqttOn);
+    writeFile(F("mqtt_config.json"), configMQTT );
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
+
+}
+
+#endif //USE_MQTT
+
 bool FileCopy (const String& SourceFile , const String& TargetFile)   {
-    File S_File = SPIFFS.open( SourceFile, "r");
-    File T_File = SPIFFS.open( TargetFile, "w");
+    File S_File = LittleFS.open( SourceFile, "r");
+    File T_File = LittleFS.open( TargetFile, "w");
     if (!S_File || !T_File) 
     return false;
     size_t size = S_File.size();
     for (unsigned int i=0; i<size; i++)  {
         T_File.write(S_File.read ());
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         yield();
     }
     S_File.close();
@@ -1463,15 +1629,22 @@ void EffectList (const String& efflist )   {
     effList.reserve(17);
     effList += jsonRead (configSetup, "lang");
     effList += F(".ini");
-    File R_File = SPIFFS.open ( effList, "r" );
+    File R_File = LittleFS.open ( effList, "r" );
     if (!R_File) LOG.println (F("Ошибка. Файл списка эффектов для передачи приложению не найден!"));
     String EffList = R_File.readString();
+    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+    Udp.print(EffList.c_str());
+    Udp.endPacket();
     #ifdef GENERAL_DEBUG
     LOG.print (F("EffList = "));
     LOG.println (EffList.c_str());
     #endif //GENERAL_DEBUG
-    Udp.write(EffList.c_str());
-    Udp.write("\0");
+    #ifdef ESP32_USED
+     esp_task_wdt_reset();
+    #else
+     ESP.wdtFeed();
+    #endif
+    yield();
     R_File.close ();
 }
  

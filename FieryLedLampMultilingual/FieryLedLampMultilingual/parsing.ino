@@ -30,7 +30,7 @@ void parseUDP()
     #endif
     
     Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
-    Udp.write(reply);
+    Udp.print(reply);
     Udp.endPacket();
 
     #ifdef GENERAL_DEBUG
@@ -63,7 +63,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
     if (!strncmp_P(inputBuffer, PSTR("GET"), 3))
     {
       #ifdef GET_TIME_FROM_PHONE
-      if (!timeSynched || !(ntpServerAddressResolved && espMode == 1U) && manualTimeShift + millis() / 1000UL > phoneTimeLastSync + GET_TIME_FROM_PHONE * 60U)
+      if ((!timeSynched || !(ntpServerAddressResolved && espMode == 1U)) && ((manualTimeShift + millis() / 1000UL) > (phoneTimeLastSync + GET_TIME_FROM_PHONE * 60U)))
       {// если прошло более 5 минут (GET_TIME_FROM_PHONE 5U), значит, можно парсить время из строки GET
         if (BUFF.length() > 7U){ // пускай будет хотя бы 7
           memcpy(buff, &inputBuffer[4], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 5
@@ -124,7 +124,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       SetBrightness(modes[currentMode].Brightness);
     }
 
-    #ifdef MP3_TX_PIN
+    #ifdef MP3_PLAYER_USE
     else if (!strncmp_P(inputBuffer, PSTR("VOL"), 3))
     {
       memcpy(buff, &inputBuffer[3], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 4
@@ -149,7 +149,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       
       send_command(6,0,0,eff_volume);
       jsonWrite(configSetup, "vol", eff_volume);
-      jsonWrite(configSetup, "on_sound", constrain (eff_sound_on,0,1));
+      jsonWrite(configSetup, "on_sound", eff_sound_on > 0 ? 1 : 0);
       
       /*
       for (uint8_t i = 0; i < 8; i++)
@@ -218,7 +218,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
         repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
     }    
-    #endif  //MP3_TX_PIN
+    #endif  // MP3_PLAYER_USE
 
     else if (!strncmp_P(inputBuffer, PSTR("LANG"), 4))
     {
@@ -624,24 +624,23 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
        memcpy(buff, &inputBuffer[4], strlen(inputBuffer));  // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 5
        switch (atoi(buff))
          {
+           case 0U:
+           {
+             EffectList (F("/efflist0"));
+             break;
+           }
            case 1U:
            {
-             //Udp.write(efList_1.c_str());
-             //Udp.write("\0");
              EffectList (F("/efflist1"));
              break;
            }
            case 2U:
            {
-             //Udp.write(efList_2.c_str());
-             //Udp.write("\0");
              EffectList (F("/efflist2"));
              break;
            }
            case 3U:
            {
-             //Udp.write(efList_3.c_str());
-             //Udp.write("\0");
              EffectList (F("/efflist3"));
 
              #ifdef USE_DEFAULT_SETTINGS_RESET
@@ -960,7 +959,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
 	      modes[currentMode].Speed = atoi (tmp);
           tmp = strtok (NULL, ",");
 	      modes[currentMode].Scale = atoi (tmp);
-          #ifdef MP3_TX_PIN
+          #ifdef MP3_PLAYER_USE
           if (valid == 8) {
           tmp = strtok (NULL, ",");
 	      eff_sound_on = atoi (tmp);
@@ -986,7 +985,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
               }
             }
           }
-          #endif //MP3_TX_PIN
+          #endif // MP3_PLAYER_USE
           loadingFlag = true; // Перезапуск эффекта
           SetBrightness(modes[currentMode].Brightness); //Применение яркости
           }
@@ -1012,7 +1011,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
                 modes[currentMode].Scale = atoi (tmp);
                 loadingFlag = true; // Перезапуск эффекта
             }
-          #ifdef MP3_TX_PIN
+          #ifdef MP3_PLAYER_USE
           if (valid == 8) {
           tmp = strtok (NULL, ",");
 	      eff_sound_on = atoi (tmp);
@@ -1037,10 +1036,10 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
               }
             }
           }
-          #endif //MP3_TX_PIN
+          #endif // MP3_PLAYER_USE
         }
         if (onflg) {
-            #ifdef MP3_TX_PIN
+            #ifdef MP3_PLAYER_USE
             if (ONflag) mp3_folder=effects_folders[currentMode];
             #endif
             changePower();   // Активация состояния ON/OFF
@@ -1052,11 +1051,11 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
      LOG.println (modes[currentMode].Brightness);
      LOG.println (modes[currentMode].Speed);
      LOG.println (modes[currentMode].Scale);
-     #ifdef MP3_TX_PIN
+     #ifdef MP3_PLAYER_USE
      LOG.println (CurrentFolder);
      LOG.println (eff_sound_on);
      LOG.println (eff_volume);
-     #endif //MP3_TX_PIN
+     #endif // MP3_PLAYER_USE
  #endif  //GENERAL_DEBUG
      //changePower();   // Активацмя состояния ON/OFF
      //loadingFlag = true; // Перезапуск эффекта
@@ -1065,11 +1064,11 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
      jsonWrite(configSetup, "sp", modes[currentMode].Speed);      //для правильного отображения
      jsonWrite(configSetup, "sc", modes[currentMode].Scale);
      jsonWrite(configSetup, "eff_sel", currentMode);
-     #ifdef MP3_TX_PIN
-     jsonWrite(configSetup, "on_sound", constrain(eff_sound_on, 0, 1));
+     #ifdef MP3_PLAYER_USE
+     jsonWrite(configSetup, "on_sound", eff_sound_on > 0 ? 1 : 0);
      jsonWrite(configSetup, "vol", eff_volume);
      jsonWrite(configSetup, "fold_sel", CurrentFolder);
-     #endif //MP3_TX_PIN
+     #endif // MP3_PLAYER_USE
      
      for ( uint8_t n=0; n< MODE_AMOUNT; n++)
      {
@@ -1115,7 +1114,9 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
             for (uint8_t i = 0; i < MODE_AMOUNT; i++) {
               OutString = String(i) + ";" +  String(modes[i].Brightness) + ";" + String(modes[i].Speed) + ";" + String(modes[i].Scale) + "\n";
               OutString.toCharArray(replyPacket, MAX_UDP_BUFFER_SIZE);
-              Udp.write(replyPacket);
+              Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+              Udp.print(replyPacket);
+              Udp.endPacket();
             }
             break;
           }
@@ -1176,10 +1177,10 @@ void sendCurrent(char *outputBuffer)
   time_t currentTicks = millis() / 1000UL;
   sprintf_P(outputBuffer, PSTR("%s %02u:%02u:%02u"), outputBuffer, hour(currentTicks), minute(currentTicks), second(currentTicks));
   #endif
-  #ifdef MP3_TX_PIN
+  #ifdef MP3_PLAYER_USE
   sprintf_P(outputBuffer, PSTR("%s %u"), outputBuffer, (uint8_t)eff_sound_on);
   //sprintf_P(outputBuffer, PSTR("%s %u"), outputBuffer, (uint8_t)eff_volume);
-  #endif  //MP3_TX_PIN
+  #endif  // MP3_PLAYER_USE
 }
 
 void NEWsendCurrent(char *outputBuffer)
@@ -1222,10 +1223,10 @@ void NEWsendCurrent(char *outputBuffer)
   char temp[3];
   str.toCharArray(temp, 3);
   sprintf_P(outputBuffer, PSTR("%s %s"), outputBuffer, temp); // отправка пріложенію, яка мова вибрана у лампі
-  #ifdef MP3_TX_PIN
+  #ifdef MP3_PLAYER_USE
   sprintf_P(outputBuffer, PSTR("%s %u"), outputBuffer, (uint8_t)eff_sound_on);
   //sprintf_P(outputBuffer, PSTR("%s %u"), outputBuffer, (uint8_t)eff_volume);
-  #endif  //MP3_TX_PIN
+  #endif  // MP3_PLAYER_USE
   #ifdef GENERAL_DEBUG
   LOG.print ("Output Bufer ");
   LOG.println (outputBuffer);
@@ -1309,11 +1310,11 @@ String getValue(String data, char separator, int index)
   return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
-#ifdef MP3_TX_PIN
+#ifdef MP3_PLAYER_USE
 void sendVolume(char *outputBuffer)
 {
   sprintf_P(outputBuffer, PSTR("VOL %u %u"),
     eff_sound_on,
     eff_volume);
 }
-#endif  //MP3_TX_PIN
+#endif  // MP3_PLAYER_USE

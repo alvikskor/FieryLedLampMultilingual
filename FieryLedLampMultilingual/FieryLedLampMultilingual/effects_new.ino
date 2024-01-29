@@ -52,7 +52,7 @@ void  espModeState(uint8_t color) {
     pcnt = 1;
     FastLED.clear();
   }
-  if (pcnt > 0 & pcnt < 200) {
+  if (pcnt > 0 && pcnt < 200) {
     if (pcnt != 0) {
       pcnt++;
     }
@@ -236,7 +236,7 @@ void gradientDownTop( uint8_t bottom, CHSV bottom_color, uint8_t top, CHSV top_c
 
 void readBinFile(String fileName, size_t len ) {
 
-  File binFile = SPIFFS.open("/" + fileName, "r");
+  File binFile = LittleFS.open("/" + fileName, "r");
   if (!binFile) {
     LOG.println("File not found");
     printMSG("Bin File not found", true);
@@ -444,8 +444,8 @@ void Swirl() {
   if (modes[currentMode].Scale > 50) Spindle(); // Якщо масштаб/колір більше 50 - тоді єфект "Веретено"
   else {
     
-  uint8_t divider;
-  uint8_t lastHue;
+  uint8_t divider = 0;
+  uint8_t lastHue = 0;
   static const uint32_t colors[5][6] PROGMEM = {
     {CRGB::Blue, CRGB::DarkRed, CRGB::Aqua, CRGB::Magenta, CRGB::Gold, CRGB::Green },
     {CRGB::Yellow, CRGB::LemonChiffon, CRGB::LightYellow, CRGB::Gold, CRGB::Chocolate, CRGB::Goldenrod},
@@ -563,7 +563,7 @@ void drawCrest() {
 void Ukraine() {
   uint8_t divider;
   uint32_t color;
-  static const uint16_t MAX_TIME = 500;
+  //static const uint16_t MAX_TIME = 500;
   uint16_t tMAX = 100;
   static const uint8_t timeout = 100;
   static const uint32_t colors[2][5] = {
@@ -691,7 +691,7 @@ void OilPaints() {
     hue = floor(21.25 * (random8(11) + 1)); // next color
     deltaHue = hue - 22;                  // last color
     deltaHue2 = 80;                       // min bright
-    max_val = pow(2, WIDTH);
+    max_val = constrain(pow(2, WIDTH), 1U, 65535U);
     //    for ( int i = WIDTH; i < (NUM_LEDS - WIDTH); i++) {
     //      leds[i] = CHSV(120U, 24U, 64U);
     //    }
@@ -885,7 +885,7 @@ void BotswanaRivers() {
   //------------------------------------------------------------------------------
   static const bool ALT_GRADIENT = true;
 
-  uint8_t divider;
+  uint8_t divider = 0;
   if (loadingFlag) {
 #if defined(USE_RANDOM_SETS_IN_APP) || defined(RANDOM_SETTINGS_IN_CYCLE_MODE)
     if (selectedSettings) {
@@ -1144,7 +1144,7 @@ void SmearPaint(uint8_t obj[trackingOBJECT_MAX_COUNT]) {
 //---------------------------------------
 void Watercolor() {
   // #define DIMSPEED (254U - 500U / WIDTH / HEIGHT)
-  uint8_t divider;
+  //uint8_t divider;
   if (loadingFlag) {
 
 #if defined(USE_RANDOM_SETS_IN_APP) || defined(RANDOM_SETTINGS_IN_CYCLE_MODE)
@@ -1192,7 +1192,7 @@ void Watercolor() {
     }
     trackingObjectHue[4] = temp;                                            // y end
     trackingObjectHue[5] = 1;
-    divider = floor((modes[currentMode].Scale - 1) / 16.7);                 // маштаб задает смену палитры
+    //divider = floor((modes[currentMode].Scale - 1) / 16.7);                 // маштаб задает смену палитры
     hue = random8(8);
     //    if (step % 127 == 0) {
     //      LOG.printf_P(PSTR("BR %03d | SP %03d | SC %03d | divider %d | [ %d ]\n\r"), modes[currentMode].Brightness, modes[currentMode].Speed, modes[currentMode].Scale, divider, hue);
@@ -1542,7 +1542,7 @@ void  Spectrum() {
 //                Spectrum
 //---------------------------------------
 void  Spectrum() {
-  static const byte COLOR_RANGE = 32;
+  //static const byte COLOR_RANGE = 32;
   static uint8_t customHue;
   if (loadingFlag) {
 #if defined(USE_RANDOM_SETS_IN_APP) || defined(RANDOM_SETTINGS_IN_CYCLE_MODE)
@@ -1789,16 +1789,16 @@ void clearNoiseArr() {
 //---------------------------------------
 void VirtualSnow(byte snow_type) {
   uint8_t posX = random8(WIDTH - 1);
-  const uint8_t maxX = WIDTH - 1;
+  //const uint8_t maxX = WIDTH - 1;
   static int deltaPos;
   byte delta = (snow_type == 3) ? 0 : 1;
   for (uint8_t x = delta; x < WIDTH - delta; x++) {
 
     // заполняем случайно верхнюю строку
     if ((noise3d[0][x][HEIGHT - 2] == 0U) &&  (posX == x) && (random8(0, 2) == 0U)) {
-      noise3d[0][x][HEIGHT] = 1;
+      noise3d[0][x][HEIGHT-1] = 1;
     } else {
-      noise3d[0][x][HEIGHT] = 0;
+      noise3d[0][x][HEIGHT-1] = 0;
     }
 
     for (uint8_t y = 0U; y < HEIGHT; y++) {
@@ -2004,7 +2004,7 @@ void ByEffect() {
 /*должен быть перед эффектом Матрицf бегунок Скорость не регулирует задержку между кадрами,
   но меняет частоту строба*/
 void StrobeAndDiffusion() {
-  const uint8_t SIZE = 3U;
+  //const uint8_t SIZE = 3U;
   const uint8_t DELTA = 1U;         // центровка по вертикали
   uint8_t STEP = 2U;
   if (loadingFlag) {
@@ -2157,7 +2157,7 @@ void Firework() {
   const uint8_t DELTA = 1U;                      /* центровка по вертикали */
   const float stepH = HEIGHT / 128.0;
   const uint8_t FPS_DELAY = 20U;
-  const uint8_t STEP = 3U;
+  //const uint8_t STEP = 3U;
   const uint8_t skyColor = 156U;
   uint8_t sizeH;
 
@@ -2410,7 +2410,7 @@ void WebTools() {
   static int posY = 0;
   static int nextX = -STEP * 2;
   static bool stop_moving = true;
-  uint8_t speed = constrain (modes[currentMode].Speed, 65, 255);
+  uint8_t speed =modes[currentMode].Speed > 65U ? modes[currentMode].Speed : 65U;   //constrain (modes[currentMode].Speed, 65, 255);
   if (loadingFlag) {
 #if defined(USE_RANDOM_SETS_IN_APP) || defined(RANDOM_SETTINGS_IN_CYCLE_MODE)
     if (selectedSettings) {
@@ -2559,7 +2559,7 @@ void MagicLantern() {
   static uint8_t saturation;
   static uint8_t brightness;
   static uint8_t low_br;
-  uint8_t delta;
+  //uint8_t delta;
   const uint8_t PADDING = HEIGHT * 0.25;
   const uint8_t WARM_LIGHT = 55U;
   const uint8_t STEP = 4U;
@@ -2730,7 +2730,7 @@ void LotusFlower() {
 
   if (modes[currentMode].Speed > 128U) {
     if (modes[currentMode].Scale > 50) {
-      deltaSpeed = 80U + (128U - abs(128U - deltaValue)) / 1.25;
+      deltaSpeed = 80 + (128 - abs(128 - deltaValue)) / 1.25;
       FPSdelay = SpeedFactor(deltaSpeed);
       if (step % 256 == 0U ) hue += 32;           /* color morph */
     } else {
@@ -2865,7 +2865,7 @@ void Tornado() {
     for (uint8_t y = 0; y < HEIGHT; y++) {
       byte angle = noise3d[0][x][y];
       byte radius = noise3d[1][x][y];
-      leds[XY(x, y)] = CHSV((angle * modes[currentMode].Scale / 10) - scale + (radius * modes[currentMode].Scale / 10), constrain((uint16_t)y*512U/(uint16_t)HEIGHT,0,255), (y < (HEIGHT/8) ? 255 - (((HEIGHT/8) - y) * 16) : 255));
+      leds[XY(x, y)] = CHSV((angle * modes[currentMode].Scale / 10) - scale + (radius * modes[currentMode].Scale / 10), min(((uint16_t)y*512U/(uint16_t)HEIGHT),255U), (y < (HEIGHT/8) ? 255 - (((HEIGHT/8) - y) * 16) : 255));
     }
   }
 }

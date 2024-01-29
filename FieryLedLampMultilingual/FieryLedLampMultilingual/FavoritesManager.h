@@ -29,7 +29,7 @@ class FavoritesManager
     static void SetStatus(char* statusText)                 // помещает в statusText состояние режима работы избранных эффектов
     {
       char buff[6];
-      uint8_t n;
+      //uint8_t n;
       strcpy_P(statusText, PSTR("FAV "));
 
       itoa(FavoritesRunning, buff, 10);
@@ -100,7 +100,7 @@ class FavoritesManager
           #if defined(USE_NTP) || defined(USE_MANUAL_TIME_SETTING) || defined(GET_TIME_FROM_PHONE)
           || *dawnFlag                                      // лампа не переключается на следующий эффект при включенном будильнике
           #endif
-          || *currentMode == EFF_WHITE_COLOR && FavoriteModes[EFF_WHITE_COLOR] == 0U // лампа не переключается на следующий эффект, если выбран режим Белый свет, и он не в списке режима Цикл
+          || (*currentMode == EFF_WHITE_COLOR && FavoriteModes[EFF_WHITE_COLOR] == 0U) // лампа не переключается на следующий эффект, если выбран режим Белый свет, и он не в списке режима Цикл
       )
       {
         return false;

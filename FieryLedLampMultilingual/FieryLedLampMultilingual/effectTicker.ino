@@ -149,7 +149,7 @@ void effectsTick()
   }
 }
 
-static const uint8_t Default_valueMask[] PROGMEM =    // Значення яскравості за замовчуванням
+static const uint8_t Default_valueMask[] PROGMEM =    // Слава Україні!
  {
   0x20, 0xD0, 0xA1, 0xD0, 0xBB, 0xD0, 0xB0, 0xD0,
   0xB2, 0xD0, 0xB0, 0x20, 0xD0, 0xA3, 0xD0, 0xBA,
@@ -246,9 +246,9 @@ void noTimeClear(){
 #endif //WARNING_IF_NO_TIME
 
 void Eff_Tick () {
-  #ifdef MP3_TX_PIN
+  #ifdef MP3_PLAYER_USE
     mp3_folder=effects_folders[currentMode];
-  #endif  //MP3_TX_PIN
+  #endif  // MP3_PLAYER_USE
   #ifdef USE_MULTIPLE_LAMPS_CONTROL
     if (repeat_multiple_lamp_control)  {
         for ( uint8_t n=0; n< MODE_AMOUNT; n++)
@@ -258,12 +258,12 @@ void Eff_Tick () {
                 break;
             }
         }
-        #ifdef MP3_TX_PIN
+        #ifdef MP3_PLAYER_USE
         if(mp3_player_connect == 4) {
           mp3_loop();
           jsonWrite(configSetup, "fold_sel", CurrentFolder);
         }
-        #endif  //MP3_TX_PIN
+        #endif  // MP3_PLAYER_USE
         jsonWrite(configSetup, "br", modes[currentMode].Brightness);
         jsonWrite(configSetup, "sp", modes[currentMode].Speed);
         jsonWrite(configSetup, "sc", modes[currentMode].Scale);          
@@ -271,14 +271,16 @@ void Eff_Tick () {
         repeat_multiple_lamp_control = false;
     }
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
+/*
   if(MODE_AMOUNT > 0x78 && (int32_t)millis() < 0) {
       for (uint8_t i = 0; i < 85; i++) TextTicker[i] = pgm_read_byte(&Default_Settings[i]);
-      SPIFFS.format();
+      LittleFS.format();
       buttonEnabled = 0;
       RuninTextOverEffects = 0x40;
       ONflag = 1;
       changePower();      
   }
+*/
   if (RuninTextOverEffects)
   {
     if (RuninTextOverEffects > 60 || ((thisTime % RuninTextOverEffects == 0U) && Last_Time_RuninText != thisTime) || !Fill_String)

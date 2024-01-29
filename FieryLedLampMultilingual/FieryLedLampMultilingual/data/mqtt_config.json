@@ -1,0 +1,7 @@
+{
+"mq_ip":"192.168.0.24",
+"mq_port":"1883",
+"mq_user":"User",
+"mq_pass":"password",
+"mq_on":"1"
+}
