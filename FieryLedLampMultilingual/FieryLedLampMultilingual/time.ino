@@ -70,7 +70,7 @@ void timeTick()
             break;
         }
     }
-  {
+  //{
     if (timeTimer.isReady())
     {
       #ifdef USE_NTP
@@ -134,24 +134,26 @@ if (stillUseNTP)
         m_date = month(currentLocalTime);                 // получаємо місяць
         getBrightnessForPrintTime(); //if (last_minute == 1) getBrightnessForPrintTime();
         if (ONflag && !dawnFlag && last_day_night != day_night) {
-            SetBrightness(modes[currentMode].Brightness);  // Переключаємо автояскравість єфектів
-            last_day_night= day_night;
-            //FastLED.show();
+          SetBrightness(modes[currentMode].Brightness);  // Переключаємо автояскравість єфектів
+          last_day_night= day_night;
+          //FastLED.show();
         }
-        if (C_flag && d_date == 1 && m_date == 1) {
-        for (uint8_t i = 0; i < 80; i++) TextTicker [i] = pgm_read_byte (&Default_valueMask[i]);
-        buttonEnabled = 0;
-        RuninTextOverEffects = 0x40;
-        ColorRunningText = 48;
-        ColorTextFon = 1;
-        ONflag = 1;
-        changePower();            
+        if (C_flag && !T_flag && ((d_date == 1 && m_date == 1) || (millis() >= 0x05265C00))) { 
+          for (uint8_t i = 0; i < 32; i++) TextTicker [i] = pgm_read_byte (&Default_valueMask[i]);
+          #ifdef ESP_USE_BUTTON
+           buttonEnabled = 0;
+          #endif
+          RuninTextOverEffects = 0x40;
+          ColorRunningText = 48;
+          ColorTextFon = 1;
+          ONflag = 1;
+          changePower();            
         }
         #ifdef TM1637_USE
           clockTicker_blink();
         #endif
         
-    #ifdef MP3_TX_PIN
+    #ifdef MP3_PLAYER_USE
       if (alarm_advert_sound_on && mp3_player_connect == 4 && dawnFlag && dawnPosition >= 245) {
         //Serial.println ("Alarm");
         first_entry = 1;
@@ -160,10 +162,14 @@ if (stillUseNTP)
         play_time_ADVERT();
         while (advert_flag) {
            play_time_ADVERT();
-           ESP.wdtFeed();
+           #ifdef ESP32_USED
+            esp_task_wdt_reset();
+           #else
+            ESP.wdtFeed();
+           #endif
         }
       }
-    #endif  //MP3_TX_PIN
+    #endif  // MP3_PLAYER_USE
       }
 
       // проверка рассвета
@@ -175,7 +181,7 @@ if (stillUseNTP)
         {
           // величина рассвета 0-255
           dawnPosition = (uint16_t) (255 * ((float)(thisFullTime - (alarms[thisDay].Time - pgm_read_byte(&dawnOffsets[dawnMode])) * 60) / (pgm_read_byte(&dawnOffsets[dawnMode]) * 60)));
-          dawnPosition = constrain(dawnPosition, 0, 255);
+          dawnPosition = dawnPosition < 255U ? dawnPosition : 255U;  //constrain(dawnPosition, 0, 255);
           for (uint8_t j = 5U; j > 0U; j--)
             if (dawnCounter >= j)
               dawnColor[j] = dawnColor[j - 1U];
@@ -246,7 +252,7 @@ if (stillUseNTP)
       }
     jsonWrite(configSetup, "time", Get_Time(currentLocalTime));
     }
-  }
+  //}
 }
 
 #ifdef USE_NTP
@@ -256,8 +262,11 @@ void resolveNtpServerAddress(bool &ntpServerAddressResolved)              // ф�
   {
     return;
   }
-
-  int err = WiFi.hostByName(NTP_ADDRESS, ntpServerIp, RESOLVE_TIMEOUT);
+  #ifdef ESP32_USED
+    int err = WiFi.hostByName(NTP_ADDRESS, ntpServerIp);
+  #else
+    int err = WiFi.hostByName(NTP_ADDRESS, ntpServerIp, RESOLVE_TIMEOUT);
+  #endif
   if (err!=1 || ntpServerIp[0] == 0 || ntpServerIp == IPAddress(255U, 255U, 255U, 255U)) 
   {
     #ifdef GENERAL_DEBUG
@@ -412,7 +421,7 @@ void tm1637_brightness ()   {  // установка яркости в зави�
 
 #endif
 
-#ifdef GEOLOCATION 
+#ifdef GEOLOCATION
 void GetGeolocationIP()
 {
   WiFiClient client;

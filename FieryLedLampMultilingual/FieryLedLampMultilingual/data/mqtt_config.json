@@ -1,0 +1,9 @@
+{
+"mq_ip":"test.mosquitto.org",
+"mq_port":"1883",
+"mq_user":"",
+"mq_pass":"",
+"tpoic":"test/FieryLedLamp",
+"mq_prd":"0",
+"mq_on":"1"
+}

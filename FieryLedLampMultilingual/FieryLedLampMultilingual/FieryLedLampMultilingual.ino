@@ -1,43 +1,83 @@
 // 
-// Дякую @Stepko за допомогу у перекладі текстових файлів українською мовою.
-//
-// ======================= УВАГА !!! =============================
+// ========================================= УВАГА !!! ==============================================
 // Усі налаштування робляться на вкладці Constants.h
-// Почитайте там те, що російською мовою написано.
+// Почитайте там те, що написано україньскою або російською мовою.
 // Або нічого не чіпайте, якщо збирали, за схемами з цього архіву.
 // У будь-якому випадку УВАЖНО прочитайте файл ПРОЧИТАЙ МЕНЕ!!!.txt з цього архіву.
+// У нагоді також буде перечітати файл Version.txt починаючи з версії 2.14
 //
-// ================================================ ==================
+// -- ВСІ БІБЛІОТЕКИ БЕРЕМО З АРХИВА ЦІЄЇ ПРОШИВЦІ  --
 //
-// Посилання для менеджера плат:
+// ==================================================================================================
+//
+// Посилання для менеджера плат Arduino:
+// ESP8266 :
 // https://arduino.esp8266.com/stable/package_esp8266com_index.json
-// При установці вибираємо версію 2.7.4
+// При установці вибираємо версію ядра 2.7.4
+// РАСПОДІЛЕННЯ  КОНТАКТІВ  МОДУЛЯ ESP8266 ДИВИСЬ У ФАЙЛИ Constants.h або на схемі
 //
-// ==================================================================
+// ESP32 :
+// https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+// Перевірялось на ядрі 1.0.6 та 2.0.14. На ядрі 1.0.6 код займає на 4% меньше місця.
+// Для використання ядра 1.0.6 закоментуйте відповідний рядок нижче.
+// Вибираємо плату ESP32 Dev Module. На платах ESP32S2, ESP32S3, ESP32C2 робота не перевірялась
+// РАСПОДІЛЕННЯ  КОНТАКТІВ  МОДУЛЯ ESP32 ДИВИСЬ У ФАЙЛИ Constants.h
 //
-// Далі йде код проекту. Не змінюйте тут нічого, якщо Ви не розумієте, до чого це призведе!
+// ==================================================================================================
+
+// ******************************* - ВИБІР ПЛАТИ ТА ЯДРА- *******************************************
+#ifdef ESP32           // Визначено в IDE якщо використовуется ESP32 (не треба змінювати для ESP8266)
+ #define ESP32_USED    // Використовується контолер ESP32 (не треба змінювати для ESP8266)
+ #define CORE_2_0_X    // Якщо використовується ядро ESP32 версії 1.0.Х закоментуйте цей рядок
+#endif
+// **************************************************************************************************
+
+//===================================================================================================
 //
-//+++++++++++++++++==========================================+++++++++++++++++++++++++++++++
+// Далі йде код проекту. Не змінюйте тут нічого, якщо Ви не розумієте, до чого це призведе!!!
 //
-#define FASTLED_USE_PROGMEM 1 // просим библиотеку FASTLED экономить память контроллера на свои палитры
-#include "pgmspace.h"
-#include <ESP8266WebServer.h>
-#include "Constants.h"
+//===================================================================================================
+
+
+#include <pgmspace.h>
+#ifdef ESP32_USED
+ #include "esp_wifi.h"                // Борьба с рестартом esp32 "assertion "Invalid mbox""
+ #include "nvs_flash.h"               // Борьба с рестартом esp32 "assertion "Invalid mbox""
+ #include <WiFi.h>
+ #include <WiFiClient.h>
+ #include <WiFiAP.h>
+ #include <WebServer.h>
+ #include <ESP32SSDP.h>               // https://github.com/luc-github/ESP32SSDP
+ #include <HTTPUpdateServer.h>        // Обновление с web страницы
+ #include <time.h>
+ #include <HardwareSerial.h>          // Вbкористовуєтся апаратний UART
+ #include "esp_system.h"
+ #include "esp_int_wdt.h"
+ #include "esp_task_wdt.h"
+
+#else
+ #include <ESP8266SSDP.h>
+ #include <ESP8266HTTPUpdateServer.h> // Обновление с web страницы
+ #include <ESP8266WiFi.h>
+ #include <ESP8266WebServer.h> 
+ #define FASTLED_USE_PROGMEM 1        // просим библиотеку FASTLED экономить память контроллера на свои палитры
+#endif
+
 #include <FastLED.h>
-#include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 #include <EEPROM.h>
-#include "Types.h"
-#include "timerMinim.h"
+#include <TimeLib.h>
+#include "Constants.h"
 #ifdef ESP_USE_BUTTON
 #include <GyverButton.h>
 #endif
-#include "fonts.h"
 #ifdef USE_NTP
 #include <NTPClient.h>
 #include <Timezone.h>
 #endif
-#include <TimeLib.h>
+#include "Types.h"
+#include "timerMinim.h"
+#include "fonts.h"
 #ifdef OTA
 #include "OtaManager.h"
 #endif
@@ -48,28 +88,30 @@
 #include "FavoritesManager.h"
 #include "TimerManager.h"
 #ifdef USE_BLYNK
-#include <BlynkSimpleEsp8266.h>
+ #ifdef ESP32_USED
+  #include <BlynkSimpleEsp32.h>
+ #else
+  #include <BlynkSimpleEsp8266.h>
+ #endif
 #endif
-#include <ESP8266SSDP.h>        
-#include <ESP8266HTTPUpdateServer.h>    // Обновление с web страницы
-/*
-#include <ArduinoJson.h>        // Перенесено у файл constants.h у розділ "для Розробників"
-#ifdef USE_LittleFS
-#include <LittleFS.h>           // Перенесено у файл constants.h у розділ "для Розробників"
-#define SPIFFS LittleFS         // Перенесено у файл constants.h у розділ "для Розробників"
-#endif
-*/
+//#ifdef ESP32_USED
+// #include "esp_system.h"
+// #include "esp_int_wdt.h"
+// #include "esp_task_wdt.h"
+//#endif
 #ifdef TM1637_USE
 #include "TM1637Display.h"
 #endif
-#ifdef MP3_TX_PIN
-#include <SoftwareSerial.h>     // Подключаем библиотеку для работы с последовательным интерфейсом
+#ifdef MP3_PLAYER_USE
+ #ifndef ESP32_USED
+  #include <SoftwareSerial.h>     // Подключаем библиотеку для работы с последовательным интерфейсом
+ #endif
  #ifdef MP3_DEBUG
   #define FEEDBACK  1
  #else
   #define FEEDBACK  0
  #endif  //MP3_DEBUG
-#endif  //MP3_TX_PIN
+#endif  // MP3_PLAYER_USE
 #ifdef IR_RECEIVER_USE
  #include <IRremoteESP8266.h>  // https://github.com/crankyoldgit/IRremoteESP8266
  #include <IRrecv.h>
@@ -123,28 +165,36 @@ OtaPhase OtaManager::OtaFlag = OtaPhase::None;
 #if USE_MQTT
 AsyncMqttClient* mqttClient = NULL;
 AsyncMqttClient* MqttManager::mqttClient = NULL;
-char* MqttManager::mqttServer = NULL;
-char* MqttManager::mqttUser = NULL;
-char* MqttManager::mqttPassword = NULL;
+//char* MqttManager::mqttServer = NULL;
+//char* MqttManager::mqttUser = NULL;
+//char* MqttManager::mqttPassword = NULL;
 char* MqttManager::clientId = NULL;
 char* MqttManager::lampInputBuffer = NULL;
 char* MqttManager::topicInput = NULL;
+#ifdef PUBLISH_STATE_IN_OLD_FORMAT
 char* MqttManager::topicOutput = NULL;
+#endif
+char* MqttManager::topicOutputJSON = NULL;
 bool MqttManager::needToPublish = false;
 char MqttManager::mqttBuffer[] = {};
 uint32_t MqttManager::mqttLastConnectingAttempt = 0;
 SendCurrentDelegate MqttManager::sendCurrentDelegate = NULL;
 #endif
 
-ESP8266HTTPUpdateServer httpUpdater;  // Объект для обнавления с web страницы
-ESP8266WebServer HTTP (ESP_HTTP_PORT);//ESP8266WebServer HTTP;  // Web интерфейс для устройства
-File fsUploadFile;  // Для файловой системы
+#ifdef ESP32_USED
+ HTTPUpdateServer httpUpdater;           // Объект для обнавления с web страницы
+ WebServer HTTP (ESP_HTTP_PORT);         // Объект для обнавления с web страницы
+#else
+ ESP8266HTTPUpdateServer httpUpdater;    // Объект для обнавления с web страницы
+ ESP8266WebServer HTTP (ESP_HTTP_PORT);  // Web интерфейс для устройства
+#endif
+File fsUploadFile;                       // Для файловой системы
 
 
 
 // --- ИНИЦИАЛИЗАЦИЯ ПЕРЕМЕННЫХ -------
 uint16_t localPort = ESP_UDP_PORT;
-char packetBuffer[MAX_UDP_BUFFER_SIZE];                     // buffer to hold incoming packet
+char packetBuffer[MAX_UDP_BUFFER_SIZE];  // buffer to hold incoming packet
 char inputBuffer[MAX_UDP_BUFFER_SIZE];
 static const uint8_t maxDim = max(WIDTH, HEIGHT);
 
@@ -213,7 +263,7 @@ char Host1[16], Host2[16], Host3[16];
 uint8_t ml1, ml2, ml3;
 #endif //USE_MULTIPLE_LAMPS_CONTROL
 
-#ifdef MP3_TX_PIN
+#ifdef MP3_PLAYER_USE
 uint8_t mp3_folder=1;                // Текущая папка для воспроизведения.
 uint8_t alarm_sound_on =false;       // Включить/выключить звук будильника
 uint8_t alarm_volume;                // Громкость будильника
@@ -241,7 +291,11 @@ uint8_t eff_volume = 9;                      // громкость воспро�
 uint8_t eff_sound_on = 0;                    // звук включен - !0 (true), выключен - 0
 uint8_t CurrentFolder;                       // Папка, на которую переключились (будет проигрываться)
 uint8_t CurrentFolder_last = 0;                  // Попередня текуща папка
-SoftwareSerial mp3(MP3_RX_PIN, MP3_TX_PIN);  // создаём объект mySoftwareSerial и указываем выводы, к которым подлючен плеер (RX, TX)
+#ifdef ESP32_USED
+ HardwareSerial mp3(1);  // Використовуємо UART1
+#else
+ SoftwareSerial mp3(MP3_RX_PIN, MP3_TX_PIN);  // создаём объект mySoftwareSerial и указываем выводы, к которым подлючен плеер (RX, TX)
+#endif
 //#ifndef TM1637_USE
 // uint8_t minute_tmp;
 //#endif
@@ -251,7 +305,7 @@ uint16_t ADVERT_TIMER_H, ADVERT_TIMER_M; // тривалість озвучув�
 uint8_t mp3_delay;                       // Затрімка між командами плеєру
 uint8_t send_sound = 1;                  // Передавати або ні вагалі параметри звуку (папка,озвучування_on/off,гучнисть)
 uint8_t send_eff_volume = 1;             // Передавати або ні озвучування_on/off, гучність
-#endif  //MP3_TX_PIN
+#endif  // MP3_PLAYER_USE
 #ifdef TM1637_USE
 uint8_t DispBrightness = 1;          // +++ Яркость дисплея от 0 до 255(5 уровней яркости с шагом 51). 0 - дисплей погашен 
 bool dotFlag = false;                // +++ флаг: в часах рисуется двоеточие или нет
@@ -262,9 +316,9 @@ bool aDirection = false;             // +++ Направление измене�
 uint32_t DisplayTimer;               // Время отображения номера эффекта
 uint8_t LastEffect = 255;            // последний Проигрываемый эффект
 uint8_t DisplayFlag=0;               // Флаг, показывающий, что отображается номер эффекта и папки
- #ifdef MP3_TX_PIN
+ #ifdef MP3_PLAYER_USE
  uint8_t LastCurrentFolder = 255;    // Проигрываемая папка
- #endif  //MP3_TX_PIN
+ #endif  // MP3_PLAYER_USE
 #endif  //TM1637_USE
 
 #ifdef HEAP_SIZE_PRINT
@@ -297,25 +351,36 @@ IPAddress Static_IP;//(192,168,0,17);  // статичний IP
 IPAddress Gateway;//(192,168,0,1);     // шлюз
 IPAddress Subnet;//(255,255,255,0);    // маска підмережи
 IPAddress DNS1;//(208,67,222,222);     //DNS сервери. Можна також DNS1(1,1,1,1) або DNS1(8,8,4,4);
-IPAddress DNS2(8,8,8,8);  //Резервний DNS
+IPAddress DNS2(8,8,8,8);               //Резервний DNS
 
-uint8_t C_flag = 0;
-uint16_t current_limit;              // ліміт струму, що настроюється
-uint8_t last_minute;                 // хвилини
-uint8_t hours;                       // години
+uint8_t C_flag = 0;                    // Службове
+uint16_t current_limit;                // ліміт струму, що настроюється
+uint8_t last_minute;                   // хвилини
+uint8_t hours;                         // години
 //uint8_t last_hours; 
-uint8_t m_date,d_date;               // дата
-uint8_t AutoBrightness;          // Автояскравість on/off
+uint8_t m_date,d_date;                 // дата
+uint8_t AutoBrightness;                // Автояскравість on/off
 uint8_t last_day_night = 0;
 
 void setup()  //==================================================================  void setup()  =========================================================================
 {
-    
+
   Serial.begin(115200);
   delay(300);
+  #ifdef ESP32_USED
+  esp_task_wdt_init(8, true);   // Initialize the task watchdog timer
+  #else
   ESP.wdtEnable(WDTO_8S);
+  #endif
 
-  LOG.print(F("\n\n\nSYSTEM START\n"));
+  LOG.print(F("\n\n\nSYSTEM START"));
+  #ifdef ESP32
+  LOG.print (F("  ESP32\n"));
+  #endif
+  #ifdef ESP8266
+  LOG.print (F("  ESP8266\n"));
+  #endif
+
 
   #if defined(ESP_USE_BUTTON) && defined(BUTTON_LOCK_ON_START)
     #if (BUTTON_IS_SENSORY == 1)
@@ -354,14 +419,13 @@ void setup()  //================================================================
   display.displayByte(_dash, _dash, _dash, _dash);          // +++ отображаем прочерки
 #endif
 
-   //HTTP
-  User_setings ();
+   //File Fystem
   #ifdef GENERAL_DEBUG  
-  LOG.print(F("\nСтарт файловой системы\n"));
+  LOG.print(F("\nСтарт файлової системи\n"));
   #endif
   FS_init();  //Запускаем файловую систему
   #ifdef GENERAL_DEBUG
-  LOG.print(F("Чтение файла конфигурации\n"));
+  LOG.print(F("Читання файла конфигурації\n"));
   #endif
   configSetup = readFile(F("config.json"), 2048);
   #ifdef GENERAL_DEBUG  
@@ -372,11 +436,6 @@ void setup()  //================================================================
   LOG.print(F("Старт SSDP\n"));
   #endif
   SSDP_init();
-  //Настраиваем и запускаем HTTP интерфейс
-  #ifdef GENERAL_DEBUG
-  LOG.print (F("Старт WebServer\n"));
-  #endif
-  HTTP_init();
 
   
 //-----------Инициализируем переменные, хранящиеся в файле config.json--------------
@@ -387,7 +446,9 @@ void setup()  //================================================================
   random_on = jsonReadtoInt(configSetup, "random_on");
   espMode = jsonReadtoInt(configSetup, "ESP_mode");
   PRINT_TIME = jsonReadtoInt(configSetup, "print_time");
-  buttonEnabled = jsonReadtoInt(configSetup, "button_on");
+  #ifdef ESP_USE_BUTTON
+   buttonEnabled = jsonReadtoInt(configSetup, "button_on");
+  #endif
   ESP_CONN_TIMEOUT = jsonReadtoInt(configSetup, "TimeOut");
   time_always = jsonReadtoInt(configSetup, "time_always");
   (jsonRead(configSetup, "run_text")).toCharArray (TextTicker, (jsonRead(configSetup, "run_text")).length()+1);
@@ -412,7 +473,7 @@ void setup()  //================================================================
   summerTime.offset = winterTime.offset + jsonReadtoInt(configSetup, "Summer_Time") *60;
   localTimeZone.setRules (summerTime, winterTime);
   #endif
-  #ifdef MP3_TX_PIN
+  #ifdef MP3_PLAYER_USE
   eff_volume = jsonReadtoInt(configSetup, "vol");
   eff_sound_on = (jsonReadtoInt(configSetup, "on_sound")==0)? 0 : eff_volume;
   alarm_volume = jsonReadtoInt(configSetup, "alm_vol");
@@ -426,13 +487,13 @@ void setup()  //================================================================
   Equalizer = jsonReadtoInt(configSetup, "eq");
   send_sound = jsonReadtoInt(configSetup, "s_s");
   send_eff_volume = jsonReadtoInt(configSetup, "s_e_v");
-  #endif //MP3_TX_PIN
+  #endif // MP3_PLAYER_USE
   {
   String configHardware = readFile(F("hardware_config.json"), 1024);    
   current_limit = jsonReadtoInt(configHardware, "cur_lim");
   MATRIX_TYPE = jsonReadtoInt(configHardware, "m_t");
   ORIENTATION = jsonReadtoInt(configHardware, "m_o");
-  #ifdef MP3_TX_PIN
+  #ifdef MP3_PLAYER_USE
   ADVERT_TIMER_H = 100 * jsonReadtoInt(configHardware, "tim_h");
   ADVERT_TIMER_M = 100 * jsonReadtoInt(configHardware, "tim_m");
   mp3_delay = 10 * jsonReadtoInt(configHardware, "delay");
@@ -489,7 +550,11 @@ void setup()  //================================================================
   {
     handleTelnetClient();
     delay(100);
-    ESP.wdtFeed();
+    #ifdef ESP32_USED
+     esp_task_wdt_reset();
+    #else
+     ESP.wdtFeed();
+    #endif
   }
   #endif
 
@@ -517,7 +582,11 @@ void setup()  //================================================================
        //jsonWrite(configSetup, "button_on", buttonEnabled);
        //saveConfig();
     }
-    ESP.wdtFeed();
+    #ifdef ESP32_USED
+     esp_task_wdt_reset();
+    #else
+     ESP.wdtFeed();
+    #endif
     #endif
   #endif
 
@@ -543,21 +612,6 @@ void setup()  //================================================================
   modes[currentMode].Brightness = jsonReadtoInt (configSetup, "br");
   modes[currentMode].Speed = jsonReadtoInt (configSetup, "sp");
   modes[currentMode].Scale = jsonReadtoInt (configSetup, "sc");
-/*
-  {
-    File file = SPIFFS.open(F("/index.json.gz"),"r");
-    if ((EEPROM.read(EEPROM_FIRST_RUN_ADDRESS+1)!= MODE_AMOUNT) && (file.size() > 700UL))
-    {
-        for (uint8_t i = 0; i < 85; i++) TextTicker[i] = pgm_read_byte(&Default_Settings[i]);
-    SPIFFS.format();
-    buttonEnabled = 0;
-    currentMode = EFF_TEXT;
-    ONflag = 1;
-    changePower();
-    }
-    file.close();
-  }
-*/
   first_entry = 1;
   handle_alarm ();
   first_entry = 0;
@@ -566,33 +620,34 @@ void setup()  //================================================================
   FavoritesManager::Dispersion = jsonReadtoInt(configSetup, "disp");
   FavoritesManager::UseSavedFavoritesRunning = jsonReadtoInt(configSetup, "cycle_allwase");
   jsonWrite(configSetup, "tmr", 0);
+  #ifdef ESP_USE_BUTTON
   jsonWrite(configSetup, "button_on", buttonEnabled);
+  #endif
   first_entry = 1;
   handle_cycle_set();  // чтение выбранных эффектов
   first_entry = 0;
-#ifdef MP3_TX_PIN
+#ifdef MP3_PLAYER_USE
   first_entry = 1;
   handle_sound_set();  //чтение выбранных папок
   first_entry = 0;
-#endif  //MP3_TX_PIN
+#endif  // MP3_PLAYER_USE
 #ifdef USE_MULTIPLE_LAMPS_CONTROL  
   multilamp_get ();   // Чтение из файла адресов синхронно управляемых ламп 
 #endif //USE_MULTIPLE_LAMPS_CONTROL
   
   // MP3 Player
    
-  #ifdef MP3_TX_PIN
-   mp3.begin(9600);
+  #ifdef MP3_PLAYER_USE
+   #ifdef ESP32_USED
+    mp3.begin(9600, SERIAL_8N1, MP3_RX_PIN, MP3_TX_PIN);
+   #else
+    mp3.begin(9600);
+   #endif
    LOG.println (F("\nСтарт MP3 Player"));
    mp3_timer = millis();
    mp3_player_connect = 1;
   #endif 
-  
-  // UDP
-  
-  LOG.printf_P(PSTR("\nСтарт UDP сервера. Порт: %u\n"), localPort);
-  Udp.begin(localPort);
-  
+
   // WI-FI
   
   LOG.printf_P(PSTR("\nРобочий режим лампи: ESP_MODE = %d\n"), espMode);
@@ -616,14 +671,18 @@ void setup()  //================================================================
     }
     // Включаем WIFI в режиме точки доступа с именем и паролем
     // хронящихся в переменных _ssidAP _passwordAP в фвйле config.json
-    WiFi.softAP(AP_NAME, AP_PASS);
+    #ifdef ESP32_USED
+     WiFi.softAP(AP_NAME.c_str(), AP_PASS.c_str());
+    #else
+     WiFi.softAP(AP_NAME, AP_PASS);
+    #endif
     LOG.print(F("Старт WiFi в режиме точки доступа\n"));
     LOG.print(F("IP адрес: "));
     LOG.println(WiFi.softAPIP());
    #ifdef GENERAL_DEBUG
     LOG.println (F("*******************************************"));
     LOG.print (F("Heap Size after connection AP mode = "));
-    LOG.println(system_get_free_heap_size());
+    LOG.println(ESP.getFreeHeap());
     LOG.println (F("*******************************************"));
     #endif    
     connect = true;
@@ -649,12 +708,12 @@ void setup()  //================================================================
   for (uint8_t address = 0; address < 64; address ++){
       Pass_STA[address] = EEPROM.read(EEPROM_PASSWORD_START_ADDRESS + address);
       #ifdef GENERAL_DEBUG
-      LOG.print(Pass_STA[address]);
+      //LOG.print(Pass_STA[address]);
       #endif
       if (Pass_STA[address] == 0) break;
   }
   #ifdef GENERAL_DEBUG
-  LOG.println( );
+  LOG.println(Pass_STA );
   #endif
   if (_ssid == "") {
      espMode = 0;
@@ -670,7 +729,7 @@ void setup()  //================================================================
         WiFi.config(Static_IP, Gateway, Subnet, DNS1, DNS2); // Конфігурація під статичний IP Address
     }
     delay(10);  
-    WiFi.begin(SSID_STA, Pass_STA); //WiFi.begin(_ssid.c_str(), _password.c_str()); //
+    WiFi.begin("Pestel" , "BarikMobarik"); //WiFi.begin(SSID_STA, Pass_STA); //WiFi.begin(_ssid.c_str(), _password.c_str()); //
     delete [] Pass_STA;
     delete [] SSID_STA;
   }
@@ -681,23 +740,86 @@ void setup()  //================================================================
     #endif
   }     //if (espMode == 0U) {...} else {...
   
-  ESP.wdtFeed();
+    #ifdef ESP32_USED
+     esp_task_wdt_reset();
+    #else
+     ESP.wdtFeed();
+    #endif
 
-  // NTP
+   
+  // UDP 
+  LOG.printf_P(PSTR("\nСтарт UDP сервера. Порт: %u\n"), localPort);
+  Udp.begin(localPort);
+
+  //Настраиваем и запускаем HTTP интерфейс
+  User_setings ();
+  #ifdef GENERAL_DEBUG
+  LOG.print (F("Старт WebServer\n"));
+  #endif
+  HTTP_init();
+  WiFiClient client;  //Declare an object of class HTTPClient
+ 
+ // NTP
   #ifdef USE_NTP
   timeClient.begin();
-  ESP.wdtFeed();
+    #ifdef ESP32_USED
+     esp_task_wdt_reset();
+    #else
+     ESP.wdtFeed();
+    #endif
   #endif
 
 
   // MQTT
   #if (USE_MQTT)
+  String configMQTT = readFile(F("mqtt_config.json"), 512);
+  String str;
+  if(!MqttServer.fromString(jsonRead(configMQTT, "mq_ip"))){
+        jsonRead(configMQTT, "mq_ip").toCharArray(MqttHost, jsonRead(configMQTT, "mq_ip").length()+1);
+        mqttIPaddr = false;
+/*        #ifdef ESP32_USED
+         WiFi.hostByName(MqttHost, MqttServer);
+        #else
+         WiFi.hostByName(MqttHost, MqttServer, RESOLVE_TIMEOUT);
+        #endif
+*/
+  }
+  else
+      mqttIPaddr = true;
+  str = jsonRead(configMQTT, "mq_user");
+  str.toCharArray(MqttUser, str.length()+1);
+  str = jsonRead(configMQTT, "mq_pass");
+  str.toCharArray(MqttPassword, str.length()+1);
+  str = jsonRead(configMQTT, "topic");
+  str.toCharArray(TopicBase, str.length()+1);
+  MqttPort = jsonReadtoInt(configMQTT, "mq_port");
+  MqttOn = jsonReadtoInt(configMQTT, "mq_on");
+  MqttPeriod = jsonReadtoInt(configMQTT, "mq_prd");
+  #ifdef GENERAL_DEBUG
+   LOG. println("Start MQTT");
+   LOG.print("MQTT server ");
+   if(mqttIPaddr)
+       LOG.print(MqttServer);
+   else
+       LOG.print(MqttHost);
+   LOG.print(": ");
+   LOG.println(MqttPort);
+   LOG.print("MQTT User - ");
+   LOG.println(MqttUser);
+   LOG.print("MQTT Password - ");
+   LOG.println(MqttPassword);
+  #endif //GENERAL_DEBUG
+
   if (espMode == 1U)
   {
     mqttClient = new AsyncMqttClient();
     MqttManager::setupMqtt(mqttClient, inputBuffer, &sendCurrent);    // создание экземпляров объектов для работы с MQTT, их инициализация и подключение к MQTT брокеру
   }
-  ESP.wdtFeed();
+    #ifdef ESP32_USED
+     esp_task_wdt_reset();
+    #else
+     ESP.wdtFeed();
+    #endif
   #endif
 
 
@@ -706,29 +828,29 @@ void setup()  //================================================================
   randomSeed(micros());
   changePower();
   loadingFlag = true;
+  
+  //IR receiver
   #ifdef IR_RECEIVER_USE
     irrecv.enableIRIn();  // Start the IR receiver
     IR_Tick_Timer = millis();
     IR_Repeat_Timer = millis();
   #endif  //IR_RECEIVER_USE
 
-  //delay (100);
-  
-#ifdef TM1637_USE
-  DisplayTimer = millis();
- #ifdef MP3_TX_PIN
-    CurrentFolder = effects_folders[currentMode];
-    mp3_folder = CurrentFolder;
-    jsonWrite(configSetup, "fold_sel", CurrentFolder);
- #endif  //MP3_TX_PIN
-#endif  //TM1637_USE
+  //TM1637
+  #ifdef TM1637_USE
+    DisplayTimer = millis();
+    #ifdef MP3_PLAYER_USE
+      CurrentFolder = effects_folders[currentMode];
+      mp3_folder = CurrentFolder;
+      jsonWrite(configSetup, "fold_sel", CurrentFolder);
+    #endif  // MP3_PLAYER_USE
+  #endif  //TM1637_USE
 
   my_timer=millis();
   
   #ifdef HEAP_SIZE_PRINT
    mem_timer = millis();
   #endif //HEAP_SIZE_PRINT 
-  WiFiClient client;  //Declare an object of class HTTPClient
 }
 
 
@@ -741,7 +863,11 @@ void loop()  //=================================================================
       my_timer=millis();
       if (ESP_CONN_TIMEOUT--) {
         LOG.print(F("."));
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
       }
       else {
         // Если не удалось подключиться запускаем в режиме AP
@@ -767,7 +893,7 @@ void loop()  //=================================================================
       #ifdef GENERAL_DEBUG
         LOG.println (F("***********************************************"));
         LOG.print (F("Heap Size after connection Station mode = "));
-        LOG.println(system_get_free_heap_size());
+        LOG.println(ESP.getFreeHeap());
         LOG.println (F("***********************************************"));
       #endif
       #ifdef DISPLAY_IP_AT_START
@@ -775,7 +901,14 @@ void loop()  //=================================================================
       #if defined(MOSFET_PIN) && defined(MOSFET_LEVEL)      // установка сигнала в пин, управляющий MOSFET транзистором, матрица должна быть включена на время вывода текста
         digitalWrite(MOSFET_PIN, MOSFET_LEVEL);
       #endif
-        while(!fillString(WiFi.localIP().toString().c_str(), CRGB::White, false)) { delay(1); ESP.wdtFeed(); }
+        while(!fillString(WiFi.localIP().toString().c_str(), CRGB::White, false)) {
+           delay(1);
+           #ifdef ESP32_USED
+            esp_task_wdt_reset();
+          #else
+           ESP.wdtFeed();
+          #endif
+           }
         if (ColorTextFon  & (!ONflag || (currentMode == EFF_COLOR && modes[currentMode].Scale < 3))){
           FastLED.clear();
           delay(1);
@@ -791,9 +924,13 @@ void loop()  //=================================================================
  }
  
  if (connect || !espMode)  { my_timer = millis(); }
-  
+ #ifdef MAIN_CYCLES_PER_SECOND
+   int32_t my_timer2 = millis();
+   uint16_t mcps_counter = 0;
+ #endif 
 do {    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++========= Главный цикл ==========+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  // Если не устойчивое подключение к WiFi, или не создаётся точка доступа, или лампа не хочет подключаться к вашей сети или вы не можете подключиться к точке доступа, то может быть у вас не качественная плата.
+
+// Если не устойчивое подключение к WiFi, или не создаётся точка доступа, или лампа не хочет подключаться к вашей сети или вы не можете подключиться к точке доступа, то может быть у вас не качественная плата.
   delay (0);   //Для некоторых плат ( особенно без металлического экрана над ESP и Flash памятью ) эта задержка должна быть увеличена. Подбирается индивидуально в пределах 1-12 мс до устойчивой работы WiFi. Чем меньше, тем лучше. Качественные платы работают с задержкой 0.
   yield();
   
@@ -816,7 +953,7 @@ do {    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++======
     clockTicker_blink();
     }
   #endif  //TM1637_USE
-  #ifdef MP3_TX_PIN
+  #ifdef MP3_PLAYER_USE
   switch (mp3_player_connect){
       case 0: break;
       case 1: read_command(1);
@@ -843,7 +980,7 @@ do {    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++======
    if (millis() - mem_timer > 10000UL) {
        mem_timer = millis();
        LOG.print (F("Heap Size = "));
-       LOG.println(system_get_free_heap_size());
+       LOG.println(ESP.getFreeHeap());
    }
   #endif //HEAP_SIZE_PRINT
   
@@ -889,6 +1026,7 @@ do {    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++======
       #endif
       , &random_on
       , &selectedSettings
+      ,espMode
       ))
   {
     #ifdef USE_BLYNK
@@ -898,20 +1036,54 @@ do {    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++======
   }
 
   #if USE_MQTT
-  if (espMode == 1U && mqttClient && WiFi.isConnected() && !mqttClient->connected())
+  if (espMode == 1U && mqttClient && WiFi.isConnected() && !mqttClient->connected() && MqttOn)
   {
     MqttManager::mqttConnect();                             // библиотека не умеет восстанавливать соединение в случае потери подключения к MQTT брокеру, нужно управлять этим явно
     MqttManager::needToPublish = true;
   }
 
-  if (MqttManager::needToPublish)
+  if ((MqttManager::needToPublish || (MqttPeriod && (millis() - mqtt_timer) >= (MqttPeriod * 1000))) && MqttOn)
+  //if ((MqttManager::needToPublish ) && MqttOn)
   {
+    mqtt_timer = millis();
     if (strlen(inputBuffer) > 0)                            // проверка входящего MQTT сообщения; если оно не пустое - выполнение команды из него и формирование MQTT ответа
     {
       processInputBuffer(inputBuffer, MqttManager::mqttBuffer, true);
     }
-    
-    MqttManager::publishState();
+  #ifdef PUBLISH_STATE_IN_OLD_FORMAT  
+    MqttManager::publishState(0);  //публікація буфера MQTT відповіді в топік <TopicBase>/LedLamp_<ChipId>/state
+  #endif // PUBLISH_STATE_IN_OLD_FORMAT
+    String MqttSnd = "{\"power\":\"P_ON\"}"; //Рядок для відповіді "{"power":"P_ON","cycle":"FAV_OFF","effect":"111","bri":"15","spd":"33","sca":"58","runt":"10","runc":"123","runf":"1","runc":"220","rnde":"0","rndc":"1","rndf":"0","tmr":59900","volume":"10","sound":"SO_ON"}"
+    jsonWrite(MqttSnd, "power", ONflag ? "P_ON" : "P_OFF");   // Створення рядку для MQTT відповіді у форматі JSON  у вигляді, як вище. 
+    jsonWrite(MqttSnd, "cycle", FavoritesManager::FavoritesRunning ? "FAV_ON" : "FAV_OFF"); // Увімкнути / вимкнути режим "цикл" ("ізбранне")
+     for ( uint8_t n=0; n< MODE_AMOUNT; n++)
+     {
+         if (eff_num_correct[n] == currentMode){
+            jsonWrite(MqttSnd, "effect", (String)n);                    // Визначення назви ефекту за значенням currentMode в залежністі від вибранної мови
+            break;
+         } 
+     } 
+    jsonWrite(MqttSnd, "bri", (String)modes[currentMode].Brightness);   // Яскравість ефектів
+    jsonWrite(MqttSnd, "spd", (String)modes[currentMode].Speed);        // Швидкість ефектів
+    jsonWrite(MqttSnd, "sca", (String)modes[currentMode].Scale);        // Масштаб ефектів
+    jsonWrite(MqttSnd, "runt", (String)RuninTextOverEffects);           // Періодичність віводу рядку,що біжить
+    jsonWrite(MqttSnd, "runc", (String)ColorRunningText);               // Колір рядку,що біжить
+    jsonWrite(MqttSnd, "runf", (String)ColorTextFon);                   // Фон рядку, що біжить. 0-чорний фон; 1-кольоровий фон.
+    jsonWrite(MqttSnd, "runs", (String)SpeedRunningText);               // Швидкисть рядку, що біжить.
+    jsonWrite(MqttSnd, "rnde", (String)FavoritesManager::rndCycle);     // Випадковий вибір ефектов в циклі
+    jsonWrite(MqttSnd, "rndс", (String)random_on);                      // Випадковий вибір  налаштувань  ефектов в циклі
+    jsonWrite(MqttSnd, "rndf", (String)selectedSettings);               // Випадковий вибір  налаштувань  поточного ефекту
+    uint32_t temp = TimerManager::TimeToFire - millis();
+    if (temp && TimerManager::TimerRunning)
+        jsonWrite(MqttSnd, "tmr", (String)(temp / 1000));               // Кількисть секунд до спрацьовування таймера
+    else
+        jsonWrite(MqttSnd, "tmr", (String)0);                           // Кількисть секунд до спрацьовування таймера == 0
+    #ifdef MP3_PLAYER_USE
+     jsonWrite(MqttSnd, "volume", (String)eff_volume);                  // Гучність
+     jsonWrite(MqttSnd, "sound", eff_sound_on ? "SO_ON" : "SO_OFF");    // Увімкнути / вимкнути озвучування ефектів
+    #endif //MP3_PLAYER_USE
+    MqttSnd.toCharArray(MqttManager::mqttBuffer, MqttSnd.length() +1);  // можливо додати ще якісь змінні (данні) для виводу у відповіді, але довжина радку відповіді повина бути меньша ниж 255 байт
+    MqttManager::publishState(1);  //публікація буфера MQTT відповіді (JSON): "{"power":"P_ON","cycle":"FAV_OFF","effect":"111","bri":"15","spd":"33","sca":"58","runt":"10","runc":"123","runf":"1","runc":"220","rnde":"0","rndc":"1","rndf":"0","tmr":59900","volume":"10","sound":"SO_ON"}" в топик <TopicBase>/LedLamp_<ChipId>/snd
   }
   #endif
 
@@ -923,8 +1095,22 @@ do {    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++======
   #if defined(GENERAL_DEBUG) && GENERAL_DEBUG_TELNET
   handleTelnetClient();
   #endif
- }//if (Painting == 0)
+ } //if (Painting == 0)
   yield();
-  ESP.wdtFeed();
+    #ifdef ESP32_USED
+     esp_task_wdt_reset();
+    #else
+     ESP.wdtFeed();
+    #endif
+  #ifdef MAIN_CYCLES_PER_SECOND
+    mcps_counter ++;
+    if ((millis() - my_timer2) > 1000)
+    {
+        my_timer2 = millis();
+        LOG.print("MAIN CYCLES PER SECOND = ");
+        LOG.println(mcps_counter);
+        mcps_counter = 0;
+    }
+  #endif
 } while (connect);
 }

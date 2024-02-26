@@ -13,16 +13,28 @@ void buttonTick()
     if (touch.isStep() && touch.getHoldClicks() == 14U) {
         LOG.println("\n*** Reset to Default ***");
         showWarning(CRGB::Red, 500, 250U);
-        ESP.wdtFeed();
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
         setModeSettings();
         updateSets();    
         if(FileCopy (F("/default/config.json"), F("/config.json"))) {
-            ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
             showWarning(CRGB::Green, 500, 250U);
             ESP.restart();
         }
         else {
-            ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
             showWarning(CRGB::Red, 500, 250U);
         }
     }  
@@ -37,14 +49,14 @@ void buttonTick()
   if (clickCount == 1U)
   {
     if (dawnFlag) {
-        #ifdef MP3_TX_PIN
+        #ifdef MP3_PLAYER_USE
         if (alarm_sound_flag) {
            send_command(0x0E,0,0,0); //Пауза
            mp3_stop = true;
            alarm_sound_flag = false;
         }
         else
-        #endif  //MP3_TX_PIN
+        #endif  // MP3_PLAYER_USE
         {
             manualOff = true;
             dawnFlag = false;
@@ -96,8 +108,8 @@ void buttonTick()
 
 
   // двухкратное нажатие
-  if (clickCount == 2U)
-     #ifdef MP3_TX_PIN
+  if (clickCount == 2U){
+     #ifdef MP3_PLAYER_USE
      if (dawnFlag) {            //if (dawnFlag && alarm_sound_flag) {
         //myDFPlayer.pause();
         send_command(0x0E,0,0,0);  //Пауза
@@ -112,7 +124,7 @@ void buttonTick()
         changePower();
        }
        else
-       #endif  //MP3_TX_PIN
+       #endif  // MP3_PLAYER_USE
       
   if (ONflag)    
   {
@@ -155,7 +167,7 @@ void buttonTick()
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
   }
-
+  }
 
   // трёхкратное нажатие
   if (ONflag && clickCount == 3U)
@@ -250,7 +262,14 @@ void buttonTick()
       #if defined(MOSFET_PIN) && defined(MOSFET_LEVEL)      // установка сигнала в пин, управляющий MOSFET транзистором, матрица должна быть включена на время вывода текста
       digitalWrite(MOSFET_PIN, MOSFET_LEVEL);
       #endif
-      while(!fillString(WiFi.localIP().toString().c_str(), CRGB::White, false)) { delay(1); ESP.wdtFeed(); }
+      while(!fillString(WiFi.localIP().toString().c_str(), CRGB::White, false)) {
+          delay(1);
+          #ifdef ESP32_USED
+           esp_task_wdt_reset();
+          #else
+           ESP.wdtFeed();
+          #endif
+          }
       if (ColorTextFon  & (!ONflag || (currentMode == EFF_COLOR && modes[currentMode].Scale < 3))){
         FastLED.clear();
         delay(1);
@@ -283,8 +302,10 @@ void buttonTick()
     saveConfig();  
 
     #ifdef GENERAL_DEBUG
-    LOG.printf_P(PSTR("Рабочий режим лампы изменён и сохранён в энергонезависимую память\nНовый рабочий режим: ESP_MODE = %d, %s\nРестарт...\n"),
-      espMode, espMode == 0U ? F("WiFi точка доступа") : F("WiFi клиент (подключение к роутеру)"));
+    LOG.print(F("Рабочий режим лампы изменён и сохранён в энергонезависимую память\nНовый рабочий режим: ESP_MODE ="));
+    LOG.print(espMode);
+    LOG.print(espMode == 0U ? F("WiFi точка доступа") : F("WiFi клиент (подключение к роутеру)"));
+    LOG.print("\nРестарт...\n");
     delay(1000);
     #endif
 
@@ -292,7 +313,7 @@ void buttonTick()
     ESP.restart();
   }
 
-  #ifdef MP3_TX_PIN
+  #ifdef MP3_PLAYER_USE
   
   // Восьмикратное нажатие
   if (clickCount == 8U)  {                                  // Вкл / Откл звука
@@ -318,12 +339,12 @@ void buttonTick()
         LOG.println (F("mp3 player не подключен"));
         #endif
     }
-    jsonWrite(configSetup, "on_sound", constrain (eff_sound_on,0,1));
+    jsonWrite(configSetup, "on_sound", eff_sound_on > 0 ? 1 : 0);
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
   }
-  #endif  //MP3_TX_PIN
+  #endif  // MP3_PLAYER_USE
 
   // кнопка только начала удерживаться
   if (touch.isHolded()) // пускай для выключенной лампы удержание кнопки включает белую лампу
@@ -334,7 +355,7 @@ void buttonTick()
 
 
   // кнопка нажата и удерживается
-if (touch.isStep())
+if (touch.isStep()){
   if (ONflag && !Button_Holding)
   {
 
@@ -435,16 +456,28 @@ if (touch.isStep())
       case 14U:                                             // Скидання основних налаштувань, які зберігаються у файлі config.json
       {
           showWarning(CRGB::Red, 500, 250U);
-          ESP.wdtFeed();
+          #ifdef ESP32_USED
+           esp_task_wdt_reset();
+          #else
+           ESP.wdtFeed();
+          #endif
           setModeSettings();
           updateSets();    
           if(FileCopy (F("/default/config.json"), F("/config.json"))){
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Green, 2500, 250U);
               ESP.restart();
           }
           else {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Red, 2500, 250U);
           }
           break;
@@ -453,63 +486,123 @@ if (touch.isStep())
       case 19U:                                            // Скидання усіх налаштувань в "заводські"
       {
           showWarning(CRGB::Red, 500, 250U);
-          ESP.wdtFeed();
+          #ifdef ESP32_USED
+           esp_task_wdt_reset();
+          #else
+           ESP.wdtFeed();
+          #endif
           setModeSettings();
           updateSets();    
           if(FileCopy (F("/default/config.json"), F("/config.json"))) {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Green, 500, 250U);
           }
           else {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Red, 500, 250U);
           }
           if(FileCopy (F("/default/cycle_config.json"), F("/cycle_config.json"))) {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Green, 500, 250U);
           }
           else {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Red, 500, 250U);
           }
           if(FileCopy (F("/default/sound_config.json"), F("/sound_config.json"))) {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Green, 500, 250U);
           }
           else {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Red, 500, 250U);
           }
           if(FileCopy (F("/default/alarm_config.json"), F("/alarm_config.json"))) {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Green, 500, 250U);
           }
           else {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Red, 500, 250U);
           }
           if(FileCopy (F("/default/hardware_config.json"), F("/hardware_config.json"))) {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Green, 500, 250U);
           }
           else {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Red, 500, 250U);
           }
           if(FileCopy (F("/default/multilamp_config.json"), F("/multilamp_config.json"))) {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Green, 500, 250U);
           }
           else {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Red, 500, 250U);
           }
           if(FileCopy (F("/default/index.json.gz"), F("/index.json.gz"))) {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
              ESP.wdtFeed();
+            #endif
              showWarning(CRGB::Green, 500, 250U);
           }
           else {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
              ESP.wdtFeed();
+            #endif
              showWarning(CRGB::Red, 500, 250U);
           }
           ESP.restart();
@@ -576,14 +669,26 @@ if (touch.isStep())
       case 14U:
       {
           showWarning(CRGB::Red, 500, 250U);
-          ESP.wdtFeed();
+          #ifdef ESP32_USED
+           esp_task_wdt_reset();
+          #else
+           ESP.wdtFeed();
+          #endif
           if(FileCopy (F("/default/config.json"), F("/config.json"))) {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Green, 2500, 250U);
               ESP.restart();
           }
           else {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Red, 2500, 250U);
           }
           break;
@@ -591,54 +696,106 @@ if (touch.isStep())
       case 19U:
       {
           showWarning(CRGB::Red, 500, 250U);
-          ESP.wdtFeed();
+          #ifdef ESP32_USED
+           esp_task_wdt_reset();
+          #else
+           ESP.wdtFeed();
+          #endif
           if(FileCopy (F("/default/config.json"), F("/config.json"))) {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Green, 500, 250U);
           }
           else {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Red, 500, 250U);
           }
           if(FileCopy (F("/default/cycle_config.json"), F("/cycle_config.json"))) {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Green, 500, 250U);
           }
           else {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Red, 500, 250U);
           }
           if(FileCopy (F("/default/sound_config.json"), F("/sound_config.json"))) {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Green, 500, 250U);
           }
           else {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Red, 500, 250U);
           }
           if(FileCopy (F("/default/alarm_config.json"), F("/alarm_config.json"))) {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Green, 500, 250U);
           }
           else {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Red, 500, 250U);
           }
           if(FileCopy (F("/default/hardware_config.json"), F("/hardware_config.json"))) {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Green, 500, 250U);
           }
           else {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Red, 500, 250U);
           }
           if(FileCopy (F("/default/multilamp_config.json"), F("/multilamp_config.json"))) {
-              ESP.wdtFeed();
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
               showWarning(CRGB::Green, 500, 250U);
           }
           else {
-              ESP.wdtFeed();
-              showWarning(CRGB::Red, 500, 250U);
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
+            showWarning(CRGB::Red, 500, 250U);
           }
           ESP.restart();
           break;
@@ -646,6 +803,7 @@ if (touch.isStep())
       
     }
    }
+  }
   }
 
   // кнопка отпущена после удерживания
