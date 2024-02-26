@@ -216,7 +216,7 @@ void gradientDownTop( uint8_t bottom, CHSV bottom_color, uint8_t top, CHSV top_c
   //  BACKWARD_HUES: hue always goes counter-clockwise
   //  SHORTEST_HUES: hue goes whichever way is shortest
   //  LONGEST_HUES: hue goes whichever way is longest
-  if (STRIP_DIRECTION < 2) {
+  if (ORIENTATION < 3 || ORIENTATION == 7) {    // if (STRIP_DIRECTION < 2) {
     // STRIP_DIRECTION to UP ========
     fill_gradient(leds, top * WIDTH, top_color, bottom * WIDTH, bottom_color, SHORTEST_HUES);
   } else {
@@ -922,14 +922,14 @@ void BotswanaRivers() {
     if (step % 2 == 0) {
       if (random8(6) == 1) {
         //fill_gradient(leds, NUM_LEDS - WIDTH, CHSV(96U, 255U, 200U), NUM_LEDS, CHSV(50U, 255U, 255U), SHORTEST_HUES);
-        if (STRIP_DIRECTION < 2) {
+        if (ORIENTATION < 3 || ORIENTATION == 7) {    // if (STRIP_DIRECTION < 2) {
           fill_gradient(leds, 0, CHSV(96U, 255U, 190U), random8(WIDTH + random8(6)), CHSV(90U, 200U, 255U), SHORTEST_HUES);
         } else {
           fill_gradient(leds, NUM_LEDS - random8(WIDTH + random8(6)), CHSV(96U, 255U, 190U), NUM_LEDS, CHSV(90U, 200U, 255U), SHORTEST_HUES);
         }
       } else {
         //fill_gradient(leds, NUM_LEDS - WIDTH, CHSV(50U, 128U, 255U), NUM_LEDS, CHSV(90U, 255U, 180U), SHORTEST_HUES);
-        if (STRIP_DIRECTION < 2) {
+        if (ORIENTATION < 3 || ORIENTATION == 7) {    // if (STRIP_DIRECTION < 2) {
           fill_gradient(leds, 0, CHSV(85U, 128U, 255U), random8(WIDTH), CHSV(90U, 255U, 180U), SHORTEST_HUES);
         } else {
           fill_gradient(leds, NUM_LEDS - random8(WIDTH), CHSV(85U, 128U, 255U), NUM_LEDS, CHSV(90U, 255U, 180U), SHORTEST_HUES);
@@ -1361,6 +1361,91 @@ void FeatherCandleRoutine() {
 //---------------------------------------
 
 void Hourglass() {
+  const float SIZE = 0.4;
+  const uint8_t h = floor(SIZE * HEIGHT);
+  uint8_t posX = 0;
+  //const uint8_t topPos  = HEIGHT - h;
+  const uint8_t route = HEIGHT - h - 1;
+  const uint8_t STEP = 18U;
+  if (loadingFlag) {
+#if defined(USE_RANDOM_SETS_IN_APP) || defined(RANDOM_SETTINGS_IN_CYCLE_MODE)
+    if (selectedSettings) {
+      //                          scale | speed 210
+      setModeSettings(15U + random8(225U), random8(255U));
+    }
+#endif
+    loadingFlag = false;
+    pcnt = 0;
+    deltaHue2 = 0;
+    hue2 = 0;
+
+    FastLED.clear();
+    hue = modes[currentMode].Scale * 2.55;
+    for (uint8_t x = 0U; x < ((WIDTH / 2)); x++) {
+      for (uint8_t y = 0U; y < h; y++) {
+        drawPixelXY(CENTER_X_MINOR - x, HEIGHT - y - 1, CHSV(hue, 255, 255 - x * STEP));
+        drawPixelXY(CENTER_X_MAJOR + x, HEIGHT - y - 1, CHSV(hue, 255, 255 - x * STEP));
+      }
+    }
+  }
+
+  if (hue2 == 0) {
+    posX = floor(pcnt / 2);
+    uint8_t posY = HEIGHT - h - pcnt;
+    // LOG.printf_P(PSTR("• [%03d] | posX %03d | deltaHue2 %03d | \n"), step, posX, deltaHue2);
+
+    /* move sand -------- */
+    if ((posY < (HEIGHT - h - 2)) && (posY > deltaHue2)) {
+      drawPixelXY(CENTER_X_MAJOR, posY, CHSV(hue, 255, 255));
+      drawPixelXY(CENTER_X_MAJOR, posY - 2, CHSV(hue, 255, 255));
+      drawPixelXY(CENTER_X_MAJOR, posY - 4, CHSV(hue, 255, 255));
+
+      if (posY < (HEIGHT - h - 3)) {
+        drawPixelXY(CENTER_X_MAJOR, posY + 1, CHSV(hue, 255, 0 ));
+      }
+    }
+
+    /* draw body hourglass */
+    if (pcnt % 2 == 0) {
+      drawPixelXY(CENTER_X_MAJOR - posX, HEIGHT - deltaHue2 - 1, CHSV(hue, 255, 0));
+      drawPixelXY(CENTER_X_MAJOR - posX, deltaHue2, CHSV(hue, 255, 255 - posX * STEP));
+    } else {
+      drawPixelXY(CENTER_X_MAJOR + posX, HEIGHT - deltaHue2 - 1, CHSV(hue, 255, 0));
+      drawPixelXY(CENTER_X_MAJOR + posX, deltaHue2, CHSV(hue, 255, 255 - posX * STEP));
+    }
+
+    if (pcnt > WIDTH - 1) {
+      deltaHue2++;
+      pcnt = 0;
+      if (modes[currentMode].Scale > 95) {
+        hue += 4U;
+      }
+    }
+
+    pcnt++;
+    if (deltaHue2 > h) {
+      deltaHue2 = 0;
+      hue2 = 1;
+    }
+  }
+  // имитация переворота песочных часов
+  if (hue2 > 0) {
+    for (uint8_t x = 0U; x < WIDTH; x++) {
+      for (uint8_t y = HEIGHT; y > 0U; y--) {
+        drawPixelXY(x, y, getPixColorXY(x, y - 1U));
+        drawPixelXY(x, y - 1, 0x000000);
+      }
+    }
+    hue2++;
+    if (hue2 > route) {
+      hue2 = 0;
+    }
+  }
+}
+
+
+/*
+void Hourglass() {
   uint8_t divider;
   uint8_t h;
   float SIZE = 0.43;
@@ -1377,7 +1462,7 @@ void Hourglass() {
     deltaValue = 255U - modes[currentMode].Speed + 1U;
     step = deltaValue;                                          // чтообы при старте эффекта сразу покрасить лампу
     deltaHue2 = 0;
-    h = floor(NUM_LEDS * SIZE / WIDTH) * WIDTH;
+    h = floor(NUM_LEDS * SIZE / WIDTH) * WIDTH; 
     FastLED.clear();
     hue2 = 0;
   }
@@ -1391,7 +1476,7 @@ void Hourglass() {
       hue = divider * 2.55;
     }
 
-    if (STRIP_DIRECTION < 2) {
+    if (ORIENTATION < 3 || ORIENTATION == 7) {    // if (STRIP_DIRECTION < 2) {
       // STRIP_DIRECTION to UP ========
       fill_gradient(leds, NUM_LEDS - h, CHSV(hue, 255, 254), NUM_LEDS - deltaHue2, CHSV(hue, 255, 30), SHORTEST_HUES);
       fill_gradient(leds, 0, CHSV(hue, 255, 254), deltaHue2, CHSV(hue, 255, 30), SHORTEST_HUES);
@@ -1431,6 +1516,7 @@ void Hourglass() {
     }
   }
 }
+*/
 /*
 // ============== Spectrum ==============
 //             © SlingMaster
@@ -2188,7 +2274,7 @@ void Firework() {
     // LOG.printf_P(PSTR("• [%03d] | %03d | %0.2f | \n"), FPSdelay, stepH, sizeH);
     dimAll(200);
 
-    if (STRIP_DIRECTION % 2 == 0) {
+    if (ORIENTATION % 2 == 0) {    // if (STRIP_DIRECTION % 2 == 0) {
       gradientDownTop( 0, CHSV(skyColor, 255U, floor(FPSdelay / 2.2)), sizeH, CHSV(skyColor, 255U, 2U));
     } else {
       gradientVertical(0, 0, WIDTH, sizeH, skyColor, skyColor, floor(FPSdelay / 2.2), 2U, 255U);
@@ -2214,7 +2300,7 @@ void Firework() {
 
   /* ============ draw sky =========== */
   if (modes[currentMode].Speed < 180U) {
-    if (STRIP_DIRECTION % 2 == 0) {
+    if (ORIENTATION % 2 == 0) {     // if (STRIP_DIRECTION % 2 == 0) {
       gradientDownTop( 0, CHSV(skyColor, 255U, hue ), HORIZONT, CHSV(skyColor, 255U, 0U ));
     } else {
       gradientVertical(0, 0, WIDTH, HORIZONT, skyColor, skyColor, hue + 1, 0U, 255U);
@@ -2636,7 +2722,6 @@ void MagicLantern() {
 
 void Octopus() {
     
-  //FastLED.clear();
   if (loadingFlag) {
 #if defined(USE_RANDOM_SETS_IN_APP) || defined(RANDOM_SETTINGS_IN_CYCLE_MODE)
     if (selectedSettings) {
@@ -2666,15 +2751,53 @@ void Octopus() {
       leds[XY(x, y)] = CHSV(color_speed - radius * (255 / WIDTH), 255,sin8(sin8((angle*4-(radius * (255 / WIDTH)))/4+scale) + radius * (255 / WIDTH) - scale*2 + angle * legs));
     }
   }
-  //delay(255 - modes[currentMode].Speed);
 }
 
+// =====================================
+//            Flower Ruta
+//    © Stepko and © Sutaburosu
+//     Adaptation © SlingMaster
+//       Modifed © alvikskor
+// =====================================
 
+void FlowerRuta() {
+  if (loadingFlag) {
+#if defined(USE_RANDOM_SETS_IN_APP) || defined(RANDOM_SETTINGS_IN_CYCLE_MODE)
+    if (selectedSettings) {
+      // scale | speed
+      setModeSettings(random8(11U, 69U), random8(150U, 255U));
+    }
+#endif
+    loadingFlag = false;
+    FastLED.clear();
+    for (int8_t x = -CENTER_X_MAJOR; x < CENTER_X_MAJOR; x++) {
+      for (int8_t y = -CENTER_Y_MAJOR; y < CENTER_Y_MAJOR; y++) {
+        noise3d[0][x + CENTER_X_MAJOR][y + CENTER_Y_MAJOR] = (atan2(x, y) / PI) * 128 + 127; // thanks ldirko
+        noise3d[1][x + CENTER_X_MAJOR][y + CENTER_Y_MAJOR] = hypot(x, y);                    // thanks Sutaburosu
+      }
+    }
+  }
+
+  uint8_t Petals = modes[currentMode].Scale / 10;
+  uint16_t color_speed;
+  step = modes[currentMode].Scale % 10;
+  if (step < 5) color_speed = scale / (3 - step/2);
+  else color_speed = scale * (step/2 - 1);
+  scale ++;
+  for (uint8_t x = 0; x < WIDTH; x++) {
+    for (uint8_t y = 0; y < HEIGHT; y++) {
+      byte angle = noise3d[0][x][y];
+      byte radius = noise3d[1][x][y];
+      leds[XY(x, y)] = CHSV(color_speed + radius * (255 / WIDTH), 255, sin8(sin8(scale + angle * Petals + ( radius * (255 / WIDTH))) + scale * 4 + sin8(scale * 4 - radius * (255 / WIDTH)) + angle * Petals));
+    }
+  }
+}
 
 // ============ Lotus Flower ============
 //             © SlingMaster
 //             Квітка Лотоса
 //---------------------------------------
+/*
 void drawLotusFlowerFragment(uint8_t posX, byte line) {
   const uint8_t h = (HEIGHT > 24) ? HEIGHT * 0.9 : HEIGHT;
   uint8_t flover_color = 128 + abs(128 - hue);                        // 128 -- 255
@@ -2732,13 +2855,13 @@ void LotusFlower() {
     if (modes[currentMode].Scale > 50) {
       deltaSpeed = 80 + (128 - abs(128 - deltaValue)) / 1.25;
       FPSdelay = SpeedFactor(deltaSpeed);
-      if (step % 256 == 0U ) hue += 32;           /* color morph */
+      if (step % 256 == 0U ) hue += 32;           // color morph
     } else {
       FPSdelay = SpeedFactor(160);
       hue = 28U;
     }
-    deltaValue++;     /* size morph  */
-    /* <==== scroll ===== */
+    deltaValue++;    // size morph  
+    // <==== scroll ===== 
     drawLotusFlowerFragment(WIDTH - 1, (step % STEP_OBJ));
     for (uint8_t y = 0U ; y < HEIGHT; y++) {
       for (uint8_t x = 0U ; x < WIDTH; x++) {
@@ -2746,23 +2869,23 @@ void LotusFlower() {
       }
     }
   } else {
-    /* <==== morph ===== */
+    // <==== morph ===== 
     for (uint8_t x = 0U ; x < WIDTH; x++) {
       drawLotusFlowerFragment(x, (x % STEP_OBJ));
       if (x % 2U) {
-        hue2++;         /* gleam morph */
+        hue2++;         // gleam morph 
       }
     }
-    deltaValue++;       /* size morph  */
+    deltaValue++;       // size morph 
     if (modes[currentMode].Scale > 50) {
-      hue += 8; /* color morph */
+      hue += 8; // color morph
     } else {
       hue = 28U;
     }
   }
   step++;
 }
-
+*/
 
 // ============== Spindle ==============
 //             © SlingMaster
@@ -2797,7 +2920,7 @@ void Spindle() {
     blurScreen(32U);
    }
 
-  /* <==== scroll ===== */
+  // <==== scroll ===== 
   for (uint8_t y = 0U ; y < HEIGHT; y++) {
     for (uint8_t x = 0U ; x < WIDTH - 1; x++) {
       hue2--;
@@ -2839,7 +2962,6 @@ void Spindle() {
 
   const byte OFFSET = 1U;
   const uint8_t H = HEIGHT - OFFSET;
-  //static uint8_t t;
   
 void Tornado() {
   if (loadingFlag) {
@@ -2888,9 +3010,6 @@ void Plasma_Waves() {
     loadingFlag = false;
     hue = modes[currentMode].Scale / 10;
   }
-  //EVERY_N_MILLIS(modes[currentMode].Speed) {//(1000 / 60) {
-  //  frameCount++;
-  //}
   FPSdelay = 1;//64 - modes[currentMode].Speed / 4;
 
   frameCount++;
@@ -2905,8 +3024,6 @@ void Plasma_Waves() {
       uint8_t g = cos8((y << 3) + t1 + cos8((t3 >> 2) + (x << 3)) +modes[currentMode].Scale);
       uint8_t b = cos8((y << 3) + t2 + cos8(t1 + x + (g >> 2) + modes[currentMode].Scale));
 
-      // uncomment the following to enable gamma correction
-      // r = pgm_read_byte_near(exp_gamma + r);
       switch (hue) {
           case 0:
               r = pgm_read_byte(&exp_gamma[r]);
@@ -2955,14 +3072,9 @@ void Plasma_Waves() {
               break;
 
       }
-      // g = pgm_read_byte_near(exp_gamma + g);
-      // b = pgm_read_byte_near(exp_gamma + b);
-
       leds[XY(x, y)] = CRGB(r, g, b);
     }
-    //hue++;
   }
-  // blurScreen(beatsin8(3, 64, 80));
 }
 
 
@@ -3015,9 +3127,10 @@ void Colored_Python() {
       case 3: thickness = 30; break;
       case 4: thickness = 40; break;
   }
-for(byte x =0; x < WIDTH; x++){
-  for(byte y =0; y < HEIGHT; y++){
-    leds[XY(x,y)]=ColorFromPalette(currentPalette,((sin8((x*thickness)+sin8(y*5+t*5))+cos8(y*10))+1)+t*(modes[currentMode].Speed%10)); //HeatColors_p -палитра, t*scale/10 -меняет скорость движения вверх, sin8(x*20) -меняет ширину рисунка
-}}
+  for(byte x =0; x < WIDTH; x++){
+    for(byte y =0; y < HEIGHT; y++){
+      leds[XY(x,y)]=ColorFromPalette(currentPalette,((sin8((x*thickness)+sin8(y*5+t*5))+cos8(y*10))+1)+t*(modes[currentMode].Speed%10)); //HeatColors_p -палитра, t*scale/10 -меняет скорость движения вверх, sin8(x*20) -меняет ширину рисунка
+    }
+  }
 }
 

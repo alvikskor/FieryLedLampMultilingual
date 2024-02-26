@@ -82,25 +82,72 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       #endif // GET_TIME_FROM_PHONE
       if (inputBuffer[3] == '-') sendCurrent(inputBuffer);
       else NEWsendCurrent(inputBuffer);
-      
     }
-#if defined(GENERAL_DEBUG) || defined(USE_OLD_IOS_APP)
-    else if (!strncmp_P(inputBuffer, PSTR("DEB"), 3))
+    else if (!strncmp_P(inputBuffer, PSTR("EFF"), 3)){
+        uint8_t temp;
+        uint8_t tmp = 0;
+        if((!strncmp_P(inputBuffer, PSTR("EFF_N"), 5)) || (!strncmp_P(inputBuffer, PSTR("EFF_P"), 5))){
+          if (!strncmp_P(inputBuffer, PSTR("EFF_N"), 5)) tmp = 1;
+          temp = jsonReadtoInt (configSetup, "eff_sel");
+          if (tmp){
+            if (Favorit_only)
+              {
+               uint8_t lastMode = currentMode;
+                do 
+                {
+                  if (++temp >= MODE_AMOUNT) temp = 0;
+                  currentMode = eff_num_correct[temp];
+                } while (FavoritesManager::FavoriteModes[currentMode] == 0 && currentMode != lastMode);
+                if (currentMode == lastMode) // если ни один режим не добавлен в избранное, всё равно куда-нибудь переключимся
+                  if (++temp >= MODE_AMOUNT) temp = 0;
+                  currentMode = eff_num_correct[temp];
+              }
+              else
+                if (++temp >= MODE_AMOUNT) temp = 0;
+          }
+          else {
+            if (Favorit_only) 
+            {
+              uint8_t lastMode = currentMode;
+              do
+              {
+                if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
+                currentMode = eff_num_correct[temp];
+              } while (FavoritesManager::FavoriteModes[currentMode] == 0 && currentMode != lastMode);
+              if (currentMode == lastMode) // если ни один режим не добавлен в избранное, всё равно куда-нибудь переключимся
+                if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
+                currentMode = eff_num_correct[temp];
+            }
+            else 
+              if (--temp >= MODE_AMOUNT) temp = MODE_AMOUNT - 1;
+          }
+            currentMode = eff_num_correct[temp];
+            jsonWrite(configSetup, "eff_sel", temp);
+            jsonWrite(configSetup, "br", modes[currentMode].Brightness);
+            jsonWrite(configSetup, "sp", modes[currentMode].Speed);
+            jsonWrite(configSetup, "sc", modes[currentMode].Scale);
+            SetBrightness(modes[currentMode].Brightness);
+            loadingFlag = true;
+            if (random_on && FavoritesManager::FavoritesRunning)
+                selectedSettings = 1U;
+            sendCurrent(inputBuffer);
+            #if (USE_MQTT)
+            if (espMode == 1U)
+            {
+              MqttManager::needToPublish = true;
+            }
+            #endif
+            #ifdef USE_BLYNK
+            updateRemoteBlynkParams();
+            #endif
+            #ifdef USE_MULTIPLE_LAMPS_CONTROL
+            repeat_multiple_lamp_control = true;
+            #endif  //USE_MULTIPLE_LAMPS_CONTROL
+        }
+    else
     {
-        //#ifdef USE_NTP
-        #if defined(USE_NTP) || defined(USE_MANUAL_TIME_SETTING) || defined(GET_TIME_FROM_PHONE)
-        getFormattedTime(inputBuffer);
-        sprintf_P(inputBuffer, PSTR("OK %s"), inputBuffer);
-        #else
-        strcpy_P(inputBuffer, PSTR("OK --:--"));
-        #endif
-    }
-#endif    
-    else if (!strncmp_P(inputBuffer, PSTR("EFF"), 3))
-    {
-      //EepromManager::SaveModesSettings(&currentMode, modes);
       memcpy(buff, &inputBuffer[3], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 4
-      uint8_t temp = (uint8_t)atoi(buff);
+      temp = (uint8_t)atoi(buff);
       currentMode = eff_num_correct[temp];
       updateSets();
 	  jsonWrite(configSetup, "eff_sel", temp);
@@ -110,8 +157,6 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       #ifdef USE_MULTIPLE_LAMPS_CONTROL
       repeat_multiple_lamp_control = true;
       #endif  //USE_MULTIPLE_LAMPS_CONTROL
-      //FastLED.clear();
-      //delay(1);
       sendCurrent(inputBuffer);
 
       #ifdef USE_BLYNK_PLUS
@@ -123,6 +168,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       
       SetBrightness(modes[currentMode].Brightness);
     }
+    }
 
     #ifdef MP3_PLAYER_USE
     else if (!strncmp_P(inputBuffer, PSTR("VOL"), 3))
@@ -131,21 +177,14 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       uint8_t eff_sound_on_tmp = (uint8_t)atoi(buff);
       if (eff_sound_on_tmp)  {
           eff_sound_on = eff_volume = constrain( eff_sound_on_tmp, 1,30 );
-          //modes[EFF_VOICE].Scale = 51;
           }
       else
           if (!eff_sound_on) {
               eff_sound_on = eff_volume;
-              //modes[EFF_VOICE].Scale = 51;
               }
           else {
               eff_sound_on = 0;
-              //modes[EFF_VOICE].Scale = 1;
               }
-      //modes[EFF_VOICE].Speed=eff_volume*8.2;
-      
-      //if (((uint8_t)atoi(buff) => 0) && ((uint8_t)atoi(buff) < 31)) cmdbuf[6] = (byte)atoi(buff);
-      //else cmdbuf[6] =0x0A;
       
       send_command(6,0,0,eff_volume);
       jsonWrite(configSetup, "vol", eff_volume);
@@ -356,583 +395,6 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
       }
     }
 
-    else if (!strncmp_P(inputBuffer, PSTR("ALM_"), 4)) { // сокращаем GET и SET для ускорения регулярного цикла
-      if (!strncmp_P(inputBuffer, PSTR("ALM_SET"), 7))
-      {
-        uint8_t alarmNum = (char)inputBuffer[7] - '0';
-        alarmNum -= 1;
-        if (strstr_P(inputBuffer, PSTR("ON")) - inputBuffer == 9)
-        {
-          alarms[alarmNum].State = true;
-          sendAlarms(inputBuffer);
-        }
-        else if (strstr_P(inputBuffer, PSTR("OFF")) - inputBuffer == 9)
-        {
-          alarms[alarmNum].State = false;
-          sendAlarms(inputBuffer);
-        }
-        else
-        {
-          memcpy(buff, &inputBuffer[8], strlen(inputBuffer)); // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 9
-          alarms[alarmNum].Time = atoi(buff);
-          sendAlarms(inputBuffer);
-        }
-        //EepromManager::SaveAlarmsSettings(&alarmNum, alarms);
-
-        #if (USE_MQTT)
-        if (espMode == 1U)
-        {
-          strcpy(MqttManager::mqttBuffer, inputBuffer);
-          MqttManager::needToPublish = true;
-        }
-        #endif
-      }
-      else
-        sendAlarms(inputBuffer);
-    }
-
-    else if (!strncmp_P(inputBuffer, PSTR("DAWN"), 4))
-    {
-      memcpy(buff, &inputBuffer[4], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 5
-      dawnMode = atoi(buff) - 1;
-      //EepromManager::SaveDawnMode(&dawnMode);
-      sendAlarms(inputBuffer);
-
-      #if (USE_MQTT)
-      if (espMode == 1U)
-      {
-        MqttManager::needToPublish = true;
-      }
-      #endif
-    }
-    
-    else if (!strncmp_P(inputBuffer, PSTR("DISCOVER"), 8))  // обнаружение приложением модуля esp в локальной сети
-    {
-      if (espMode == 1U)                                    // работает только в режиме WiFi клиента. интересно, зачем было запрещать обнаружение точки доступа?
-      {
-		char lamp_name[LAMP_NAME.length()+1];
-		LAMP_NAME.toCharArray(lamp_name,LAMP_NAME.length()+1);
-        sprintf_P(inputBuffer, PSTR("IP %u.%u.%u.%u:%u:%s"),
-        WiFi.localIP()[0],
-        WiFi.localIP()[1],
-        WiFi.localIP()[2],
-        WiFi.localIP()[3],
-        ESP_UDP_PORT,
-        lamp_name);
-      }
-      else
-      {
-		char lamp_name[LAMP_NAME.length()+1];
-		LAMP_NAME.toCharArray(lamp_name,LAMP_NAME.length()+1);		
-        sprintf_P(inputBuffer, PSTR("IP %u.%u.%u.%u:%u:%s"),
-        AP_STATIC_IP[0],
-        AP_STATIC_IP[1],
-        AP_STATIC_IP[2],
-        AP_STATIC_IP[3],
-        ESP_UDP_PORT,
-        lamp_name);
-      }
-    }
-
-    else if (!strncmp_P(inputBuffer, PSTR("TMR_"), 4)) { // сокращаем GET и SET для ускорения регулярного цикла
-      if (!strncmp_P(inputBuffer, PSTR("TMR_SET"), 7))
-      {
-        memcpy(buff, &inputBuffer[8], 2);                     // взять подстроку, состоящую из 9 и 10 символов, из строки inputBuffer
-        TimerManager::TimerRunning = (bool)atoi(buff);
-
-        memcpy(buff, &inputBuffer[10], 2);                    // взять подстроку, состоящую из 11 и 12 символов, из строки inputBuffer
-        TimerManager::TimerOption = (uint8_t)atoi(buff);
-
-        memcpy(buff, &inputBuffer[12], strlen(inputBuffer));  // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 13
-        TimerManager::TimeToFire = millis() + strtoull(buff, &endToken, 10) * 1000;
-
-        TimerManager::TimerHasFired = false;
-        sendTimer(inputBuffer);
-
-        #if (USE_MQTT)
-        if (espMode == 1U)
-        {
-          MqttManager::needToPublish = true;
-        }
-        #endif
-      }
-      else
-        sendTimer(inputBuffer);
-    }
-
-    else if (!strncmp_P(inputBuffer, PSTR("FAV_"), 4)) { // сокращаем GET и SET для ускорения регулярного цикла
-      if (!strncmp_P(inputBuffer, PSTR("FAV_SET"), 7))
-      {
-        FavoritesManager::ConfigureFavorites(inputBuffer);
-        if (!ONflag) FavoritesManager::FavoritesRunning = 0;
-        FavoritesManager::SetStatus(inputBuffer);
-        jsonWrite(configSetup, "cycle_on", FavoritesManager::FavoritesRunning);  // чтение состояния настроек режима Цикл 
-        jsonWrite(configSetup, "time_eff", FavoritesManager::Interval);          // вкл/выкл,время переключения,дисперсия,вкл цикла после перезагрузки
-        jsonWrite(configSetup, "disp", FavoritesManager::Dispersion);
-        jsonWrite(configSetup, "cycle_allwase", FavoritesManager::UseSavedFavoritesRunning);
-        //cycle_get();  // запмсь выбранных эффектов
-        if (FavoritesManager::FavoritesRunning){
-        EepromManager::EepromPut(modes);
-        //eepromTimeout = millis() - EEPROM_WRITE_DELAY;
-        }
-        else EepromManager::EepromGet(modes);
-        timeout_save_file_changes = millis();
-        bitSet (save_file_changes, 2);
-    
-        #if (USE_MQTT)
-        if (espMode == 1U)
-        {
-          MqttManager::needToPublish = true;
-        }
-        #endif
-      }
-      else
-        FavoritesManager::SetStatus(inputBuffer);
-    }
-
-    #ifdef OTA
-    else if (!strncmp_P(inputBuffer, PSTR("OTA"), 3))
-    {
-      //if (espMode == 1U) пускай обновление работает даже в режиме точки доступа
-      // && otaManager.RequestOtaUpdate()){ по идее, нужен положительный ответ от менеджера
-        otaManager.RequestOtaUpdate(); // но из-за двойного запроса нихрена не работает
-        delay(70);
-        //if (otaManager.RequestOtaUpdate()) //по идее, нужен положительный ответ от менеджера
-        otaManager.RequestOtaUpdate(); // но если уже был один ответ из двух в прошлый раз, то сейчас второй лучше не проверять
-        if (OtaManager::OtaFlag == OtaPhase::InProgress) {
-          currentMode = EFF_MATRIX;                             // принудительное включение режима "Матрица" для индикации перехода в режим обновления по воздуху
-          FastLED.clear();
-          delay(1);
-          ONflag = true;
-		  jsonWrite(configSetup, "Power", ONflag);
-		  jsonWrite(configSetup, "eff_sel", currentMode);
-		  jsonWrite(configSetup, "br", modes[currentMode].Brightness);
-		  jsonWrite(configSetup, "sp", modes[currentMode].Speed);
-		  jsonWrite(configSetup, "sc", modes[currentMode].Scale);
-          changePower();
-        }
-        else
-          showWarning(CRGB::Red, 2000U, 500U);                     // мигание красным цветом 2 секунды (ошибка)
-    }
-    #endif // OTA
-
-    #ifdef ESP_USE_BUTTON
-    else if (!strncmp_P(inputBuffer, PSTR("BTN"), 3))
-    {
-      if (strstr_P(inputBuffer, PSTR("ON")) - inputBuffer == 4)
-      {
-        buttonEnabled = true;
-        jsonWrite(configSetup, "button_on", (int) buttonEnabled);
-		saveConfig();
-        sendCurrent(inputBuffer);
-      }
-      else// if (strstr_P(inputBuffer, PSTR("OFF")) - inputBuffer == 4)
-      {
-        buttonEnabled = false;
-        jsonWrite(configSetup, "button_on", (int) buttonEnabled);
-		saveConfig();
-        sendCurrent(inputBuffer);
-      }
-
-      #if (USE_MQTT)
-      if (espMode == 1U)
-      {
-        strcpy(MqttManager::mqttBuffer, inputBuffer);
-        MqttManager::needToPublish = true;
-      }
-      #endif
-    }
-    #endif //ESP_USE_BUTTON
-    
-    else if (!strncmp_P(inputBuffer, PSTR("GBR"), 3)) // выставляем общую яркость для всех эффектов без сохранения в EEPROM, если приложение присылает такую строку
-    {
-      memcpy(buff, &inputBuffer[3], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 4
-      uint8_t ALLbri = constrain(atoi(buff), 1, 255);
-      for (uint8_t i = 0; i < MODE_AMOUNT; i++) {
-        modes[i].Brightness = ALLbri;		
-      }
-	  jsonWrite(configSetup, "br", ALLbri);
-      FastLED.setBrightness(ALLbri);
-      loadingFlag = true;
-      #ifdef USE_MULTIPLE_LAMPS_CONTROL
-      repeat_multiple_lamp_control = true;
-      #endif  //USE_MULTIPLE_LAMPS_CONTROL
-    }
-    #ifdef USE_RANDOM_SETS_IN_APP
-    else if (!strncmp_P(inputBuffer, PSTR("RND_"), 4)) // управление включением случайных настроек
-    {
-       if (!strncmp_P(inputBuffer, PSTR("RND_0"), 5)) // вернуть настройки по умолчанию текущему эффекту
-       {
-         setModeSettings();
-         updateSets();
-         #ifdef USE_MULTIPLE_LAMPS_CONTROL
-         repeat_multiple_lamp_control = true;
-         #endif  //USE_MULTIPLE_LAMPS_CONTROL
-         sendCurrent(inputBuffer);
-       }
-       else if (!strncmp_P(inputBuffer, PSTR("RND_1"), 5)) // выбрать случайные настройки текущему эффекту
-       { // раньше была идея, что будут числа RND_1, RND_2, RND_3 - выбор из предустановленных настроек, но потом всё свелось к единственному варианту случайных настроек
-         selectedSettings = 1U;
-         updateSets();
-         #ifdef USE_MULTIPLE_LAMPS_CONTROL
-         repeat_multiple_lamp_control = true;
-         #endif  //USE_MULTIPLE_LAMPS_CONTROL
-       }
-       else if (!strncmp_P(inputBuffer, PSTR("RND_Z"), 5)) // вернуть настройки по умолчанию всем эффектам
-       {
-         restoreSettings();
-         selectedSettings = 0U;
-         updateSets();
-         #ifdef USE_MULTIPLE_LAMPS_CONTROL
-         repeat_multiple_lamp_control = true;
-         #endif  //USE_MULTIPLE_LAMPS_CONTROL
-         sendCurrent(inputBuffer);
-         #ifdef USE_BLYNK
-         updateRemoteBlynkParams();
-         #endif
-       }
-       else if (!strncmp_P(inputBuffer, PSTR("RND_C1"), 5)) // Включаем случайный выбор эффектов в цикле
-       {
-        FavoritesManager::rndCycle = 1;
-	    jsonWrite(configSetup, "rnd_cycle", 1);
-        saveConfig();
-       }
-       else if (!strncmp_P(inputBuffer, PSTR("RND_C0"), 5)) // Выключаем случайный выбор эффектов в цикле
-       {
-        FavoritesManager::rndCycle = 0;
-	    jsonWrite(configSetup, "rnd_cycle", 0);
-        saveConfig();
-       }
-       else if (!strncmp_P(inputBuffer, PSTR("RND_ON"), 6)) // включить выбор случайных настроек в режиме Цикл
-       {
-         random_on = 1U;
-		jsonWrite(configSetup, "random_on", (int)random_on);
-		saveConfig();  
-         showWarning(CRGB::Blue, 1000U, 500U);                    // мигание синим цветом 1 секунды
-       }
-       else if (!strncmp_P(inputBuffer, PSTR("RND_OFF"), 7)) // отключить выбор случайных настроек в режиме Цикл
-       {
-         random_on = 0U;
-		jsonWrite(configSetup, "random_on", (int)random_on);
-		saveConfig();  
-         showWarning(CRGB::Blue, 1000U, 500U);                    // мигание синим цветом 1 секунды
-       }
-    }
-    #endif //#ifdef USE_RANDOM_SETS_IN_APP
-    else if (!strncmp_P(inputBuffer, PSTR("LIST"), 4)) // передача списка эффектов по запросу от приложения (если поддерживается приложением)
-    {
-       memcpy(buff, &inputBuffer[4], strlen(inputBuffer));  // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 5
-       switch (atoi(buff))
-         {
-           case 0U:
-           {
-             EffectList (F("/efflist0"));
-             break;
-           }
-           case 1U:
-           {
-             EffectList (F("/efflist1"));
-             break;
-           }
-           case 2U:
-           {
-             EffectList (F("/efflist2"));
-             break;
-           }
-           case 3U:
-           {
-             EffectList (F("/efflist3"));
-
-             #ifdef USE_DEFAULT_SETTINGS_RESET
-             // и здесь же после успешной отправки списка эффектов делаем сброс настроек эффектов на значения по умолчанию
-             restoreSettings();
-             updateSets();
-             #ifdef USE_BLYNK_PLUS
-             updateRemoteBlynkParams();
-             #endif
-             #endif
-
-             break;
-           }
-         }
-    }
-    else if (!strncmp_P(inputBuffer, PSTR("ssid"), 4)){        // Сохрание SSID для подключения к WiFi роутера
-      jsonWrite(configSetup, "ssid", BUFF.substring(5, BUFF.length()));        
-      saveConfig();            
-    }
-    else if (!strncmp_P(inputBuffer, PSTR("passw"), 5)){        // Сохрание пароля для подключения к WiFi роутера 
-      //jsonWrite(configSetup, "password", BUFF.substring(6, BUFF.length()));        
-      //saveConfig();            
-      String password = BUFF.substring(6, BUFF.length());
-      if (password != ""){
-          char* Pass_STA = new char[64];
-          password.toCharArray(Pass_STA, password.length()+1);
-          for (uint8_t address = 0; address < 64; address ++){
-              EEPROM.put((EEPROM_PASSWORD_START_ADDRESS + address), Pass_STA[address]);
-              EEPROM.commit();
-              if (Pass_STA[address] == 0) break;
-          }
-          #ifdef GENERAL_DEBUG
-          LOG.print("\nPass_STA = ");
-          LOG.println(Pass_STA );
-          #endif
-          delete [] Pass_STA;
-      }
-    }          
-    else if (!strncmp_P(inputBuffer, PSTR("timeout"), 7)){     // Сохрание таймаута - времени попытки подключения к WiFi роутера
-      jsonWrite(configSetup, "TimeOut", BUFF.substring(8, BUFF.length()));        
-      saveConfig();            
-    }
-    else if (!strncmp_P(inputBuffer, PSTR("esp_mode=0"), 10)){  // Изменение режима на точку доступа
-		espMode = 0U;
-		jsonWrite(configSetup, "ESP_mode", (int)espMode);
-		saveConfig();  
-		showWarning(CRGB::Blue, 1000U, 500U);                    // мигание синим цветом 1 секунду - смена рабочего режима лампы, перезагрузка
-		ESP.restart();
-	}
-	else if (!strncmp_P(inputBuffer, PSTR("esp_mode=1"), 10)){  // Изменение режима для использования подключения к роутеру
-		espMode = 1U;
-		jsonWrite(configSetup, "ESP_mode", (int)espMode);
-		saveConfig();  
-		showWarning(CRGB::Blue, 1000U, 500U);                    // мигание синим цветом 1 секунду - смена рабочего режима лампы, перезагрузка
-		ESP.restart();
-	}    
-    else if (!strncmp_P(inputBuffer, PSTR("TXT"), 3)){     // Принимаем текст для бегущей строки
-      #if defined(USE_SECRET_COMMANDS) || defined(USE_MANUAL_TIME_SETTING) // вкорячиваем ручную синхранизацию времени пока что сюда. пока нет другой функции в приложении...
-        if (!strncmp_P(inputBuffer, PSTR("TXT-time="), 9) && (BUFF.length() > 15)){ 
-          #ifdef USE_MANUAL_TIME_SETTING // всё-таки если данная директива не объявлена, то нет смысла высчитывать ручное время. использовать его всё равно не будет никто
-            // 0000000000111111
-            // 0123456789012345
-            // TXT-time=07:25 7
-            uint8_t mtH = BUFF.substring(9, 11).toInt();
-            uint8_t mtM = BUFF.substring(12, 14).toInt();
-            uint8_t mtD = BUFF.substring(15, 16).toInt();
-            if (mtH < 24U && mtM < 60U && mtD < 8U && mtD > 0U){
-              manualTimeShift = (((3650UL + mtD) * 24UL + mtH) * 60UL + mtM) * 60UL - millis() / 1000UL; // 3650 дней (521 полная неделя + 3 дня для сдвига на понедельник???)
-              #ifdef GET_TIME_FROM_PHONE
-                phoneTimeLastSync = manualTimeShift + millis() / 1000UL;
-              #endif
-              #ifdef WARNING_IF_NO_TIME
-                noTimeClear();
-              #endif
-              timeSynched = true;
-              #if defined(PHONE_N_MANUAL_TIME_PRIORITY) && defined(USE_NTP)
-                stillUseNTP = false;
-              #endif
-              getBrightnessForPrintTime();
-              showWarning(CRGB::Blue, 2000U, 500U);     // мигание голубым цветом 2 секунды (2 раза) - время установлено
-            }
-            else
-              showWarning(CRGB::Red, 2000U, 500U);      // мигание красным цветом 2 секунды (ошибка)
-/*    Я БЕЗ ПОНЯТИЯ, ПОЧЕМУ ТЕКСТ В БЕГУЩЕЙ СТРОКЕ С КАЖДЫМ РАЗОМ СДВИГАЕТСЯ ВСЁ СИЛЬНЕЕ
-            mtD = weekday(millis() / 1000UL + manualTimeShift);
-            mtD = (mtD == 7) ? 1 : mtD + 1;
-            String str = "УСТАНОВЛЕНО! ДЕНЬ НЕДЕЛИ = " + String(mtD) + String("\n");;
-//            String str = String(mtH) + ":" + String(mtM) + " ДН:" + String(mtD) + " =" + String(weekday(millis() / 1000UL + manualTimeShift) + 1U) + String("\n");;
-            
-            str.toCharArray(TextTicker, str.length() + 1);
-          }
-          else
-            TextTicker = "ОШИБКА ФОРМАТА ВРЕМЕНИ\n";
-        currentMode = EFF_TEXT;                             // принудительное включение режима "Бегущая строка" для сообщения результате
-        FastLED.clear();
-        delay(1);
-        ONflag = true;
-        changePower();
-*/        
-          #else
-            showWarning(CRGB::Red, 2000U, 500U);                     // мигание красным цветом 2 секунды (ошибка)          
-          #endif // USE_MANUAL_TIME_SETTING
-        }
-        #ifdef USE_SECRET_COMMANDS
-          else if (!strncmp_P(inputBuffer, PSTR("TXT-esp_mode=0"), 14)){
-            if (espMode == 1U){
-              espMode = 0U;
-			  jsonWrite(configSetup, "ESP_mode", (int)espMode);
-			  saveConfig();  
-              showWarning(CRGB::Blue, 2000U, 500U);                    // мигание синим цветом 2 секунды - смена рабочего режима лампы, перезагрузка
-              ESP.restart();
-            }
-            else
-              showWarning(CRGB::Red, 2000U, 500U);                     // мигание красным цветом 2 секунды (ошибка)
-          }
-          else if (!strncmp_P(inputBuffer, PSTR("TXT-esp_mode=1"), 14)){
-            if (espMode == 0U){
-              espMode = 1U;
-			  jsonWrite(configSetup, "ESP_mode", (int)espMode);
-			  saveConfig();  
-              showWarning(CRGB::Blue, 2000U, 500U);                    // мигание синим цветом 2 секунды - смена рабочего режима лампы, перезагрузка
-              ESP.restart();
-            }
-            else
-              showWarning(CRGB::Red, 2000U, 500U);                     // мигание красным цветом 2 секунды (ошибка)
-          }
-          else if (!strncmp_P(inputBuffer, PSTR("TXT-reset=wifi"), 14)){
-			jsonWrite(configSetup, "ssid", "");                         // сброс сохранённых SSID и пароля (сброс настроек подключения к роутеру)
-			jsonWrite(configSetup, "password", "");
-			saveConfig();                                       // Функция сохранения данных во Flash
-			showWarning(CRGB::Blue, 2000U, 500U);                    // мигание синим цветом 2 секунды
-          }
-          else if (!strncmp_P(inputBuffer, PSTR("TXT-reset=effects"), 17)){
-            restoreSettings();
-            updateSets();
-            showWarning(CRGB::Blue, 2000U, 500U);                    // мигание синим цветом 2 секунды
-            #ifdef USE_BLYNK
-            updateRemoteBlynkParams();
-            #endif
-          }
-/*
-          else if (!strncmp_P(inputBuffer, PSTR("TXT-alarm"), 9)&& (BUFF.length() > 12) && (char)inputBuffer[10] == '='){
-            // 0000000000111111
-            // 0123456789012345
-            // TXT-alarm4=07:25
-            // TXT-alarm5=on
-            // TXT-alarm2=off
-            bool isError = false;
-            uint8_t alarmNum = (char)inputBuffer[9] - '0' - 1U;
-            if (strstr_P(inputBuffer, PSTR("on")) - inputBuffer == 11 && alarmNum < 7U)
-            {
-              alarms[alarmNum].State = true;
-            }
-            else if (strstr_P(inputBuffer, PSTR("off")) - inputBuffer == 11 && alarmNum < 7U)
-            {
-              alarms[alarmNum].State = false;
-            }
-            else if (BUFF.length() > 15)
-            {
-              uint8_t mtH = BUFF.substring(11, 13).toInt();
-              uint8_t mtM = BUFF.substring(14, 16).toInt();
-              if (mtH < 24U && mtM < 60U && alarmNum < 7U){
-                alarms[alarmNum].Time = mtH * 60U + mtM;
-                alarms[alarmNum].State = true;
-              }
-              else
-                isError = true;
-            }
-            else 
-              isError = true;
-              
-            if (isError){
-              #ifdef USE_BLYNK
-                Blynk.setProperty(V6, "label", String("Ошибка!"));
-              #endif              
-              showWarning(CRGB::Red, 2000U, 500U);      // мигание красным цветом 2 секунды (ошибка)
-            }
-            else {
-              #ifdef USE_BLYNK
-                Blynk.setProperty(V6, "label", String("Рассвет в ")+String(alarmNum+1U)+String("й д.н. ")+String(alarms[alarmNum].State ? String((uint8_t)(alarms[alarmNum].Time / 600U))+String((uint8_t)(alarms[alarmNum].Time / 60U % 10U))+':'+String(alarms[alarmNum].Time % 60U / 10U)+String(alarms[alarmNum].Time % 60U % 10U) : "ВЫКЛЮЧЕН"));
-              #endif              
-              showWarning(CRGB::Blue, 2000U, 500U);     // мигание голубым цветом 2 секунды (2 раза) - будильник установлен
-              
-              //EepromManager::SaveAlarmsSettings(&alarmNum, alarms);
-            }
-          }
-
-          else if (!strncmp_P(inputBuffer, PSTR("TXT-dawn="), 9)){
-            memcpy(buff, &inputBuffer[9], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 10
-            uint8_t temp = atoi(buff);
-            if (temp) {
-              //dawnOffsets[dawnMode] PROGMEM = {5, 10, 15, 20, 25, 30, 40, 50, 60};
-              dawnMode = 0U;
-              for (uint8_t i = 1; i < 9; i++)
-                if (temp >= pgm_read_byte(&dawnOffsets[i]))
-                  dawnMode = i;
-                else
-                  break;
-            EepromManager::SaveDawnMode(&dawnMode);
-              showWarning(CRGB::Blue, 2000U, 500U);                    // мигание синим цветом 2 секунды
-            }
-            else{
-              showWarning(CRGB::Red, 2000U, 500U);                     // мигание красным цветом 2 секунды (ошибка)
-            }
-            #ifdef USE_BLYNK
-              Blynk.setProperty(V6, "label", String("Рассвет начнётся за ") + String(pgm_read_byte(&dawnOffsets[dawnMode])) + String(" мин."));
-            #endif                
-          }
-          else if (!strncmp_P(inputBuffer, PSTR("TXT-timer=off"), 13)){
-            TimerManager::TimerRunning = false;
-            showWarning(CRGB::Blue, 2000U, 500U);                    // мигание синим цветом 2 секунды
-            #ifdef USE_BLYNK
-              Blynk.setProperty(V6, "label", String("Таймер отключен"));
-            #endif                
-          }
-          else if (!strncmp_P(inputBuffer, PSTR("TXT-timer="), 10)){
-            memcpy(buff, &inputBuffer[10], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 11
-            uint16_t temp = atoi(buff);
-            if (ONflag && temp) {
-              TimerManager::TimeToFire = millis() + temp * 60UL * 1000UL;
-              TimerManager::TimerRunning = true;
-              showWarning(CRGB::Blue, 2000U, 500U);                    // мигание синим цветом 2 секунды
-              #ifdef USE_BLYNK
-                Blynk.setProperty(V6, "label", String("Выключение через ") + String(temp) + String(" мин."));
-              #endif                
-            }
-            else{
-              showWarning(CRGB::Red, 2000U, 500U);                     // мигание красным цветом 2 секунды (ошибка)
-              #ifdef USE_BLYNK
-                Blynk.setProperty(V6, "label", TimerManager::TimerRunning ? String("Выключение через ") + String((uint16_t)floor((TimerManager::TimeToFire - millis()) / 60000U)) + String(" мин.") : String("Таймер отключен"));
-              #endif                
-            }
-          }
-*/          
-          else if (!strncmp_P(inputBuffer, PSTR("TXT-random="), 11)){
-            if (strstr_P(inputBuffer, PSTR("on")) - inputBuffer == 11)
-            {
-              random_on = 1U;
-			  jsonWrite(configSetup, "random_on", (int)random_on);
-			  saveConfig();  
-              showWarning(CRGB::Blue, 2000U, 500U);                    // мигание синим цветом 2 секунды
-            }
-            else if (strstr_P(inputBuffer, PSTR("off")) - inputBuffer == 11)
-            {
-              random_on = 0U;
-			  jsonWrite(configSetup, "random_on", (int)random_on);
-			  saveConfig();  
-              showWarning(CRGB::Blue, 2000U, 500U);                    // мигание синим цветом 2 секунды
-            }
-          }
-        #endif // USE_SECRET_COMMANDS
-        else
-        {  
-          //String str = getValue(BUFF, '-', 1); // этим способом дефисы нельзя в бегущую строку передать. почему вообще разделитель - дефис?!
-          String str = (BUFF.length() > 4) ? BUFF.substring(4, BUFF.length()) : "";
-          str.toCharArray(TextTicker, str.length() + 1);
-        }
-      #else
-        //String str = getValue(BUFF, '-', 1); // этим способом дефисы нельзя в бегущую строку передать. почему вообще разделитель - дефис?!
-        String str = (BUFF.length() > 4) ? BUFF.substring(4, BUFF.length()) : "";
-        str.toCharArray(TextTicker, str.length() + 1);
-      #endif // defined(USE_SECRET_COMMANDS) || defined(USE_MANUAL_TIME_SETTING)
-    }
-    else if (!strncmp_P(inputBuffer, PSTR("DRW"), 3)) {
-      drawPixelXY((int8_t)getValue(BUFF, ';', 1).toInt(), (int8_t)getValue(BUFF, ';', 2).toInt(), DriwingColor);
-      FastLED.show();
-    }
-    else if (!strncmp_P(inputBuffer, PSTR("CLR"), 3)) {
-      FastLED.clear();
-      FastLED.show();
-    }
-    else if (!strncmp_P(inputBuffer, PSTR("COL"), 3)) {
-      #ifdef USE_OLD_APP_FROM_KOTEYKA // (в версии 2.3... цвета были только в формате RGB)
-       DriwingColor = CRGB(getValue(BUFF, ';', 1).toInt(), getValue(BUFF, ';', 2).toInt(), getValue(BUFF, ';', 3).toInt());
-      #else
-       DriwingColor = CRGB(getValue(BUFF, ';', 1).toInt(), getValue(BUFF, ';', 3).toInt(), getValue(BUFF, ';', 2).toInt());
-      #endif
-    }
-    else if (!strncmp_P(inputBuffer, PSTR("DRAWO"), 5)) { // сокращаем OFF и ON для ускорения регулярного цикла
-      if (!strncmp_P(inputBuffer, PSTR("DRAWON"), 6))
-        Painting = 1;
-      else
-        Painting = 0;
-        //FastLED.clear();
-        //FastLED.show();
-    }
-    else if (!strncmp_P(inputBuffer, PSTR("RESET"), 5)) { // сброс настроек WIFI по запросу от приложения
-      jsonWrite(configSetup, "ssid", "");                         // сброс сохранённых SSID и пароля (сброс настроек подключения к роутеру)
-      jsonWrite(configSetup, "password", "");
-      saveConfig();                                       // Функция сохранения данных во Flash
-      showWarning(CRGB::Blue, 2000U, 500U);                    // мигание синим цветом 2 секунды
-    }
 #ifdef USE_MULTIPLE_LAMPS_CONTROL
     else if (!strncmp_P(inputBuffer, PSTR("MULTI"), 5)) { // Управление несколькими лампами
       uint8_t valid = 0, i = 0;
@@ -1072,7 +534,11 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
      
      for ( uint8_t n=0; n< MODE_AMOUNT; n++)
      {
-         if (eff_num_correct[n] == currentMode) jsonWrite(configSetup, "eff_sel", n);
+        if (eff_num_correct[n] == currentMode)
+        {
+            jsonWrite(configSetup, "eff_sel", n);
+            break;
+        }
      } 
 
      jsonWrite(configSetup, "Power", ONflag);
@@ -1082,6 +548,619 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
      generateOutput = false;
   	}
 #endif //USE_MULTIPLE_LAMPS_CONTROL
+
+    else if (!strncmp_P(inputBuffer, PSTR("FAV_"), 4)) { // сокращаем GET и SET для ускорения регулярного цикла
+      if (!strncmp_P(inputBuffer, PSTR("FAV_ON"), 6))
+       {
+         if (ONflag)   {
+         FavoritesManager::FavoritesRunning = 1;
+         jsonWrite(configSetup, "cycle_on", 1);
+         EepromManager::EepromPut(modes);
+        }
+        else {
+             FavoritesManager::FavoritesRunning = 0;
+             FavoritesManager::nextModeAt = 0;
+             jsonWrite(configSetup, "cycle_on", 0);
+        } 
+      }
+      else if(!strncmp_P(inputBuffer, PSTR("FAV_OFF"), 7))
+      {
+        FavoritesManager::FavoritesRunning = 0;
+        FavoritesManager::nextModeAt = 0;
+        jsonWrite(configSetup, "cycle_on", 0);
+        EepromManager::EepromGet(modes);
+      }
+      else if(MODE_AMOUNT > 0x76) over_effects();  // захіст від падіння лампи при використанні додатку Котейкі
+      else 
+      {
+      if (!strncmp_P(inputBuffer, PSTR("FAV_SET"), 7))
+      {
+        FavoritesManager::ConfigureFavorites(inputBuffer);
+        if (!ONflag) FavoritesManager::FavoritesRunning = 0;
+        FavoritesManager::SetStatus(inputBuffer);
+        jsonWrite(configSetup, "cycle_on", FavoritesManager::FavoritesRunning);  // чтение состояния настроек режима Цикл 
+        jsonWrite(configSetup, "time_eff", FavoritesManager::Interval);          // вкл/выкл,время переключения,дисперсия,вкл цикла после перезагрузки
+        jsonWrite(configSetup, "disp", FavoritesManager::Dispersion);
+        jsonWrite(configSetup, "cycle_allwase", FavoritesManager::UseSavedFavoritesRunning);
+        //cycle_get();  // запмсь выбранных эффектов
+        if (FavoritesManager::FavoritesRunning){
+        EepromManager::EepromPut(modes);
+        //eepromTimeout = millis() - EEPROM_WRITE_DELAY;
+        }
+        else EepromManager::EepromGet(modes);
+        timeout_save_file_changes = millis();
+        bitSet (save_file_changes, 2);
+    
+        #if (USE_MQTT)
+        if (espMode == 1U)
+        {
+          MqttManager::needToPublish = true;
+        }
+        #endif
+      }
+      else if (!strncmp_P(inputBuffer, PSTR("FAV_GET"), 7))
+        FavoritesManager::SetStatus(inputBuffer);
+      }
+    }
+
+    #ifdef OTA
+    else if (!strncmp_P(inputBuffer, PSTR("OTA"), 3))
+    {
+      //if (espMode == 1U) пускай обновление работает даже в режиме точки доступа
+      // && otaManager.RequestOtaUpdate()){ по идее, нужен положительный ответ от менеджера
+        otaManager.RequestOtaUpdate(); // но из-за двойного запроса нихрена не работает
+        delay(70);
+        //if (otaManager.RequestOtaUpdate()) //по идее, нужен положительный ответ от менеджера
+        otaManager.RequestOtaUpdate(); // но если уже был один ответ из двух в прошлый раз, то сейчас второй лучше не проверять
+        if (OtaManager::OtaFlag == OtaPhase::InProgress) {
+          currentMode = EFF_MATRIX;                             // принудительное включение режима "Матрица" для индикации перехода в режим обновления по воздуху
+          FastLED.clear();
+          delay(1);
+          ONflag = true;
+		  jsonWrite(configSetup, "Power", ONflag);
+		  jsonWrite(configSetup, "eff_sel", currentMode);
+		  jsonWrite(configSetup, "br", modes[currentMode].Brightness);
+		  jsonWrite(configSetup, "sp", modes[currentMode].Speed);
+		  jsonWrite(configSetup, "sc", modes[currentMode].Scale);
+          changePower();
+        }
+        else
+          showWarning(CRGB::Red, 2000U, 500U);                     // мигание красным цветом 2 секунды (ошибка)
+    }
+    #endif // OTA
+
+    #ifdef ESP_USE_BUTTON
+    else if (!strncmp_P(inputBuffer, PSTR("BTN"), 3))
+    {
+      if (strstr_P(inputBuffer, PSTR("ON")) - inputBuffer == 4)
+      {
+        buttonEnabled = true;
+        jsonWrite(configSetup, "button_on", (int) buttonEnabled);
+		saveConfig();
+        sendCurrent(inputBuffer);
+      }
+      else// if (strstr_P(inputBuffer, PSTR("OFF")) - inputBuffer == 4)
+      {
+        buttonEnabled = false;
+        jsonWrite(configSetup, "button_on", (int) buttonEnabled);
+		saveConfig();
+        sendCurrent(inputBuffer);
+      }
+
+      #if (USE_MQTT)
+      if (espMode == 1U)
+      {
+        strcpy(MqttManager::mqttBuffer, inputBuffer);
+        MqttManager::needToPublish = true;
+      }
+      #endif
+    }
+    #endif //ESP_USE_BUTTON
+    
+    else if (!strncmp_P(inputBuffer, PSTR("GBR"), 3)) // выставляем общую яркость для всех эффектов без сохранения в EEPROM, если приложение присылает такую строку
+    {
+      memcpy(buff, &inputBuffer[3], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 4
+      uint8_t ALLbri = constrain(atoi(buff), 1, 255);
+      for (uint8_t i = 0; i < MODE_AMOUNT; i++) {
+        modes[i].Brightness = ALLbri;		
+      }
+	  jsonWrite(configSetup, "br", ALLbri);
+      FastLED.setBrightness(ALLbri);
+      loadingFlag = true;
+      #ifdef USE_MULTIPLE_LAMPS_CONTROL
+      repeat_multiple_lamp_control = true;
+      #endif  //USE_MULTIPLE_LAMPS_CONTROL
+    }
+    
+    #ifdef USE_RANDOM_SETS_IN_APP
+    else if (!strncmp_P(inputBuffer, PSTR("RND_"), 4)) // керування включенням випадкових налаштувань
+    {
+       if (!strncmp_P(inputBuffer, PSTR("RND_0"), 5)) // повернути параметри за промовчанням поточного ефекту
+       {
+         setModeSettings();
+         updateSets();
+         #ifdef USE_MULTIPLE_LAMPS_CONTROL
+         repeat_multiple_lamp_control = true;
+         #endif  //USE_MULTIPLE_LAMPS_CONTROL
+         sendCurrent(inputBuffer);
+       }
+       else if (!strncmp_P(inputBuffer, PSTR("RND_1"), 5)) // вибрати випадкові налаштування поточного ефекту
+       { 
+         selectedSettings = 1U;
+         updateSets();
+         #ifdef USE_MULTIPLE_LAMPS_CONTROL
+         repeat_multiple_lamp_control = true;
+         #endif  //USE_MULTIPLE_LAMPS_CONTROL
+       }
+       else if (!strncmp_P(inputBuffer, PSTR("RND_Z"), 5)) // повернути стандартні налаштування всім ефектам
+       {
+         restoreSettings();
+         selectedSettings = 0U;
+         updateSets();
+         #ifdef USE_MULTIPLE_LAMPS_CONTROL
+         repeat_multiple_lamp_control = true;
+         #endif  //USE_MULTIPLE_LAMPS_CONTROL
+         sendCurrent(inputBuffer);
+         #ifdef USE_BLYNK
+         updateRemoteBlynkParams();
+         #endif
+       }
+       else if (!strncmp_P(inputBuffer, PSTR("RND_C1"), 5)) // Включаємо випадковий вибір ефектів у циклі
+       {
+        FavoritesManager::rndCycle = 1;
+	    jsonWrite(configSetup, "rnd_cycle", 1);
+        saveConfig();
+       }
+       else if (!strncmp_P(inputBuffer, PSTR("RND_C0"), 5)) // Виключаємо випадковий вибір ефектів у циклі
+       {
+        FavoritesManager::rndCycle = 0;
+	    jsonWrite(configSetup, "rnd_cycle", 0);
+        saveConfig();
+       }
+       else if (!strncmp_P(inputBuffer, PSTR("RND_ON"), 6)) // увімкнути вибір випадкових налаштувань у режимі Цикл
+       {
+         random_on = 1U;
+		jsonWrite(configSetup, "random_on", (int)random_on);
+		saveConfig();  
+         showWarning(CRGB::Blue, 1000U, 500U);                    // блимання синім кольором 1 секунду
+       }
+       else if (!strncmp_P(inputBuffer, PSTR("RND_OFF"), 7)) // вимкнути вибір випадкових налаштувань у режимі Цикл
+       {
+         random_on = 0U;
+		jsonWrite(configSetup, "random_on", (int)random_on);
+		saveConfig();  
+         showWarning(CRGB::Blue, 1000U, 500U);                    // блимання синім кольором 1 секунду
+       }
+    }
+    #endif //#ifdef USE_RANDOM_SETS_IN_APP
+    
+    else if (!strncmp_P(inputBuffer, PSTR("RUN_"), 4)) {          // Налаштування рядка, що біжить
+        if (!strncmp_P(inputBuffer, PSTR("RUN_T"), 5))            // Періодичність виводу (хвилини). 0-не виводити;більше 60-виводити постійно
+        {
+            memcpy(buff, &inputBuffer[5], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 6
+            RuninTextOverEffects = (uint8_t)atoi(buff);
+            jsonWrite(configSetup, "toe", RuninTextOverEffects);
+            bitSet (save_file_changes, 0);
+            timeout_save_file_changes = millis();
+        }
+        else if (!strncmp_P(inputBuffer, PSTR("RUN_C"), 5))       // Колір рядку, що біжить (0-255)
+        {
+            memcpy(buff, &inputBuffer[5], strlen(inputBuffer));
+            ColorRunningText = (uint8_t)atoi(buff);
+            jsonWrite(configSetup, "sct", ColorRunningText);
+            bitSet (save_file_changes, 0);
+            timeout_save_file_changes = millis();
+        }
+        else if (!strncmp_P(inputBuffer, PSTR("RUN_F"), 5))       // фон рядку, що біжить 0-чорний фон; 1-кольоровий фон
+        {
+            memcpy(buff, &inputBuffer[5], strlen(inputBuffer));
+            ColorTextFon = (uint8_t)atoi(buff);
+            jsonWrite(configSetup, "ctf", ColorTextFon);
+            bitSet (save_file_changes, 0);
+            timeout_save_file_changes = millis();
+        }
+        else if (!strncmp_P(inputBuffer, PSTR("RUN_S"), 5))       // швидкість рядку, що біжить (0-255)
+        {
+            memcpy(buff, &inputBuffer[5], strlen(inputBuffer));
+            SpeedRunningText = (uint8_t)atoi(buff);
+            jsonWrite(configSetup, "spt", SpeedRunningText);
+            bitSet (save_file_changes, 0);
+            timeout_save_file_changes = millis();
+        }
+    }
+    
+    #ifdef BUTTON_CAN_SET_SLEEP_TIMER
+    else if (!strncmp_P(inputBuffer, PSTR("SLEEP"), 5)) { // Tаймер сну. SLEEP2 - 10 хвилин. Инакше - 5 хвилин
+    memcpy(buff, &inputBuffer[5], strlen(inputBuffer));
+    uint8_t temp = (uint8_t)atoi(buff);
+    showWarning(CRGB::Blue, 1000, 250U);     // Мигание синим цветом 1 секунду. Мигать об успехе операции лучше до вызова changePower(), иначе сперва мелькнут кадры текущего эффекта
+    if (!ONflag) EepromManager::EepromGet(modes);
+    ONflag = true;
+    changePower();
+    jsonWrite(configSetup, "Power", ONflag);
+    jsonWrite(configSetup, "tmr", 1);
+    #ifdef USE_BLYNK
+    updateRemoteBlynkParams();
+    #endif
+    if (temp == 2) TimerManager::TimeToFire = millis() + BUTTON_SET_SLEEP_TIMER2 * 60UL * 1000UL;
+    else TimerManager::TimeToFire = millis() + BUTTON_SET_SLEEP_TIMER1 * 60UL * 1000UL;
+    TimerManager::TimerRunning = true;
+    }
+    #endif //BUTTON_CAN_SET_SLEEP_TIMER 
+
+    else if (!strncmp_P(inputBuffer, PSTR("ALM_"), 4)) { // сокращаем GET и SET для ускорения регулярного цикла
+      if (!strncmp_P(inputBuffer, PSTR("ALM_SET"), 7))
+      {
+        uint8_t alarmNum = (char)inputBuffer[7] - '0';
+        alarmNum -= 1;
+        if (strstr_P(inputBuffer, PSTR("ON")) - inputBuffer == 9)
+        {
+          alarms[alarmNum].State = true;
+          sendAlarms(inputBuffer);
+        }
+        else if (strstr_P(inputBuffer, PSTR("OFF")) - inputBuffer == 9)
+        {
+          alarms[alarmNum].State = false;
+          sendAlarms(inputBuffer);
+        }
+        else
+        {
+          memcpy(buff, &inputBuffer[8], strlen(inputBuffer)); // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 9
+          alarms[alarmNum].Time = atoi(buff);
+          sendAlarms(inputBuffer);
+        }
+        //EepromManager::SaveAlarmsSettings(&alarmNum, alarms);
+
+        #if (USE_MQTT)
+        if (espMode == 1U)
+        {
+          strcpy(MqttManager::mqttBuffer, inputBuffer);
+          MqttManager::needToPublish = true;
+        }
+        #endif
+      }
+      else
+        sendAlarms(inputBuffer);
+    }
+
+    else if (!strncmp_P(inputBuffer, PSTR("DAWN"), 4))
+    {
+      memcpy(buff, &inputBuffer[4], strlen(inputBuffer));   // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 5
+      dawnMode = atoi(buff) - 1;
+      //EepromManager::SaveDawnMode(&dawnMode);
+      sendAlarms(inputBuffer);
+
+      #if (USE_MQTT)
+      if (espMode == 1U)
+      {
+        MqttManager::needToPublish = true;
+      }
+      #endif
+    }
+    
+    else if (!strncmp_P(inputBuffer, PSTR("DISCOVER"), 8))  // обнаружение приложением модуля esp в локальной сети
+    {
+      if (espMode == 1U)                                    // работает только в режиме WiFi клиента. интересно, зачем было запрещать обнаружение точки доступа?
+      {
+		char lamp_name[LAMP_NAME.length()+1];
+		LAMP_NAME.toCharArray(lamp_name,LAMP_NAME.length()+1);
+        sprintf_P(inputBuffer, PSTR("IP %u.%u.%u.%u:%u:%s"),
+        WiFi.localIP()[0],
+        WiFi.localIP()[1],
+        WiFi.localIP()[2],
+        WiFi.localIP()[3],
+        ESP_UDP_PORT,
+        lamp_name);
+      }
+      else
+      {
+		char lamp_name[LAMP_NAME.length()+1];
+		LAMP_NAME.toCharArray(lamp_name,LAMP_NAME.length()+1);		
+        sprintf_P(inputBuffer, PSTR("IP %u.%u.%u.%u:%u:%s"),
+        AP_STATIC_IP[0],
+        AP_STATIC_IP[1],
+        AP_STATIC_IP[2],
+        AP_STATIC_IP[3],
+        ESP_UDP_PORT,
+        lamp_name);
+      }
+    }
+
+    else if (!strncmp_P(inputBuffer, PSTR("TMR_"), 4)) { // сокращаем GET и SET для ускорения регулярного цикла
+      if (!strncmp_P(inputBuffer, PSTR("TMR_SET"), 7))
+      {
+        memcpy(buff, &inputBuffer[8], 2);                     // взять подстроку, состоящую из 9 и 10 символов, из строки inputBuffer
+        TimerManager::TimerRunning = (bool)atoi(buff);
+
+        memcpy(buff, &inputBuffer[10], 2);                    // взять подстроку, состоящую из 11 и 12 символов, из строки inputBuffer
+        TimerManager::TimerOption = (uint8_t)atoi(buff);
+
+        memcpy(buff, &inputBuffer[12], strlen(inputBuffer));  // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 13
+        TimerManager::TimeToFire = millis() + strtoull(buff, &endToken, 10) * 1000;
+
+        TimerManager::TimerHasFired = false;
+        sendTimer(inputBuffer);
+
+        #if (USE_MQTT)
+        if (espMode == 1U)
+        {
+          MqttManager::needToPublish = true;
+        }
+        #endif
+      }
+      else
+        sendTimer(inputBuffer);
+    }
+
+    else if (!strncmp_P(inputBuffer, PSTR("LIST"), 4)) // передача списка эффектов по запросу от приложения (если поддерживается приложением)
+    {
+       memcpy(buff, &inputBuffer[4], strlen(inputBuffer));  // взять подстроку, состоящую последних символов строки inputBuffer, начиная с символа 5
+       switch (atoi(buff))
+         {
+           case 0U:
+           {
+             EffectList (F("/efflist0"));
+             break;
+           }
+           case 1U:
+           {
+             EffectList (F("/efflist1"));
+             break;
+           }
+           case 2U:
+           {
+             EffectList (F("/efflist2"));
+             break;
+           }
+           case 3U:
+           {
+             EffectList (F("/efflist3"));
+
+             #ifdef USE_DEFAULT_SETTINGS_RESET
+             // и здесь же после успешной отправки списка эффектов делаем сброс настроек эффектов на значения по умолчанию
+             restoreSettings();
+             updateSets();
+             #ifdef USE_BLYNK_PLUS
+             updateRemoteBlynkParams();
+             #endif
+             #endif
+
+             break;
+           }
+         }
+    }
+    
+    else if (!strncmp_P(inputBuffer, PSTR("ssid"), 4)){        // Сохрание SSID для подключения к WiFi роутера
+      jsonWrite(configSetup, "ssid", BUFF.substring(5, BUFF.length()));        
+      saveConfig();            
+    }
+    
+    else if (!strncmp_P(inputBuffer, PSTR("passw"), 5)){        // Сохрание пароля для подключения к WiFi роутера 
+      //jsonWrite(configSetup, "password", BUFF.substring(6, BUFF.length()));        
+      //saveConfig();            
+      String password = BUFF.substring(6, BUFF.length());
+      if (password != ""){
+          char* Pass_STA = new char[64];
+          password.toCharArray(Pass_STA, password.length()+1);
+          for (uint8_t address = 0; address < 64; address ++){
+              EEPROM.put((EEPROM_PASSWORD_START_ADDRESS + address), Pass_STA[address]);
+              EEPROM.commit();
+              if (Pass_STA[address] == 0) break;
+          }
+          #ifdef GENERAL_DEBUG
+          LOG.print("\nPass_STA = ");
+          LOG.println(Pass_STA );
+          #endif
+          delete [] Pass_STA;
+      }
+    }          
+    else if (!strncmp_P(inputBuffer, PSTR("timeout"), 7)){     // Сохрание таймаута - времени попытки подключения к WiFi роутера
+      jsonWrite(configSetup, "TimeOut", BUFF.substring(8, BUFF.length()));        
+      saveConfig();            
+    }
+    
+    else if (!strncmp_P(inputBuffer, PSTR("esp_mode=0"), 10)){  // Изменение режима на точку доступа
+		espMode = 0U;
+		jsonWrite(configSetup, "ESP_mode", (int)espMode);
+		saveConfig();  
+		showWarning(CRGB::Blue, 1000U, 500U);                    // мигание синим цветом 1 секунду - смена рабочего режима лампы, перезагрузка
+		ESP.restart();
+	}
+	
+	else if (!strncmp_P(inputBuffer, PSTR("esp_mode=1"), 10)){  // Изменение режима для использования подключения к роутеру
+		espMode = 1U;
+		jsonWrite(configSetup, "ESP_mode", (int)espMode);
+		saveConfig();  
+		showWarning(CRGB::Blue, 1000U, 500U);                    // мигание синим цветом 1 секунду - смена рабочего режима лампы, перезагрузка
+		ESP.restart();
+	}    
+	
+    else if (!strncmp_P(inputBuffer, PSTR("TXT"), 3)){     // Принимаем текст для бегущей строки
+        //String str = getValue(BUFF, '-', 1); // этим способом дефисы нельзя в бегущую строку передать. почему вообще разделитель - дефис?!
+        String str = (BUFF.length() > 4) ? BUFF.substring(4, BUFF.length()) : "";
+        str.toCharArray(TextTicker, str.length() + 1);
+    }
+    
+    else if (!strncmp_P(inputBuffer, PSTR("DRW"), 3)) {
+      drawPixelXY((int8_t)getValue(BUFF, ';', 1).toInt(), (int8_t)getValue(BUFF, ';', 2).toInt(), DriwingColor);
+      FastLED.show();
+    }
+    
+    else if (!strncmp_P(inputBuffer, PSTR("CLR"), 3)) {
+      FastLED.clear();
+      FastLED.show();
+    }
+    
+    else if (!strncmp_P(inputBuffer, PSTR("COL"), 3)) {
+      #ifdef USE_OLD_APP_FROM_KOTEYKA // (в версии 2.3... цвета были только в формате RGB)
+       DriwingColor = CRGB(getValue(BUFF, ';', 1).toInt(), getValue(BUFF, ';', 2).toInt(), getValue(BUFF, ';', 3).toInt());
+      #else
+       DriwingColor = CRGB(getValue(BUFF, ';', 1).toInt(), getValue(BUFF, ';', 3).toInt(), getValue(BUFF, ';', 2).toInt());
+      #endif
+    }
+    
+    else if (!strncmp_P(inputBuffer, PSTR("DRAWO"), 5)) { // сокращаем OFF и ON для ускорения регулярного цикла
+      if (!strncmp_P(inputBuffer, PSTR("DRAWON"), 6))
+        Painting = 1;
+      else
+        Painting = 0;
+        //FastLED.clear();
+        //FastLED.show();
+    }
+    
+    else if (!strncmp_P(inputBuffer, PSTR("RESET"), 5)) { // сброс настроек WIFI по запросу от приложения
+      if (!strncmp_P(inputBuffer, PSTR("RESET_ALL"), 9))  // Скидання налаштувань у початкові (за замовчуванням)
+      {
+        LOG.println("\n*** Reset to Default ***");
+        showWarning(CRGB::Red, 500, 250U);
+        #ifdef ESP32_USED
+         esp_task_wdt_reset();
+        #else
+         ESP.wdtFeed();
+        #endif
+        setModeSettings();
+        updateSets();    
+        if(FileCopy (F("/default/config.json"), F("/config.json"))) {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
+            showWarning(CRGB::Green, 500, 250U);
+        }
+        else {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
+            showWarning(CRGB::Red, 500, 250U);
+        }
+        if(FileCopy (F("/default/cycle_config.json"), F("/cycle_config.json"))) {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
+            showWarning(CRGB::Green, 500, 250U);
+        }
+        else {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
+            showWarning(CRGB::Red, 500, 250U);
+        }
+        if(FileCopy (F("/default/sound_config.json"), F("/sound_config.json"))) {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
+            showWarning(CRGB::Green, 500, 250U);
+        }
+        else {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
+            showWarning(CRGB::Red, 500, 250U);
+        }
+        if(FileCopy (F("/default/alarm_config.json"), F("/alarm_config.json"))) {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+             #endif
+            showWarning(CRGB::Green, 500, 250U);
+        }
+        else {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
+            showWarning(CRGB::Red, 500, 250U);
+        }
+        if(FileCopy (F("/default/hardware_config.json"), F("/hardware_config.json"))) {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
+            showWarning(CRGB::Green, 500, 250U);
+        }
+        else {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
+            showWarning(CRGB::Red, 500, 250U);
+        }
+        if(FileCopy (F("/default/multilamp_config.json"), F("/multilamp_config.json"))) {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
+            showWarning(CRGB::Green, 500, 250U);
+        }
+        else {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
+            showWarning(CRGB::Red, 500, 250U);
+        }
+        if(FileCopy (F("/default/index.json.gz"), F("/index.json.gz"))) {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
+            showWarning(CRGB::Green, 500, 250U);
+        }
+        else {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
+            showWarning(CRGB::Red, 500, 250U);
+        }
+        delay(100);
+        ESP.restart();
+      }
+    else
+      {
+        jsonWrite(configSetup, "ssid", "");                         // сброс сохранённых SSID и пароля (сброс настроек подключения к роутеру)
+        jsonWrite(configSetup, "password", "");
+        saveConfig();                                       // Функция сохранения данных во Flash
+        showWarning(CRGB::Blue, 2000U, 500U);                    // мигание синим цветом 2 секунды
+      }
+    }
+    
+#if defined(GENERAL_DEBUG) || defined(USE_OLD_IOS_APP)
+    else if (!strncmp_P(inputBuffer, PSTR("DEB"), 3))
+    {
+        //#ifdef USE_NTP
+        #if defined(USE_NTP) || defined(USE_MANUAL_TIME_SETTING) || defined(GET_TIME_FROM_PHONE)
+        getFormattedTime(inputBuffer);
+        sprintf_P(inputBuffer, PSTR("OK %s"), inputBuffer);
+        #else
+        strcpy_P(inputBuffer, PSTR("OK --:--"));
+        #endif
+    }
+#endif
+#if USE_MQTT
+    else if  (!strncmp_P(inputBuffer, PSTR("STATE"), 5) && (espMode == 1U)){
+        MqttManager::needToPublish = true;
+    }
+#endif //USE_MQTT
 //#ifdef USE_OLD_APP_FROM_KOTEYKA // (в версии 2.3... были кнопки, чтобы сохранить настройки эффектов из приложения в лампу)
 //и в новых тоже появились
     else if (!strncmp_P(inputBuffer, PSTR("SETS"), 4)) // передача настроек эффектов по запросу от приложения (если поддерживается приложением)
@@ -1118,6 +1197,12 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
               Udp.print(replyPacket);
               Udp.endPacket();
             }
+            #if (USE_MQTT)
+            if (espMode == 1U)
+            {
+                MqttManager::needToPublish = true;
+            }
+            #endif
             break;
           }
       }
@@ -1200,13 +1285,17 @@ void NEWsendCurrent(char *outputBuffer)
     modes[currentMode].Scale,
     ONflag,
     espMode,
-  #ifdef USE_NTP
-  1,
-  #else
-  0,
-  #endif
+    #ifdef USE_NTP
+     1,
+    #else
+     0,
+    #endif
     TimerManager::TimerRunning,
-    buttonEnabled,
+    #ifdef ESP_USE_BUTTON
+     buttonEnabled,
+    #else
+     0,
+    #endif
     FavoritesManager::FavoritesRunning,
     FavoritesManager::rndCycle,
     random_on);

@@ -43,6 +43,25 @@ class EepromManager
       {
         EEPROM.get(EEPROM_MODES_START_ADDRESS + EEPROM_MODE_STRUCT_SIZE * i, modes[i]);
       }
+      if (EEPROM.read(EEPROM_FIRST_RUN_ADDRESS + 2) != EEPROM_FIRST_RUN_MARK)
+      {
+        if(FileCopy (F("/default/index.json.gz"), F("/index.json.gz"))) {
+            #ifdef ESP32_USED
+             esp_task_wdt_reset();
+            #else
+             ESP.wdtFeed();
+            #endif
+            showWarning(CRGB::Green, 500, 250U);
+            //EEPROM.write(EEPROM_FIRST_RUN_ADDRESS + 2, EEPROM_FIRST_RUN_MARK);
+            //EEPROM.commit();
+        }
+        else {
+            showWarning(CRGB::Red, 500, 250U);
+        }
+      }
+      else {
+          T_flag = 1;
+      }
     }
 /*
     static void HandleEepromTick(bool* settChanged, uint32_t* eepromTimeout, ModeType modes[])

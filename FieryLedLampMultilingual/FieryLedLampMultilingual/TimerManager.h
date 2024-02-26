@@ -1,13 +1,12 @@
 #pragma once
 
-
 class TimerManager
 {
   public:
     static bool TimerRunning;                               // флаг "таймер взведён"
     static bool TimerHasFired;                              // флаг "таймер отработал"
     static uint8_t TimerOption;                             // индекс элемента в списке List Picker'а
-    static uint32_t TimeToFire;                             // время, в которое должен сработать таймер (millis)
+    static uint32_t TimeToFire;                             // время, по прошествии которого, должен сработать таймер (millis)
 
     static void HandleTimer(                                // функция, обрабатывающая срабатывание таймера, гасит матрицу
       bool* ONflag,

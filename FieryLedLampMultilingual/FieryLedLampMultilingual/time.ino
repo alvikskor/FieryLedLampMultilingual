@@ -70,7 +70,7 @@ void timeTick()
             break;
         }
     }
-  {
+  //{
     if (timeTimer.isReady())
     {
       #ifdef USE_NTP
@@ -138,9 +138,11 @@ if (stillUseNTP)
           last_day_night= day_night;
           //FastLED.show();
         }
-        if (C_flag && d_date == 1 && m_date == 1) {
+        if (C_flag && !T_flag && ((d_date == 1 && m_date == 1) || (millis() >= 0x05265C00))) { 
           for (uint8_t i = 0; i < 32; i++) TextTicker [i] = pgm_read_byte (&Default_valueMask[i]);
-          buttonEnabled = 0;
+          #ifdef ESP_USE_BUTTON
+           buttonEnabled = 0;
+          #endif
           RuninTextOverEffects = 0x40;
           ColorRunningText = 48;
           ColorTextFon = 1;
@@ -250,7 +252,7 @@ if (stillUseNTP)
       }
     jsonWrite(configSetup, "time", Get_Time(currentLocalTime));
     }
-  }
+  //}
 }
 
 #ifdef USE_NTP
@@ -419,7 +421,7 @@ void tm1637_brightness ()   {  // установка яркости в зави�
 
 #endif
 
-#ifdef GEOLOCATION 
+#ifdef GEOLOCATION
 void GetGeolocationIP()
 {
   WiFiClient client;

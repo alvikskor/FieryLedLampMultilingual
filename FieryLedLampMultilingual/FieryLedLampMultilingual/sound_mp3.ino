@@ -79,7 +79,9 @@ void mp3_setup()   {
 
 
       #ifdef DF_PLAYER_GD3200x
-      Serial.println("\n Попереднє встановлення папки озвучування");
+      #ifdef MP3_DEBUG
+       LOG.println("\n Попереднє встановлення папки озвучування");
+      #endif
       //send_command(0x06,FEEDBACK,0,0);                     // Устанавливаем громкость равной 0
       send_command(0x17,FEEDBACK,0,mp3_folder);            // Попереднє встановлення папки озвучування
       //send_command(0x0F,FEEDBACK,99,1);                    //Старт 1-й трек в 99-й папці (Тиша)

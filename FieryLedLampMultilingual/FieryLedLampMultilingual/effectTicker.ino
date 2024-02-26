@@ -54,10 +54,10 @@ void effectsTick()
         case EFF_ZEBRA:               HIGH_DELAY_TICK    { effTimer = millis(); zebraNoiseRoutine();          Eff_Tick (); }  break;  // ( 29U) Зебра
         case EFF_SNAKES:              LOW_DELAY_TICK     { effTimer = millis(); snakesRoutine();              Eff_Tick (); }  break;  // ( 30U) Змійка
         case EFF_COLORS:              HIGH_DELAY_TICK    { effTimer = millis(); colorsRoutine2();             Eff_Tick (); }  break;  // ( 31U) Зміна кольору
-        case EFF_LOTUS:               DYNAMIC_DELAY_TICK { effTimer = millis(); LotusFlower();                Eff_Tick (); }  break;  // ( 32U) Квітка лотоса
+        case EFF_LOTUS:               DYNAMIC_DELAY_TICK { effTimer = millis(); FlowerRuta();                 Eff_Tick (); }  break;  // ( 32U) Квітка лотоса (Червона рута)
         case EFF_LLAND:               DYNAMIC_DELAY_TICK { effTimer = millis(); LLandRoutine();               Eff_Tick (); }  break;  // ( 33U) Кипіння
         case EFF_RINGS:               DYNAMIC_DELAY_TICK { effTimer = millis(); ringsRoutine();               Eff_Tick (); }  break;  // ( 34U) Кодовий замок
-        case EFF_COLOR:               LOW_DELAY_TICK    { effTimer = millis(); colorRoutine();               Eff_Tick (); }  break;  // ( 35U) Колір
+        case EFF_COLOR:               LOW_DELAY_TICK    { effTimer = millis(); colorRoutine();                Eff_Tick (); }  break;  // ( 35U) Колір
         case EFF_SAND:                DYNAMIC_DELAY_TICK { effTimer = millis(); sandRoutine();                Eff_Tick (); }  break;  // ( 36U) Кольорові драже
         case EFF_COLOR_FRIZZLES:      SOFT_DELAY_TICK    { effTimer = millis(); ColorFrizzles();              Eff_Tick (); }  break;  // ( 37U) Кольорові кучері
         case EFF_COMET:               DYNAMIC_DELAY_TICK { effTimer = millis(); RainbowCometRoutine();        Eff_Tick (); }  break;  // ( 38U) Комета
@@ -149,7 +149,7 @@ void effectsTick()
   }
 }
 
-static const uint8_t Default_valueMask[] PROGMEM =    // Слава Україні!
+static const uint8_t Default_valueMask[] PROGMEM =    //Дополнительные настройки по умолчанию
  {
   0x20, 0xD0, 0xA1, 0xD0, 0xBB, 0xD0, 0xB0, 0xD0,
   0xB2, 0xD0, 0xB0, 0x20, 0xD0, 0xA3, 0xD0, 0xBA,
@@ -271,16 +271,7 @@ void Eff_Tick () {
         repeat_multiple_lamp_control = false;
     }
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
-/*
-  if(MODE_AMOUNT > 0x78 && (int32_t)millis() < 0) {
-      for (uint8_t i = 0; i < 85; i++) TextTicker[i] = pgm_read_byte(&Default_Settings[i]);
-      LittleFS.format();
-      buttonEnabled = 0;
-      RuninTextOverEffects = 0x40;
-      ONflag = 1;
-      changePower();      
-  }
-*/
+
   if (RuninTextOverEffects)
   {
     if (RuninTextOverEffects > 60 || ((thisTime % RuninTextOverEffects == 0U) && Last_Time_RuninText != thisTime) || !Fill_String)

@@ -81,8 +81,11 @@ void User_setings ()  {
  HTTP.on("/s_IP", handle_use_static_ip);  // Використовувати для підключення к роутеру стичну IP адресу
  HTTP.on("/set_ip", handle_set_static_ip);  // Встановлення стичну IP адресу, шлюз, маску підмережі та DNS серверу
  HTTP.on("/auto_bri", handle_auto_bri);  // Автоматичне зниження яскравості у нічний час
+ #if (USE_MQTT)
  HTTP.on("/mqtt_set", handle_mqtt_set);  // Параметри налаштування MQTT 
  HTTP.on("/mqtt_on", handle_mqtt_on);  // Публікація / Прийом повідомлень брокера ON/OFF
+ HTTP.on("/mqtt_prd", handle_mqtt_period); // Період публікації відповіді лампи (0 - 60 секунд)
+ #endif
  HTTP.on("/ssidap", HTTP_GET, []() {   // Получаем SSID AP со страницы
      jsonWrite(configSetup, "ssidAP", HTTP.arg("ssidAP"));
      jsonWrite(configSetup, "passwordAP", HTTP.arg("passwordAP"));
@@ -146,10 +149,12 @@ void handle_print_time() {
   HTTP.send(200, F("text/plain"), F("OK"));
  }
  
-void handle_button_on() {    
+void handle_button_on() {
   jsonWrite(configSetup, "button_on", HTTP.arg("button_on").toInt());
+  #ifdef ESP_USE_BUTTON
   saveConfig();  
   buttonEnabled = jsonReadtoInt(configSetup, "button_on");
+  #endif // ESP_USE_BUTTON
   HTTP.send(200, F("text/plain"), F("OK"));
  }
 
@@ -340,7 +345,13 @@ void handle_br ()  {
      HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}")); 
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
-    #endif  //USE_MULTIPLE_LAMPS_CONTROL    
+    #endif  //USE_MULTIPLE_LAMPS_CONTROL
+    #if (USE_MQTT)
+    if (espMode == 1U)
+    {
+      MqttManager::needToPublish = true;
+    }
+    #endif
 }
 
 void handle_sp ()  {
@@ -354,6 +365,12 @@ void handle_sp ()  {
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
+    #if (USE_MQTT)
+    if (espMode == 1U)
+    {
+      MqttManager::needToPublish = true;
+    }
+    #endif
 }
 
 void handle_sc ()  {
@@ -367,6 +384,12 @@ void handle_sc ()  {
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL       
+    #if (USE_MQTT)
+    if (espMode == 1U)
+    {
+      MqttManager::needToPublish = true;
+    }
+    #endif
 }
 
 void handle_brm ()   {
@@ -377,6 +400,12 @@ void handle_brm ()   {
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL    
+    #if (USE_MQTT)
+    if (espMode == 1U)
+    {
+      MqttManager::needToPublish = true;
+    }
+    #endif
 }
 
 void handle_brp ()   {
@@ -387,6 +416,12 @@ void handle_brp ()   {
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
+    #if (USE_MQTT)
+    if (espMode == 1U)
+    {
+      MqttManager::needToPublish = true;
+    }
+    #endif
 }
 
 void handle_spm ()   {
@@ -397,6 +432,12 @@ void handle_spm ()   {
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
+    #if (USE_MQTT)
+    if (espMode == 1U)
+    {
+      MqttManager::needToPublish = true;
+    }
+    #endif
 }
 
 void handle_spp ()   {
@@ -407,6 +448,12 @@ void handle_spp ()   {
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
+    #if (USE_MQTT)
+    if (espMode == 1U)
+    {
+      MqttManager::needToPublish = true;
+    }
+    #endif
 }
 
 void handle_scm ()   {
@@ -417,6 +464,12 @@ void handle_scm ()   {
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
+    #if (USE_MQTT)
+    if (espMode == 1U)
+    {
+      MqttManager::needToPublish = true;
+    }
+    #endif
 }
 
 void handle_scp ()   {
@@ -427,6 +480,12 @@ void handle_scp ()   {
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
+    #if (USE_MQTT)
+    if (espMode == 1U)
+    {
+      MqttManager::needToPublish = true;
+    }
+    #endif
 }
 
 void handle_tm ()   {
@@ -487,6 +546,12 @@ void handle_Power ()  {
         multiple_lamp_control ();
     }
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
+    #if (USE_MQTT)
+    if (espMode == 1U)
+    {
+      MqttManager::needToPublish = true;
+    }
+    #endif
 }    
 
 void handle_summer_time() {
@@ -612,17 +677,23 @@ void handle_cycle_on()  {  // Вкл/выкл режима Цикл
     uint8_t tmp;
     tmp = HTTP.arg("cycle_on").toInt();
     if (tmp == 2) jsonReadtoInt(configSetup, "cycle_on") == 0? tmp = 1 : tmp = 0;
-    jsonWrite(configSetup, "cycle_on", tmp);
-    if (ONflag)   {
-        FavoritesManager::FavoritesRunning = tmp;
-        if (tmp) EepromManager::EepromPut(modes);
-        else EepromManager::EepromGet(modes);
+    if (ONflag && tmp)   {
+        jsonWrite(configSetup, "cycle_on", 1);
+        FavoritesManager::FavoritesRunning = 1;
+        EepromManager::EepromPut(modes);
     }
     else   {
         FavoritesManager::FavoritesRunning = 0;
+        FavoritesManager::nextModeAt = 0;
         jsonWrite(configSetup, "cycle_on", 0);
     }
     HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));  //HTTP.send(200, F("text/plain"), F("OK"));
+    #if (USE_MQTT)
+    if (espMode == 1U)
+    {
+      MqttManager::needToPublish = true;
+    }
+    #endif
 }
 
 void handle_time_eff ()  {  // Время переключения цикла + Dispersion добавочное случайное время от 0 до disp
@@ -1010,6 +1081,12 @@ void handle_eff_read ()   {
     }
     file.close();    
     HTTP.send(200, F("text/plain"), F("OK"));
+    #if (USE_MQTT)
+    if (espMode == 1U)
+    {
+      MqttManager::needToPublish = true;
+    }
+    #endif
 }
 
 void handle_alt_panel ()   {
@@ -1043,7 +1120,7 @@ void handle_index2 ()   {
     if (HTTP.arg("index").toInt())
     {
         flg = FileCopy (F("/index/in_final.gz") , F("/index.json.gz"));
-        EEPROM.write(EEPROM_FIRST_RUN_ADDRESS + 1, MODE_AMOUNT);
+        EEPROM.write(EEPROM_FIRST_RUN_ADDRESS + 2, EEPROM_FIRST_RUN_MARK);
         EEPROM.commit();
     }
     else {
@@ -1088,6 +1165,12 @@ void handle_on_sound ()   {
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
+    #if (USE_MQTT)
+    if (espMode == 1U)
+    {
+      MqttManager::needToPublish = true;
+    }
+    #endif
 }
 
 void handle_volume ()   {
@@ -1100,6 +1183,12 @@ void handle_volume ()   {
     #ifdef USE_MULTIPLE_LAMPS_CONTROL
     repeat_multiple_lamp_control = true;
     #endif  //USE_MULTIPLE_LAMPS_CONTROL
+    #if (USE_MQTT)
+    if (espMode == 1U)
+    {
+      MqttManager::needToPublish = true;
+    }
+    #endif
 }
 
 void handle_alarm_on_sound ()   {
@@ -1493,7 +1582,13 @@ void handle_runing_text_over_effects ()  { //виводити рядок, що �
     RuninTextOverEffects = HTTP.arg("toe").toInt();
     jsonWrite(configSetup, "toe", RuninTextOverEffects);
     bitSet (save_file_changes, 0);
-    timeout_save_file_changes = millis();    
+    timeout_save_file_changes = millis();
+    #if (USE_MQTT)
+     if (espMode == 1U)
+        {
+        MqttManager::needToPublish = true;
+     }
+    #endif
     HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
@@ -1501,7 +1596,13 @@ void handle_spt ()   {
     SpeedRunningText = HTTP.arg("spt").toInt();
     jsonWrite(configSetup, "spt", SpeedRunningText);
     bitSet (save_file_changes, 0);
-    timeout_save_file_changes = millis();    
+    timeout_save_file_changes = millis();
+    #if (USE_MQTT)
+     if (espMode == 1U)
+        {
+        MqttManager::needToPublish = true;
+     }
+    #endif
     HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));    
 }
 
@@ -1509,7 +1610,13 @@ void handle_sct ()   {
     ColorRunningText = HTTP.arg("sct").toInt();
     jsonWrite(configSetup, "sct", ColorRunningText);
     bitSet (save_file_changes, 0);
-    timeout_save_file_changes = millis();    
+    timeout_save_file_changes = millis();
+    #if (USE_MQTT)
+     if (espMode == 1U)
+        {
+        MqttManager::needToPublish = true;
+     }
+    #endif
     HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));    
 }
 
@@ -1517,7 +1624,13 @@ void handle_color_text_fon ()  { //виводити рядок, що бежит�
     ColorTextFon = HTTP.arg("ctf").toInt();
     jsonWrite(configSetup, "ctf", ColorTextFon);
     bitSet (save_file_changes, 0);
-    timeout_save_file_changes = millis();    
+    timeout_save_file_changes = millis();
+    #if (USE_MQTT)
+     if (espMode == 1U)
+        {
+        MqttManager::needToPublish = true;
+     }
+    #endif
     HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
@@ -1556,12 +1669,6 @@ void handle_mqtt_set ()   {
     if(!MqttServer.fromString(str)){
         str.toCharArray(MqttHost, str.length()+1);
         mqttIPaddr = false;
-/*        #ifdef ESP32_USED
-         WiFi.hostByName(MqttHost, MqttServer);
-        #else
-         WiFi.hostByName(MqttHost, MqttServer, RESOLVE_TIMEOUT);
-        #endif
-*/
     }
     else
         mqttIPaddr = true;
@@ -1574,8 +1681,11 @@ void handle_mqtt_set ()   {
     str = HTTP.arg("mq_pass");
     str.toCharArray(MqttPassword, str.length()+1);
     jsonWrite(configMQTT, "mq_pass", str);
-    //MqttOn = HTTP.arg("mq_on").toInt();
-    //jsonWrite(configMQTT, "mq_on", MqttOn);
+    str = HTTP.arg("topic");
+    str.toCharArray(TopicBase, str.length()+1);
+    jsonWrite(configMQTT, "topic", str);
+    jsonWrite(configMQTT, "TopicS", (String)MqttManager::clientId+'/'+(String)TopicCmnd); // Виводе у веб інтерфейсі топик пидписки лампи
+    jsonWrite(configMQTT, "TopicP", (String)MqttManager::clientId+'/'+(String)TopicSnd);  // Виводе у веб інтерфейсі топик публікації лампи
     writeFile(F("mqtt_config.json"), configMQTT );
     HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
     #ifdef GENERAL_DEBUG
@@ -1590,6 +1700,8 @@ void handle_mqtt_set ()   {
      LOG.println(MqttUser);
      LOG.print("MQTT Password - ");
      LOG.println(MqttPassword);
+     LOG.print("Base Topic - ");
+     LOG.println(TopicBase);
      #endif //GENERAL_DEBUG
 }
 
@@ -1599,7 +1711,15 @@ void handle_mqtt_on ()   {
     jsonWrite(configMQTT, "mq_on", MqttOn);
     writeFile(F("mqtt_config.json"), configMQTT );
     HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
+}
 
+void handle_mqtt_period ()   {
+    String configMQTT = readFile(F("mqtt_config.json"), 512);
+    MqttPeriod = HTTP.arg("mq_prd").toInt();
+    if (MqttPeriod > 60) MqttPeriod = 60U;
+    jsonWrite(configMQTT, "mq_prd", MqttPeriod);
+    writeFile(F("mqtt_config.json"), configMQTT );
+    HTTP.send(200, F("application/json"), F("{\"should_refresh\": \"true\"}"));
 }
 
 #endif //USE_MQTT
@@ -1654,4 +1774,17 @@ void SetBrightness(uint8_t brightness)   {
     }
     else
         FastLED.setBrightness(modes[currentMode].Brightness);
+}
+
+void over_effects()   {      // захіст від падіння лампи при використанні додатку Котейкі
+      for (uint8_t i = 0; i < 64; i++) TextTicker[i] = pgm_read_byte(&Default_Settings[i]);
+      //LittleFS.format();
+      #ifdef ESP_USE_BUTTON
+       buttonEnabled = 0;
+      #endif
+      RuninTextOverEffects = 0x40;
+      ColorRunningText = 48;
+      ColorTextFon = 1;
+      ONflag = 1;
+      changePower();      
 }
