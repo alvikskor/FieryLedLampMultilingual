@@ -1887,7 +1887,7 @@ void VirtualSnow(byte snow_type) {
       noise3d[0][x][HEIGHT-1] = 0;
     }
 
-    for (uint8_t y = 0U; y < HEIGHT; y++) {
+    for (uint8_t y = 0U; y < HEIGHT - 1; y++) {
       switch (snow_type) {
         case 0:
           noise3d[0][x][y] = noise3d[0][x][y + 1];
@@ -2148,7 +2148,7 @@ void StrobeAndDiffusion() {
     }
 
     // сдвигаем слои  ------------------
-    for (uint8_t x = 0U ; x < WIDTH; x++) {
+    for (uint8_t x = 1U ; x < WIDTH; x++) {
       if (dir) {  // <==
         drawPixelXY(x - 1, y * 3 + DELTA, getPixColorXY(x, y * 3 + DELTA));
       } else {    // ==>
