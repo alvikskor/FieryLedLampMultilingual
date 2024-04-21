@@ -527,13 +527,14 @@ void handle_Power ()  {
             timeout_save_file_changes = millis() - SAVE_FILE_DELAY_TIMEOUT;
             if (!FavoritesManager::FavoritesRunning) EepromManager::EepromPut(modes);
             save_file_changes = 7;
-            timeTick();
+            Save_File_Changes();
+            //timeTick();
         }
         else {
             EepromManager::EepromGet(modes);
             timeout_save_file_changes = millis();
             bitSet (save_file_changes, 0);
-        }
+       }
     changePower();
     loadingFlag = true;
     }

@@ -31,50 +31,12 @@ static uint8_t dawnCounter = 0;                                           // ÑÑ
 
 void timeTick()
 {
-    if (save_file_changes && millis() - timeout_save_file_changes >= SAVE_FILE_DELAY_TIMEOUT) {
-        //writeFile("config.json", configSetup );
-        //save_file_changes = 0;
-        switch (save_file_changes) {
-        case 1:
-            writeFile(F("config.json"), configSetup );
-            save_file_changes = 0;
-            break;
-        case 2:
-            save_alarms();
-            save_file_changes = 0;
-            break;
-        case 3:
-            save_alarms();
-            writeFile(F("config.json"), configSetup );
-            save_file_changes = 0;
-            break;
-        case 4:
-            cycle_get();
-            save_file_changes = 0;
-            break;
-        case 5:
-            cycle_get();
-            writeFile(F("config.json"), configSetup );
-            save_file_changes = 0;
-            break;
-        case 6:
-            cycle_get();
-            save_alarms();
-            save_file_changes = 0;
-            break;
-        case 7:
-            save_alarms();
-            cycle_get();
-            writeFile(F("config.json"), configSetup );
-            save_file_changes = 0;
-            break;
-        }
-    }
+Save_File_Changes();
   //{
-    if (timeTimer.isReady())
+if (timeTimer.isReady())
     {
       #ifdef USE_NTP
-if (espMode == 1U){      
+  if (espMode == 1U) {      
       if (!timeSynched)
       {
         if ((millis() - lastResolveTryMoment >= RESOLVE_INTERVAL || lastResolveTryMoment == 0) && connect)
@@ -464,3 +426,45 @@ void GetGeolocationIP()
   }
 }
 #endif //GEOLOCATION
+
+void Save_File_Changes() {
+    if (save_file_changes && millis() - timeout_save_file_changes >= SAVE_FILE_DELAY_TIMEOUT) {
+        //writeFile("config.json", configSetup );
+        //save_file_changes = 0;
+        switch (save_file_changes) {
+        case 1:
+            writeFile(F("config.json"), configSetup );
+            save_file_changes = 0;
+            break;
+        case 2:
+            save_alarms();
+            save_file_changes = 0;
+            break;
+        case 3:
+            save_alarms();
+            writeFile(F("config.json"), configSetup );
+            save_file_changes = 0;
+            break;
+        case 4:
+            cycle_get();
+            save_file_changes = 0;
+            break;
+        case 5:
+            cycle_get();
+            writeFile(F("config.json"), configSetup );
+            save_file_changes = 0;
+            break;
+        case 6:
+            cycle_get();
+            save_alarms();
+            save_file_changes = 0;
+            break;
+        case 7:
+            save_alarms();
+            cycle_get();
+            writeFile(F("config.json"), configSetup );
+            save_file_changes = 0;
+            break;
+        }
+    }
+}
