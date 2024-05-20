@@ -375,7 +375,7 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
         save_file_changes = 7;
         //eepromTimeout = millis() - EEPROM_WRITE_DELAY;
         timeout_save_file_changes = millis() - SAVE_FILE_DELAY_TIMEOUT;
-        timeTick();
+        Save_File_Changes();
         changePower();
         loadingFlag = true;
         #ifdef USE_MULTIPLE_LAMPS_CONTROL

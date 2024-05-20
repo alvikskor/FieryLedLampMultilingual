@@ -1,11 +1,11 @@
-// Поточна версія / Current version : v3.90_sound_Multilingual_IR 112 ефектов
+// Поточна версія / Current version : v3.93_sound_Multilingual_IR 112 ефектов
 // УВАГА!!! Більшість установок перенесено у файл data/config і може змінюватися в процесі експлуатації лампи.
 // Уважно читайте файл ПРОЧИТИ МЕНЕ!!!.txt і ПРОЧТИ МЕНЕ.doc (тут з картинками)
 
 #pragma once
 
-#define FLL_VERSION           (" Ver.3.90.112")
-#define FLL_MARK              (390)
+#define FLL_VERSION           (" Ver.3.93.112")
+#define FLL_MARK              (393)
 
 
 // ==========  ЗОВНІШНЄ УПРАВЛІННЯ  ===============
@@ -13,7 +13,7 @@
 #if USE_MQTT
 #define MQTT_RECONNECT_TIME   (10U)                         // час у секундах перед підключенням до MQTT брокеру у разі втрати підключення
 #endif
-//#define USE_BLYNK  ("сюди_вставититокен_із_програми")     // розкоментуйте цей рядок, якщо ви використовуєте програму Blynk (для iOS та Android) https://community.alexgyver.ru/goto/post?id=53535 . Токен беруть у додатку в "Параметри -> DEVICES -> MY DEVICES -> AUTH TOKEN"
+//#define USE_BLYNK  ("сюди_вставити_токен_із_програми")    // розкоментуйте цей рядок, якщо ви використовуєте програму Blynk (для iOS та Android) https://community.alexgyver.ru/goto/post?id=53535 . Токен беруть у додатку в "Параметри -> DEVICES -> MY DEVICES -> AUTH TOKEN"
 
 // =======  МОДУЛІ, ЩО ВИКОРИСТОВУЮТЬСЯ  ==========
 #define ESP_USE_BUTTON                                      // Закоментувати, якщо не використовується кнопка (інакше лампа може реєструвати "фантомні" натискання та некоректно встановлювати яскравість)
@@ -702,6 +702,7 @@ bool repeat_multiple_lamp_control = false;
 uint8_t eff_num_correct [MODE_AMOUNT]; // Коригування номерів ефектів для різних мов
 void Display_Timer (uint8_t argument = 0);
 void timeTick();
+void Save_File_Changes();
 bool FileCopy (const String& SourceFile , const String& TargetFile); // Копіювання файлів
 uint8_t T_flag = 0;                   // Службове
 void showWarning(CRGB color, uint32_t duration, uint16_t blinkHalfPeriod);
