@@ -189,9 +189,9 @@ if (stillUseNTP)
           #ifdef TM1637_USE
           clockTicker_blink();
           #endif
-          FastLED.clear();
-          delay(2);
-          FastLED.show();
+          //FastLED.clear();
+          //delay(2);
+          //FastLED.show();
           changePower();                                                  // выключение матрицы или установка яркости текущего эффекта в засисимости от того, была ли включена лампа до срабатывания будильника
         }
 #ifdef TM1637_USE

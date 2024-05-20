@@ -26,9 +26,9 @@ class TimerManager
 
         TimerManager::TimerRunning = false;
         TimerManager::TimerHasFired = true;
-        FastLED.clear();
-        delay(2);
-        FastLED.show();
+        //FastLED.clear();
+        //delay(2);
+        //FastLED.show();
         *ONflag = !(*ONflag);
         jsonWrite(configSetup, "Power", (uint8_t)*ONflag);
 
