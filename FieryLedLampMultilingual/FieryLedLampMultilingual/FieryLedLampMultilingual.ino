@@ -729,7 +729,7 @@ void setup()  //================================================================
         WiFi.config(Static_IP, Gateway, Subnet, DNS1, DNS2); // Конфігурація під статичний IP Address
     }
     delay(10);  
-    WiFi.begin("Pestel" , "BarikMobarik"); //WiFi.begin(SSID_STA, Pass_STA); //WiFi.begin(_ssid.c_str(), _password.c_str()); //
+    WiFi.begin(SSID_STA, Pass_STA); //WiFi.begin(_ssid.c_str(), _password.c_str()); //
     delete [] Pass_STA;
     delete [] SSID_STA;
   }
