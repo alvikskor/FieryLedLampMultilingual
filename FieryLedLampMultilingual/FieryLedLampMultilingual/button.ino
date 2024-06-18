@@ -48,7 +48,7 @@ void buttonTick()
   // однократное нажатие
   if (clickCount == 1U)
   {
-    if (dawnFlag) {
+    if (dawnFlag == 1) {
         #ifdef MP3_PLAYER_USE
         if (alarm_sound_flag) {
            send_command(0x0E,0,0,0); //Пауза
@@ -59,7 +59,7 @@ void buttonTick()
         #endif  // MP3_PLAYER_USE
         {
             manualOff = true;
-            dawnFlag = false;
+            dawnFlag = 2;
             #ifdef TM1637_USE
             clockTicker_blink();
             #endif
@@ -110,13 +110,13 @@ void buttonTick()
   // двухкратное нажатие
   if (clickCount == 2U){
      #ifdef MP3_PLAYER_USE
-     if (dawnFlag) {            //if (dawnFlag && alarm_sound_flag) {
+     if (dawnFlag == 1) {            //if (dawnFlag && alarm_sound_flag) {
         //myDFPlayer.pause();
         send_command(0x0E,0,0,0);  //Пауза
         mp3_stop = true;
         alarm_sound_flag = false;
         manualOff = true;
-        dawnFlag = false;
+        dawnFlag = 2;
         #ifdef TM1637_USE
         clockTicker_blink();
         #endif
@@ -276,7 +276,7 @@ void buttonTick()
         FastLED.show();
       }
       #if defined(MOSFET_PIN) && defined(MOSFET_LEVEL)      // установка сигнала в пин, управляющий MOSFET транзистором, соответственно состоянию вкл/выкл матрицы или будильника
-      digitalWrite(MOSFET_PIN, ONflag || (dawnFlag && !manualOff) ? MOSFET_LEVEL : !MOSFET_LEVEL);
+      digitalWrite(MOSFET_PIN, ONflag || (dawnFlag == 1 && !manualOff) ? MOSFET_LEVEL : !MOSFET_LEVEL);
       #endif
 
       loadingFlag = true;

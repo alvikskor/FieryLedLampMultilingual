@@ -203,7 +203,7 @@ AlarmType alarms[7];
 
 static const uint8_t dawnOffsets[] PROGMEM = {5, 10, 15, 20, 25, 30, 40, 50, 60};   // опции для выпадающего списка параметра "время перед 'рассветом'" (будильник); синхронизировано с android приложением
 uint8_t dawnMode;
-bool dawnFlag = false;
+uint8_t dawnFlag = 0;
 uint32_t thisTime;
 bool manualOff = false;
 
@@ -729,7 +729,7 @@ void setup()  //================================================================
         WiFi.config(Static_IP, Gateway, Subnet, DNS1, DNS2); // Конфігурація під статичний IP Address
     }
     delay(10);  
-    WiFi.begin(SSID_STA, Pass_STA); //WiFi.begin(_ssid.c_str(), _password.c_str()); //
+    WiFi.begin(SSID_STA, Pass_STA);
     delete [] Pass_STA;
     delete [] SSID_STA;
   }
@@ -915,7 +915,7 @@ void loop()  //=================================================================
           FastLED.show();
         }
       #if defined(MOSFET_PIN) && defined(MOSFET_LEVEL)      // установка сигнала в пин, управляющий MOSFET транзистором, соответственно состоянию вкл/выкл матрицы или будильника
-        digitalWrite(MOSFET_PIN, ONflag || (dawnFlag && !manualOff) ? MOSFET_LEVEL : !MOSFET_LEVEL);
+        digitalWrite(MOSFET_PIN, ONflag || (dawnFlag == 1 && !manualOff) ? MOSFET_LEVEL : !MOSFET_LEVEL);
       #endif
         loadingFlag = true;
       #endif  // DISPLAY_IP_AT_START
@@ -949,7 +949,7 @@ do {    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++======
       if (!DisplayFlag) display.point(dotFlag); // выкл/выкл двоеточия
       Display_Timer ();
     }
-    if (dawnFlag) {
+    if (dawnFlag == 1) {
     clockTicker_blink();
     }
   #endif  //TM1637_USE

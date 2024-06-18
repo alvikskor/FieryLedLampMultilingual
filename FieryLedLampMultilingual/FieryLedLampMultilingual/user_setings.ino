@@ -508,9 +508,9 @@ void handle_PassOn ()   {
 
 void handle_Power ()  {
     uint8_t tmp;
-    if (dawnFlag) {
+    if (dawnFlag == 1) {
       manualOff = true;
-      dawnFlag = false;
+      dawnFlag = 2;
       #ifdef TM1637_USE
       clockTicker_blink();
       #endif

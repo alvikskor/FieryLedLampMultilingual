@@ -116,7 +116,7 @@ if (stillUseNTP)
         #endif
         
     #ifdef MP3_PLAYER_USE
-      if (alarm_advert_sound_on && mp3_player_connect == 4 && dawnFlag && dawnPosition >= 245) {
+      if (alarm_advert_sound_on && mp3_player_connect == 4 && dawnFlag == 1 && dawnPosition >= 245) {
         //Serial.println ("Alarm");
         first_entry = 1;
         advert_hour = true;
@@ -160,7 +160,7 @@ if (stillUseNTP)
           FastLED.setBrightness(255);
           delay(1);
           FastLED.show();
-          dawnFlag = true;
+          dawnFlag = 1;
 #ifdef TM1637_USE
           //blink_clock = true;
 #endif
@@ -183,9 +183,9 @@ if (stillUseNTP)
       else
       {
         // не время будильника (ещё не начался или закончился по времени)
-        if (dawnFlag)
+        if (dawnFlag == 1)
         {
-          dawnFlag = false;
+          dawnFlag = 2;
           #ifdef TM1637_USE
           clockTicker_blink();
           #endif
@@ -315,12 +315,27 @@ time_t getCurrentLocalTime()
 }
 
 // Получение текущего времени
+/*
 String Get_Time(time_t LocalTime) {
  String Time = ""; // Строка для результатов времени
  Time += ctime(&LocalTime); // Преобразуем время в строку формата Thu Jan 19 00:55:35 2017
  int i = Time.indexOf(":"); //Ишем позицию первого символа :
  Time = Time.substring(i - 2, i + 6); // Выделяем из строки 2 символа перед символом : и 6 символов после
  return Time; // Возврашаем полученное время
+}
+*/
+
+//+++++ Функція ctime() відсутня в бібіліотеці time.h для ESP32 Тому заміна від V.Matchenko +++++
+String Get_Time(time_t LocalTime) {
+  // Преобразование секунд во время (часы, минуты, секунды)
+  int hours = (LocalTime % 86400L) / 3600;
+  int minutes = (LocalTime % 3600) / 60;
+  int seconds = LocalTime % 60;
+
+  // Форматирование времени в строку "HH:MM:SS"
+  char buffer[9]; // Достаточно места для строки "HH:MM:SS"
+  snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d", hours, minutes, seconds);
+  return String(buffer);
 }
 
 #ifdef TM1637_USE
@@ -329,7 +344,7 @@ void clockTicker_blink()
   if (timeSynched && !DisplayFlag) {  
   
   //tm1637_brightness ();
-  if (dawnFlag)  //если рассвет - мигаем  часами
+  if (dawnFlag == 1)  //если рассвет - мигаем  часами
   {
     display.displayClock(hours, last_minute);                         // выводим время функцией часов
     if (millis() - tmr_blink > 100) {
