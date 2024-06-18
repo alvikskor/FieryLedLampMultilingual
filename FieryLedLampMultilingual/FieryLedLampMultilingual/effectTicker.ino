@@ -159,13 +159,19 @@ static const uint8_t Default_valueMask[] PROGMEM =    //Дополнительн
 
 void changePower()
 {
-  uint8_t k;    
-  if (AutoBrightness && !day_night)      
-    k = constrain(modes[currentMode].Brightness >> AutoBrightness, 1, 100);
-  else
-    k = modes[currentMode].Brightness;
+  uint8_t k;
+  if (dawnFlag == 2) {
+      k = DAWN_BRIGHT;
+      //Serial.print("dawnFlag = ");
+      //Serial.println(dawnFlag);
+      //dawnFlag = 0;
+  }
+  else  if (AutoBrightness && !day_night)      
+          k = constrain(modes[currentMode].Brightness >> AutoBrightness, 1, 100);
+       else
+         k = modes[currentMode].Brightness;
 
-  if (ONflag)
+  if (ONflag && !dawnFlag)
   {
     effectsTick();
     #if defined(MOSFET_PIN) && defined(MOSFET_LEVEL)      // установка сигнала в пин, управляющий MOSFET транзистором
@@ -183,7 +189,8 @@ void changePower()
   }
   else
   {
-    effectsTick();
+    if(dawnFlag != 2) effectsTick();
+    else dawnFlag = 0;
     for (uint8_t i = k; i > 0; i = constrain(i - (k < 60 ? 1 : 4), 0, k))
     {
       FastLED.setBrightness(i);
@@ -196,6 +203,11 @@ void changePower()
     #if defined(MOSFET_PIN) && defined(MOSFET_LEVEL)      // установка сигнала в пин, управляющий MOSFET транзистором
     digitalWrite(MOSFET_PIN, !MOSFET_LEVEL);
     #endif
+    if (ONflag) 
+    {
+        changePower();
+        return;
+    }
   }
   TimerManager::TimerRunning = false;
   TimerManager::TimerHasFired = false;

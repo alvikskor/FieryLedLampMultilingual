@@ -372,7 +372,7 @@ void IR_Receive_Button_Handle()   {     //Обробка прийнятих ко
 }
 
 void IR_Power()   {
-    if (dawnFlag) {
+    if (dawnFlag == 1) {
         #ifdef MP3_PLAYER_USE
         if (alarm_sound_flag) {
            //myDFPlayer.pause();
@@ -384,7 +384,7 @@ void IR_Power()   {
         #endif  // MP3_PLAYER_USE
         {
             manualOff = true;
-            dawnFlag = false;
+            dawnFlag = 2;
             #ifdef TM1637_USE
             clockTicker_blink();
             #endif
@@ -692,7 +692,7 @@ void Print_IP()   {
       loadingFlag = true;
     }
     #if defined(MOSFET_PIN) && defined(MOSFET_LEVEL)      // установка сигнала в пин, управляющий MOSFET транзистором, соответственно состоянию вкл/выкл матрицы или будильника
-      digitalWrite(MOSFET_PIN, ONflag || (dawnFlag && !manualOff) ? MOSFET_LEVEL : !MOSFET_LEVEL);
+      digitalWrite(MOSFET_PIN, ONflag || (dawnFlag == 1 && !manualOff) ? MOSFET_LEVEL : !MOSFET_LEVEL);
     #endif
 }
 

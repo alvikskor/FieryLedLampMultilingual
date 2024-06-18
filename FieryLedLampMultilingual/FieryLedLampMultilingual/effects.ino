@@ -2285,7 +2285,7 @@ void showWarning(
   FastLED.show();
 
 #if defined(MOSFET_PIN) && defined(MOSFET_LEVEL)      // установка сигнала в пин, управляющий MOSFET транзистором, соответственно состоянию вкл/выкл матрицы или будильника
-  digitalWrite(MOSFET_PIN, ONflag || (dawnFlag && !manualOff) ? MOSFET_LEVEL : !MOSFET_LEVEL);
+  digitalWrite(MOSFET_PIN, ONflag || (dawnFlag == 1 && !manualOff) ? MOSFET_LEVEL : !MOSFET_LEVEL);
 #endif
 
   loadingFlag = true;                                       // принудительное отображение текущего эффекта (того, что был активен перед предупреждением)

@@ -275,7 +275,7 @@ void play_sound()   {
 }
 
 void mp3_loop()   {
-  if (dawnFlag) {                          // если наступает рассвет
+  if (dawnFlag == 1) {                          // если наступает рассвет
       if (dawnflag_sound ) {
           if (alarm_sound_flag && (millis() - alarm_timer > 1000)) {
               alarm_timer = millis();

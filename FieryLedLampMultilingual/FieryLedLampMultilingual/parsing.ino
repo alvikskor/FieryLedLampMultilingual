@@ -327,9 +327,9 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
 
     else if (!strncmp_P(inputBuffer, PSTR("P_ON"), 4))
     {
-      if (dawnFlag) {
+      if (dawnFlag == 1) {
         manualOff = true;
-        dawnFlag = false;
+        dawnFlag = 2;
         #ifdef TM1637_USE
         clockTicker_blink();
         #endif
@@ -358,9 +358,9 @@ void processInputBuffer(char *inputBuffer, char *outputBuffer, bool generateOutp
 
     else if (!strncmp_P(inputBuffer, PSTR("P_OFF"), 5))
     {
-      if (dawnFlag) {
+      if (dawnFlag == 1) {
         manualOff = true;
-        dawnFlag = false;
+        dawnFlag = 2;
         #ifdef TM1637_USE
         clockTicker_blink();
         #endif
