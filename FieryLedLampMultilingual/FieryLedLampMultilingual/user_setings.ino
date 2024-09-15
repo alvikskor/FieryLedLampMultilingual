@@ -79,7 +79,7 @@ void User_setings ()  {
  HTTP.on("/sct", handle_sct);  // Колір рядка, що бежить
  HTTP.on("/ctf", handle_color_text_fon);  // Виводити рядок, що бежить, на кольоровом фоні
  HTTP.on("/s_IP", handle_use_static_ip);  // Використовувати для підключення к роутеру стичну IP адресу
- HTTP.on("/set_ip", handle_set_static_ip);  // Встановлення стичну IP адресу, шлюз, маску підмережі та DNS серверу
+ HTTP.on("/set_ip", handle_set_static_ip);  // Встановлення статичної IP адреси, шлюза, маски підмережі та DNS сервера
  HTTP.on("/auto_bri", handle_auto_bri);  // Автоматичне зниження яскравості у нічний час
  #if (USE_MQTT)
  HTTP.on("/mqtt_set", handle_mqtt_set);  // Параметри налаштування MQTT 
@@ -1406,8 +1406,11 @@ void handle_test ()   {
 
 void handle_current_limit ()   {
     String configHardware = readFile(F("hardware_config.json"), 1024);
-    current_limit = constrain (HTTP.arg("cur_lim").toInt(), 100, CURRENT_LIMIT);
+    current_limit = HTTP.arg("cur_lim").toInt();
+    //current_limit = constrain (HTTP.arg("cur_lim").toInt(), 0, CURRENT_LIMIT);
+    if(current_limit > CURRENT_LIMIT) current_limit = CURRENT_LIMIT;
     jsonWrite(configHardware, "cur_lim", current_limit);
+    if(current_limit == 0) current_limit = 0xFFFF;
     FastLED.setMaxPowerInVoltsAndMilliamps(5, current_limit);
     #ifdef GENERAL_DEBUG
     LOG.print (F("\nЛимит тока current_limit = "));

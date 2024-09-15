@@ -234,18 +234,20 @@ void buttonTick()
     #ifdef BUTTON_CAN_SET_SLEEP_TIMER
     //if (!ota)
     {
-    // мигать об успехе операции лучше до вызова changePower(), иначе сперва мелькнут кадры текущего эффекта
-    showWarning(CRGB::Blue, 1000, 250U);                    // мигание синим цветом 1 секунду
-    if (!ONflag) EepromManager::EepromGet(modes);
-    ONflag = true;
-    changePower();
-    jsonWrite(configSetup, "Power", ONflag);
-    jsonWrite(configSetup, "tmr", 1);
-    #ifdef USE_BLYNK
-    updateRemoteBlynkParams();
-    #endif
-    TimerManager::TimeToFire = millis() + BUTTON_SET_SLEEP_TIMER1 * 60UL * 1000UL;
-    TimerManager::TimerRunning = true;
+      if (!dawnFlag) {
+        // мигать об успехе операции лучше до вызова changePower(), иначе сперва мелькнут кадры текущего эффекта
+        showWarning(CRGB::Blue, 1000, 250U);                    // мигание синим цветом 1 секунду
+        if (!ONflag) EepromManager::EepromGet(modes);
+        ONflag = true;
+        changePower();
+        jsonWrite(configSetup, "Power", ONflag);
+        jsonWrite(configSetup, "tmr", 1);
+        #ifdef USE_BLYNK
+        updateRemoteBlynkParams();
+        #endif
+        TimerManager::TimeToFire = millis() + BUTTON_SET_SLEEP_TIMER1 * 60UL * 1000UL;
+        TimerManager::TimerRunning = true;
+      }
     }
     #endif //BUTTON_CAN_SET_SLEEP_TIMER 
     ;
@@ -437,18 +439,21 @@ if (touch.isStep()){
         #ifdef BUTTON_CAN_SET_SLEEP_TIMER
       case 3U:                                               // Таймер сну 10 хв.
       {
-        Button_Holding = true;
-        // мигать об успехе операции лучше до вызова changePower(), иначе сперва мелькнут кадры текущего эффекта
-        showWarning(CRGB::Blue, 1500U, 250U);                    // мигание синим цветом 1 секунду
-        ONflag = true;
-        changePower();
-        jsonWrite(configSetup, "Power", ONflag);
-        jsonWrite(configSetup, "tmr", 1);
-        #ifdef USE_BLYNK
-        updateRemoteBlynkParams();
-        #endif
-        TimerManager::TimeToFire = millis() + BUTTON_SET_SLEEP_TIMER2 * 60UL * 1000UL;
-        TimerManager::TimerRunning = true;
+        if(!dawnFlag){
+          Button_Holding = true;
+          // мигать об успехе операции лучше до вызова changePower(), иначе сперва мелькнут кадры текущего эффекта
+          showWarning(CRGB::Blue, 1500U, 250U);                    // мигание синим цветом 1 секунду
+          ONflag = true;
+          changePower();
+          jsonWrite(configSetup, "Power", ONflag);
+          jsonWrite(configSetup, "tmr", 1);
+          #ifdef USE_BLYNK
+          updateRemoteBlynkParams();
+          #endif
+          TimerManager::TimeToFire = millis() + BUTTON_SET_SLEEP_TIMER2 * 60UL * 1000UL;
+          TimerManager::TimerRunning = true;
+          break;
+        }
         break;
       }
         #endif //BUTTON_CAN_SET_SLEEP_TIMER
@@ -649,20 +654,23 @@ if (touch.isStep()){
         #ifdef BUTTON_CAN_SET_SLEEP_TIMER     
       case 3U:
       {
-        Button_Holding = true;
-        // мигать об успехе операции лучше до вызова changePower(), иначе сперва мелькнут кадры текущего эффекта
-        showWarning(CRGB::Blue, 1500U, 250U);                    // мигание синим цветом 1 секунду
-        EepromManager::EepromGet(modes);
-        ONflag = true;
-        changePower();
-        jsonWrite(configSetup, "Power", ONflag);
-        jsonWrite(configSetup, "tmr", 1);
-        #ifdef USE_BLYNK
-        updateRemoteBlynkParams();
-        #endif
-        TimerManager::TimeToFire = millis() + BUTTON_SET_SLEEP_TIMER2 * 60UL * 1000UL;
-        TimerManager::TimerRunning = true;
-        break;      
+        if(!dawnFlag){
+          Button_Holding = true;
+          // мигать об успехе операции лучше до вызова changePower(), иначе сперва мелькнут кадры текущего эффекта
+          showWarning(CRGB::Blue, 1500U, 250U);                    // мигание синим цветом 1 секунду
+          EepromManager::EepromGet(modes);
+          ONflag = true;
+          changePower();
+          jsonWrite(configSetup, "Power", ONflag);
+          jsonWrite(configSetup, "tmr", 1);
+          #ifdef USE_BLYNK
+          updateRemoteBlynkParams();
+          #endif
+          TimerManager::TimeToFire = millis() + BUTTON_SET_SLEEP_TIMER2 * 60UL * 1000UL;
+          TimerManager::TimerRunning = true;
+          break;
+        }
+        break;
       }
         #endif //BUTTON_CAN_SET_SLEEP_TIMER
         
